@@ -29,7 +29,7 @@ public class VerifyUser {
     public VerifyResult verify() {
         // 校验用户名长度和是否包含汉字
         if (!isValidUsername(username)) {
-            return VerifyResult.invalid("用户名必须由6到12位字母或数字组成，不能包含汉字");
+            return VerifyResult.invalid("用户名必须由4到12位字母或数字组成，不能包含汉字");
         }
 
         // 校验密码长度和复杂度（字母加数字）
@@ -76,8 +76,8 @@ public class VerifyUser {
     }
 
     private boolean isValidUsername(String username) {
-        // 用户名长度必须在6到12位，并且不能包含汉字
-        return Pattern.matches("^[a-zA-Z0-9]{6,12}$", username);
+        // 用户名长度必须在4到12位，并且不能包含汉字
+        return Pattern.matches("^[a-zA-Z0-9]{4,12}$", username);
     }
 
     private boolean isValidPassword(String password) {

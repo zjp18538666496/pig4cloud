@@ -48,8 +48,13 @@ public class UserServiceImpl implements UserService {
             password = new BCryptPasswordEncoder().encode(password);
             userEntity.setPassword(password);
             UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq("username", userEntity.getUsername());
-            int rows = userMapper.update(updateWrapper);
+            updateWrapper.eq("username", userEntity.getUsername())
+                    .set("password", password)
+                    .set("name", userEntity.getName())
+                    .set("email", userEntity.getEmail())
+                    .set("mobile", userEntity.getMobile());
+
+            int rows = userMapper.update(null, updateWrapper);
             return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", userEntity);
         } else {
             return new ResponseImpl(-200, verify.getMessage(), null);
@@ -61,7 +66,7 @@ public class UserServiceImpl implements UserService {
         QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", userEntity.getUsername());
         int rows = userMapper.delete(queryWrapper);
-        return new ResponseImpl(200, rows > 0 ? "删除成功" : "删除失败", userEntity);
+        return new ResponseImpl(rows > 0 ? 200 : -200, rows > 0 ? "删除成功" : "删除失败", null);
     }
 
     public Response getUserLists() {

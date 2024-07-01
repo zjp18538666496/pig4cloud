@@ -1,0 +1,70 @@
+<template>
+  <el-form :model="form" label-width="auto" style="max-width: 600px">
+    <el-form-item label="昵称">
+      <el-input v-model="form.name"/>
+    </el-form-item>
+    <el-form-item label="用户名">
+      <el-input disabled v-model="form.username"/>
+    </el-form-item>
+    <el-form-item label="密码">
+      <el-input v-model="form.password"/>
+    </el-form-item>
+    <el-form-item label="手机号">
+      <el-input v-model="form.mobile"/>
+    </el-form-item>
+    <el-form-item label="邮箱">
+      <el-input v-model="form.email"/>
+    </el-form-item>
+    <el-form-item>
+      <el-button @click="logOut">注销账号</el-button>
+      <el-button @click="onSubmit">保存</el-button>
+    </el-form-item>
+  </el-form>
+</template>
+
+<script setup>
+import {reactive} from 'vue'
+import {useRouter} from "vue-router";
+const router = useRouter()
+import {updateUser, delUser} from '@/api/user.js'
+import {ElMessage, ElMessageBox} from "element-plus";
+
+const form = reactive(JSON.parse(localStorage.getItem("userinfo")))
+form.password = "";
+const onSubmit = () => {
+  updateUser(form).then(res => {
+    if (!res) return;
+    if (res.code === 200) {
+      localStorage.setItem("userinfo", JSON.stringify(res.data))
+      ElMessage({message: '保存成功', type: 'success'})
+    } else {
+      ElMessage.error(`保存失败！${res.message}`)
+    }
+  })
+}
+const logOut = () => {
+  ElMessageBox.confirm('注销账号后无法恢复，确定注销吗？', '提示', {
+    confirmButtonText: '注销',
+    cancelButtonText: '取消',
+    type: 'info'
+  })
+      .then(() => {
+        delUser({
+          username: form.username
+        }).then(res => {
+          if (!res) return;
+          if (res.code === 200) {
+            localStorage.clear()
+            ElMessage({message: '注销成功', type: 'success'})
+            router.push("/login")
+          }
+
+        }).catch((err) => {
+
+        })
+      })
+      .catch(() => {
+
+      });
+}
+</script>

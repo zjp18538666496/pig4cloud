@@ -22,3 +22,11 @@ export function updateUser(data) {
         data
     });
 }
+
+export function delUser(data) {
+    return service({
+        url: "/user/delUser",
+        method: "POST",
+        data
+    });
+}
