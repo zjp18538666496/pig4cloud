@@ -1,36 +1,59 @@
 <template>
-  <el-form :model="form" label-width="auto" style="max-width: 600px">
-    <el-form-item label="昵称">
-      <el-input v-model="form.name"/>
-    </el-form-item>
-    <el-form-item label="用户名">
-      <el-input disabled v-model="form.username"/>
-    </el-form-item>
-    <el-form-item label="密码">
-      <el-input v-model="form.password"/>
-    </el-form-item>
-    <el-form-item label="手机号">
-      <el-input v-model="form.mobile"/>
-    </el-form-item>
-    <el-form-item label="邮箱">
-      <el-input v-model="form.email"/>
-    </el-form-item>
-    <el-form-item>
-      <el-button @click="logOut">注销账号</el-button>
-      <el-button @click="onSubmit">保存</el-button>
-    </el-form-item>
-  </el-form>
+  <el-tabs v-model="activeName" class="demo-tabs">
+    <el-tab-pane label="基本信息" name="basic">
+      <el-form :model="form" label-width="auto" style="max-width: 600px">
+        <el-form-item label="昵称">
+          <el-input v-model="form.name"/>
+        </el-form-item>
+        <el-form-item label="用户名">
+          <el-input disabled v-model="form.username"/>
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="form.mobile"/>
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="form.email"/>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="logOut">注销账号</el-button>
+          <el-button @click="onSubmit">更新个人信息</el-button>
+        </el-form-item>
+      </el-form>
+    </el-tab-pane>
+    <el-tab-pane label="安全信息" name="second">
+      <el-form :model="passwordForm" label-width="auto" style="max-width: 600px">
+        <el-form-item label="原密码">
+          <el-input v-model="passwordForm.password"/>
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="passwordForm.newPassword"/>
+        </el-form-item>
+        <el-form-item label="确认密码">
+          <el-input v-model="passwordForm.confirmPassword"/>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="upadtePassword">更新密码</el-button>
+        </el-form-item>
+      </el-form>
+    </el-tab-pane>
+  </el-tabs>
 </template>
 
 <script setup>
-import {reactive} from 'vue'
+import {reactive, ref} from 'vue'
 import {useRouter} from "vue-router";
+
 const router = useRouter()
 import {updateUser, delUser} from '@/api/user.js'
 import {ElMessage, ElMessageBox} from "element-plus";
 
+const activeName = ref('basic')
 const form = reactive(JSON.parse(localStorage.getItem("userinfo")))
-form.password = "";
+const passwordForm = reactive({
+  password: '',
+  newPassword: '',
+  confirmPassword: ''
+});
 const onSubmit = () => {
   updateUser(form).then(res => {
     if (!res) return;
@@ -58,13 +81,14 @@ const logOut = () => {
             ElMessage({message: '注销成功', type: 'success'})
             router.push("/login")
           }
-
-        }).catch((err) => {
-
         })
       })
       .catch(() => {
 
       });
+}
+
+const upadtePassword = () => {
+
 }
 </script>
