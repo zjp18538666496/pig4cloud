@@ -17,6 +17,11 @@ const router = createRouter({
                     path: '/home',
                     name: 'home',
                     component: Home
+                },
+                {
+                    path: '/role-manager',
+                    name: 'role-manager',
+                    component: import('@/views/role-manager/Index.vue')
                 }
             ]
         },

@@ -9,9 +9,13 @@ import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
 import com.pig4cloud.util.verify.VerifyResult;
 import com.pig4cloud.util.verify.VerifyUser;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.sql.Timestamp;
+import java.time.LocalTime;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -31,6 +35,7 @@ public class UserServiceImpl implements UserService {
             password = new BCryptPasswordEncoder().encode(password);
             userEntity.setPassword(password);
             userEntity.setName(userEntity.getUsername());
+            userEntity.setCreateTime(new Timestamp(System.currentTimeMillis()));
             int rows = userMapper.insert(userEntity);
             return new ResponseImpl(200, rows > 0 ? "注册成功" : "注册失败", null);
         } else {
@@ -40,25 +45,36 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response updateUser(UserEntity userEntity) {
-        verifyUser.setUsername(userEntity.getUsername());
-        verifyUser.setPassword(userEntity.getPassword());
-        VerifyResult verify = verifyUser.updateVerify();
-        if (verify.isValid()) {
-            String password = userEntity.getPassword();
-            password = new BCryptPasswordEncoder().encode(password);
-            userEntity.setPassword(password);
-            UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq("username", userEntity.getUsername())
-                    .set("password", password)
-                    .set("name", userEntity.getName())
-                    .set("email", userEntity.getEmail())
-                    .set("mobile", userEntity.getMobile());
+//        verifyUser.setUsername(userEntity.getUsername());
+//        verifyUser.setPassword(userEntity.getPassword());
+//        VerifyResult verify = verifyUser.updateVerify();
+//        if (verify.isValid()) {
+//            String password = userEntity.getPassword();
+//            password = new BCryptPasswordEncoder().encode(password);
+//            userEntity.setPassword(password);
+//            UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+//            updateWrapper.eq("username", userEntity.getUsername())
+//                    .set("password", password)
+//                    .set("name", userEntity.getName())
+//                    .set("email", userEntity.getEmail())
+//                    .set("mobile", userEntity.getMobile())
+//                    .set("update_time", new Timestamp(System.currentTimeMillis()));
+//
+//            int rows = userMapper.update(null, updateWrapper);
+//            return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", userEntity);
+//        } else {
+//            return new ResponseImpl(-200, verify.getMessage(), null);
+//        }
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        userEntity.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+        updateWrapper.eq("username", userEntity.getUsername())
+                .set("name", userEntity.getName())
+                .set("email", userEntity.getEmail())
+                .set("mobile", userEntity.getMobile())
+                .set("update_time", userEntity.getUpdateTime());
 
-            int rows = userMapper.update(null, updateWrapper);
-            return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", userEntity);
-        } else {
-            return new ResponseImpl(-200, verify.getMessage(), null);
-        }
+        int rows = userMapper.update(null, updateWrapper);
+        return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", userEntity);
     }
 
     @Override

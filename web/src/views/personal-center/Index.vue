@@ -14,6 +14,30 @@
         <el-form-item label="邮箱">
           <el-input v-model="form.email"/>
         </el-form-item>
+        <el-form-item label="更新时间">
+          <el-date-picker
+              v-model="form.updateTime"
+              type="datetime"
+              placeholder="更新时间"
+              disabled
+          />
+        </el-form-item>
+        <el-form-item label="创建时间">
+          <el-date-picker
+              v-model="form.createTime"
+              type="datetime"
+              placeholder="创建时间"
+              disabled
+          />
+        </el-form-item>
+        <el-form-item label="最后登录时间">
+          <el-date-picker
+              v-model="form.lastLoginTime"
+              type="datetime"
+              placeholder="最后登录时间"
+              disabled
+          />
+        </el-form-item>
         <el-form-item>
           <el-button @click="logOut">注销账号</el-button>
           <el-button @click="onSubmit">更新个人信息</el-button>
@@ -48,16 +72,18 @@ import {updateUser, delUser} from '@/api/user.js'
 import {ElMessage, ElMessageBox} from "element-plus";
 
 const activeName = ref('basic')
-const form = reactive(JSON.parse(localStorage.getItem("userinfo")))
+debugger
+let form = ref(JSON.parse(localStorage.getItem("userinfo")))
 const passwordForm = reactive({
   password: '',
   newPassword: '',
   confirmPassword: ''
 });
 const onSubmit = () => {
-  updateUser(form).then(res => {
+  updateUser(form.value).then(res => {
     if (!res) return;
     if (res.code === 200) {
+      form.value = res.data
       localStorage.setItem("userinfo", JSON.stringify(res.data))
       ElMessage({message: '保存成功', type: 'success'})
     } else {

@@ -37,7 +37,7 @@
             </el-icon>
             <span>用户管理</span>
           </el-menu-item>
-          <el-menu-item index="1-2">
+          <el-menu-item index="role-manager">
             <el-icon>
               <icon-menu/>
             </el-icon>
@@ -74,9 +74,7 @@
 </template>
 
 <script setup>
-import {ref} from 'vue'
 import {
-  Location,
   Menu as IconMenu,
 } from '@element-plus/icons-vue'
 import {storeToRefs} from 'pinia'

@@ -1,5 +1,6 @@
 package com.pig4cloud.controller;
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.pig4cloud.dao.Response;
 import com.pig4cloud.dao.UserMapper;
 import com.pig4cloud.dao.impl.ResponseImpl;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +32,7 @@ public class UserLoginController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final UserMapper userMapper;
+
     @PostMapping
     public Response doLogin(@RequestBody UserDetailsEntity userDetailsEntity) {
         try {
@@ -37,6 +40,12 @@ public class UserLoginController {
             Authentication authentication = authenticationManager.authenticate(auth);
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("username", userDetailsEntity.getUsername())
+                    .set("last_login_time", new Timestamp(System.currentTimeMillis()));
+            //更新用户最后登录时间
+            userMapper.update(null, updateWrapper);
 
             //获取用户权限信息
             String authorityString = "";

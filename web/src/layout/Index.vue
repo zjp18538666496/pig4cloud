@@ -8,7 +8,7 @@
         <el-header>
           <Header/>
         </el-header>
-        <el-main>
+        <el-main class="app_main">
           <AppMain/>
         </el-main>
       </el-container>
@@ -36,5 +36,11 @@ let {width} = storeToRefs(store)
 .el-aside {
   overflow: hidden;
   transition: width 0.3s ease-in-out;
+}
+.app_main {
+  padding: 15px;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(248, 248, 248);
 }
 </style>

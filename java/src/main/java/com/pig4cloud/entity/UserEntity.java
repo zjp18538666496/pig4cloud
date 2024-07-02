@@ -1,6 +1,7 @@
 package com.pig4cloud.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.sql.Timestamp;
@@ -8,13 +9,50 @@ import java.sql.Timestamp;
 @Data
 @TableName("sys_user")
 public class UserEntity {
-    private Integer id;
+
+    /**
+     * 用户id
+     */
+    private int id;
+
+    /**
+     * 用户名
+     */
     private String username;
+    /**
+     * 密码
+     */
     private String password;
+    /**
+     * 姓名
+     */
     private String name;
+
+    /**
+     * 手机号
+     */
     private String mobile;
+
+    /**
+     * 邮箱
+     */
     private String email;
-    private Timestamp create_time;
-    private Timestamp update_time;
-    private Timestamp last_login_time;
+
+    /**
+     * 创建时间
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Timestamp createTime;
+
+    /**
+     * 更新时间
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Timestamp updateTime;
+
+    /**
+     * 最后登录时间
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Timestamp lastLoginTime;
 }
