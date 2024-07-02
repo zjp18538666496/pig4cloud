@@ -7,7 +7,13 @@ const service = axios.create({
     headers: {
         'Access-Control-Allow-Origin': '*', // 设置允许跨域的域名，* 代表允许所有域名
         'Content-Type': 'application/json', // 设置请求的内容类型为 JSON
-    }
+    },
+    // `validateStatus` 定义了对于给定的 HTTP状态码是 resolve 还是 reject promise。
+    // 如果 `validateStatus` 返回 `true` (或者设置为 `null` 或 `undefined`)，
+    // 则promise 将会 resolved，否则是 rejected。
+    validateStatus: function (status) {
+        return status >= -200;
+    },
 })
 
 /**
@@ -60,6 +66,7 @@ service.interceptors.response.use(
         } else {
             ElMessage({message: error, type: 'error'})
         }
+        return Promise.reject(error)
     }
 )
 

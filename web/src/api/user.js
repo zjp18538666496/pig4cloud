@@ -1,5 +1,10 @@
 import service from "@/utils/request.js";
 
+/**
+ * 查询用户列表
+ * @param id
+ * @return {*}
+ */
 export function getUser(id) {
     return service({
         url: "/user/id/" + id,
@@ -7,6 +12,11 @@ export function getUser(id) {
     });
 }
 
+/**
+ * 创建用户
+ * @param data
+ * @return {*}
+ */
 export function createUser(data) {
     return service({
         url: "/user/createUser",
@@ -15,6 +25,11 @@ export function createUser(data) {
     });
 }
 
+/**
+ * 更新用户信息
+ * @param data
+ * @return {*}
+ */
 export function updateUser(data) {
     return service({
         url: "/user/updateUser",
@@ -23,6 +38,11 @@ export function updateUser(data) {
     });
 }
 
+/**
+ * 删除用户
+ * @param data
+ * @return {*}
+ */
 export function delUser(data) {
     return service({
         url: "/user/delUser",
