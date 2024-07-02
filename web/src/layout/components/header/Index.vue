@@ -18,7 +18,7 @@
       </el-dropdown>
     </div>
   </div>
-  <el-drawer v-model="drawer" title="I am the title" :with-header="false">
+  <el-drawer v-model="drawer" title="个人信息">
     <presonalCenter />
   </el-drawer>
 </template>
@@ -70,7 +70,6 @@ const goto = (src) => {
   if (src === "/login") {
     return logout(src)
   }
-  debugger
   if(src === "/personalCenter"){
      drawer.value = true
      return

@@ -29,12 +29,12 @@ public class VerifyUser {
     public VerifyResult verify() {
         // 校验用户名长度和是否包含汉字
         if (!isValidUsername(username)) {
-            return VerifyResult.invalid("用户名必须由4到12位字母或数字组成，不能包含汉字");
+            return VerifyResult.invalid("请输入4到12位的用户名，支持字母合数字");
         }
 
         // 校验密码长度和复杂度（字母加数字）
         if (!isValidPassword(password)) {
-            return VerifyResult.invalid("密码必须由6到18位字母和数字组成");
+            return VerifyResult.invalid("请输入4到18位的密码，支持字母、数字和特殊字符");
         }
         return VerifyResult.valid("校验通过");
     }
@@ -44,18 +44,18 @@ public class VerifyUser {
         if (!verify().isValid()) {
             return VerifyResult.invalid(verify.getMessage());
         }
-
-        // 构建查询条件，查询数据库中是否存在指定用户名的用户
-        QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", username);
-        UserEntity user = userMapper.selectOne(queryWrapper);
-
-        // 检查是否找到了用户，并且密码匹配
-        if (user != null && user.getUsername() != null) {
-            return VerifyResult.invalid("用户已存在");
-        } else {
-            return VerifyResult.valid("用户不存在");
-        }
+        return VerifyResult.valid("用户不存在");
+//        // 构建查询条件，查询数据库中是否存在指定用户名的用户
+//        QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("username", username);
+//        UserEntity user = userMapper.selectOne(queryWrapper);
+//
+//        // 检查是否找到了用户，并且密码匹配
+//        if (user != null && user.getUsername() != null) {
+//            return VerifyResult.invalid("用户已存在");
+//        } else {
+//            return VerifyResult.valid("用户不存在");
+//        }
     }
 
     public VerifyResult updateVerify() {
@@ -81,8 +81,8 @@ public class VerifyUser {
     }
 
     private boolean isValidPassword(String password) {
-        // 密码长度必须在6到18位，并且必须包含至少一个字母和一个数字
-        return Pattern.matches("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{6,18}$", password);
+        // 密码长度必须在4到18位
+        return Pattern.matches("^[a-zA-Z0-9!@#$%^&*(),.?\":{}|<>~`\\\\/\\[\\]\\-_+=;']{4,18}$", password);
     }
 
 

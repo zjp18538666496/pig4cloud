@@ -3,6 +3,7 @@ import {Lock, User} from "@element-plus/icons-vue";
 import {reactive, ref} from 'vue'
 import {ElMessage, ElNotification} from 'element-plus'
 import {createUser} from "@/api/user.js";
+import {valiPassword, valiUsername} from "@/utils/validate.js";
 
 let loading = ref(false);
 /**
@@ -13,13 +14,14 @@ const createUser1 = () => {
     username: ruleForm.username,
     password: ruleForm.password
   }).then(res => {
-    loading.value = false
-    if (res.code === 200) {
+    if (res?.code === 200) {
       ElMessage({message: '注册成功，请返回登录', type: 'success'})
     } else {
       ElMessage.error(`${res.message}`)
     }
-  });
+  }).finally(() => {
+    loading.value = false
+  })
 }
 
 /**
@@ -44,17 +46,20 @@ const registration = () => {
  * 表单验证
  */
 const ruleFormRef = ref()
-const valiUsername = (rule, value, callback) => {
-  if (value === '') {
-    callback(new Error('请输入用户名'))
+const verifyUsername = (rule, value, callback) => {
+  if (valiUsername(value)) {
+    callback()
+  } else {
+    callback(new Error('请输入4到12位的用户名，支持字母合数字'))
   }
-  callback()
+
 }
-const valiPassword = (rule, value, callback) => {
-  if (value === '') {
-    callback(new Error('请输入密码'))
+const verifyPassword = (rule, value, callback) => {
+  if (valiPassword(value)) {
+    callback()
+  } else {
+    callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'))
   }
-  callback()
 }
 
 const ruleForm = reactive({
@@ -63,8 +68,8 @@ const ruleForm = reactive({
 })
 
 const rules = reactive({
-  username: [{validator: valiUsername, trigger: 'blur'}],
-  password: [{validator: valiPassword, trigger: 'blur'}]
+  username: [{validator: verifyUsername, trigger: 'blur'}],
+  password: [{validator: verifyPassword, trigger: 'blur'}]
 })
 
 /**
