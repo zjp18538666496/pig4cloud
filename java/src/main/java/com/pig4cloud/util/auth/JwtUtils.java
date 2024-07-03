@@ -1,6 +1,5 @@
 package com.pig4cloud.util.auth;
 
-import com.pig4cloud.util.auth.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

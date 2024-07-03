@@ -44,18 +44,18 @@ public class VerifyUser {
         if (!verify().isValid()) {
             return VerifyResult.invalid(verify.getMessage());
         }
-        return VerifyResult.valid("用户不存在");
-//        // 构建查询条件，查询数据库中是否存在指定用户名的用户
-//        QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
-//        queryWrapper.eq("username", username);
-//        UserEntity user = userMapper.selectOne(queryWrapper);
-//
-//        // 检查是否找到了用户，并且密码匹配
-//        if (user != null && user.getUsername() != null) {
-//            return VerifyResult.invalid("用户已存在");
-//        } else {
-//            return VerifyResult.valid("用户不存在");
-//        }
+//        return VerifyResult.valid("用户不存在");
+        // 构建查询条件，查询数据库中是否存在指定用户名的用户
+        QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("username", username);
+        UserEntity user = userMapper.selectOne(queryWrapper);
+
+        // 检查是否找到了用户，并且密码匹配
+        if (user != null && user.getUsername() != null) {
+            return VerifyResult.invalid("用户已存在");
+        } else {
+            return VerifyResult.valid("用户不存在");
+        }
     }
 
     public VerifyResult updateVerify() {

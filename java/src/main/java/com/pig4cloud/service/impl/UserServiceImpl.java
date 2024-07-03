@@ -9,13 +9,11 @@ import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
 import com.pig4cloud.util.verify.VerifyResult;
 import com.pig4cloud.util.verify.VerifyUser;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.time.LocalTime;
 
 @Service
 public class UserServiceImpl implements UserService {
