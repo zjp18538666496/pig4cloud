@@ -1,8 +1,10 @@
 package com.pig4cloud.controller;
 
 import com.pig4cloud.dao.Response;
+import com.pig4cloud.entity.PagingQuery;
 import com.pig4cloud.entity.RoleEntity;
 import com.pig4cloud.service.RoleService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,4 +28,18 @@ public class RoleController {
         return roleService.createRole(roleEntity);
     }
 
+    @PostMapping("/delRole")
+    public Response deleteRole(@RequestBody RoleEntity roleEntity) {
+        return roleService.deleteRole(roleEntity);
+    }
+
+    @PostMapping("/updateRole")
+    public Response updateRole(@RequestBody RoleEntity roleEntity) {
+        return roleService.updateRole(roleEntity);
+    }
+
+    @PostMapping("/getRoleLists")
+    public Response getRoleLists(@RequestBody PagingQuery pagingQuery) {
+        return roleService.getRoleLists(pagingQuery);
+    }
 }

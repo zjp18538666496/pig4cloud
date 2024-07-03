@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @TableName("sys_role")
-public class RoleEntity {
+public class RoleEntity{
 
     /**
      * id

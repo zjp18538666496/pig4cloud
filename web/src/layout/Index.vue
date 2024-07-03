@@ -37,10 +37,18 @@ let {width} = storeToRefs(store)
   overflow: hidden;
   transition: width 0.3s ease-in-out;
 }
+
 .app_main {
   padding: 15px;
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 50px);
   background-color: rgb(248, 248, 248);
+  overflow: hidden;
+}
+
+.common-layout {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 </style>

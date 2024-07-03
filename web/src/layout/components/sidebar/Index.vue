@@ -1,7 +1,7 @@
 <template>
   <div class="sidebar">
     <div class="logo" :style="borderRight" @click="toggleCollapse">
-      {{logo}}
+      {{ logo }}
     </div>
     <el-menu
         default-active="/home"
@@ -94,9 +94,9 @@ const toggleCollapse = () => {
   } : {
     borderRight: '1px solid #9a9a9a'
   }
-  if(isCollapse.value){
+  if (isCollapse.value) {
     logo.value = 'PIGX'
-  }else {
+  } else {
     setTimeout(() => {
       logo.value = 'PIGX ADMIN'
     }, 500)

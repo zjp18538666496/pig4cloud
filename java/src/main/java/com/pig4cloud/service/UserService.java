@@ -29,4 +29,15 @@ public interface UserService {
      * 获取用户列表
      */
     Response getUserLists();
+
+    /**
+     * 更新密码
+     */
+    Response updatePassword(UserEntity userEntity);
+
+    /**
+     * 忘记密码 重置密码
+     */
+
+    Response resetPassword(UserEntity userEntity);
 }

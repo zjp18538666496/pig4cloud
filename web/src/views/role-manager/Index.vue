@@ -1,69 +1,91 @@
 <script setup>
-import {ref} from "vue";
-const input = ref('')
-const tableData = [
-  {
-    date: '2016-05-03',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-  {
-    date: '2016-05-02',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-  {
-    date: '2016-05-04',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-  {
-    date: '2016-05-01',
-    name: 'Tom',
-    address: 'No. 189, Grove St, Los Angeles',
-  },
-]
-const currentPage1 = ref(5)
-const currentPage2 = ref(5)
-const currentPage3 = ref(5)
-const currentPage4 = ref(4)
-const pageSize2 = ref(100)
-const pageSize3 = ref(100)
-const pageSize4 = ref(100)
-// const size = ref<ComponentSize>('default')
-const background = ref(false)
-const disabled = ref(false)
+import {ref, computed, onUnmounted, onMounted} from "vue";
+import {getRoleLists, delRole} from "@/api/role.js";
+import {ElMessage, ElMessageBox} from "element-plus";
 
-const handleSizeChange = (val) => {
-  console.log(`${val} items per page`)
+let roleName = ref('')
+let tableData = ref([])
+let currentPage = ref(1)
+let pageSize = ref(10)
+let total = ref(0)
+let background = ref(false)
+let disabled = ref(false)
+const computedTableHeight = computed(() => {
+  return window.innerHeight - 50 - 30 - 40 - 52 - 52; // 例如减去页面上方和下方的高度
+});
+const getRoleList = () => {
+  getRoleLists({
+    page: currentPage.value,
+    pageSize: pageSize.value,
+    roleName: roleName.value
+  }).then(res => {
+    tableData.value = res.data.rows;
+    total.value = res.data.total;
+    pageSize.value = res.data.size;
+  })
 }
-const handleCurrentChange = (val) => {
-  console.log(`current page: ${val}`)
-}
+getRoleList()
 const handleEdit = (index, row) => {
-  console.log(index, row)
+  //getRoleList()
 }
 const handleDelete = (index, row) => {
-  console.log(index, row)
+  ElMessageBox.confirm(`您确定删除【${row.roleName}】吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+      .then(() => {
+        delRole({
+          roleCode: row.roleCode
+        }).then(res => {
+          if (res?.code === 200) {
+            ElMessage({message: '删除成功', type: 'success'})
+            getRoleList()
+          } else {
+            ElMessage.error(`删除失败！${res.message}`)
+          }
+        })
+      })
+      .catch(() => {
+
+      });
+  //getRoleList()
 }
+
+onMounted(() => {
+  // 窗口大小改变时重新计算表格高度
+  const updateTableHeight = () => {
+    computedTableHeight.value = window.innerHeight - 50 - 30 - 40 - 52 - 52; // 根据实际情况调整
+  };
+
+  window.addEventListener('resize', updateTableHeight);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateTableHeight);
+});
+
+
 </script>
 
 <template>
   <div>
     <div style="margin-bottom: 20px;">
-      角色名称 <el-input v-model="input" style="width: 240px" placeholder="角色名称" />
-      <el-button style="margin: 0 0 0 10px;">查询</el-button>
-      <el-button type="primary">重置</el-button>
+      角色名称
+      <el-input v-model="roleName" style="width: 240px" placeholder="角色名称"/>
+      <el-button style="margin: 0 0 0 10px;" @click="getRoleList">查询</el-button>
+      <el-button type="primary" @click="roleName=''">重置</el-button>
     </div>
-    <el-table :data="tableData" border style="width: 100%">
+    <el-table :data="tableData" border style="width: 100%; overflow: auto;"
+              :style="{ 'max-height': computedTableHeight + 'px' }">
       <el-table-column prop="date" label="序号">
         <template #default="scope">
           <span>{{ scope.$index + 1 }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="date" label="角色名称"/>
-      <el-table-column prop="name" label="角色标识"/>
-      <el-table-column prop="name" label="角色描述"/>
+      <el-table-column prop="roleName" label="角色名称"/>
+      <el-table-column prop="roleCode" label="角色标识"/>
+      <el-table-column prop="description" label="角色描述"/>
       <el-table-column prop="address" label="数据权限"/>
       <el-table-column prop="address" label="创建时间"/>
       <el-table-column prop="address" label="操作">
@@ -83,16 +105,16 @@ const handleDelete = (index, row) => {
     </el-table>
     <div style="display: flex; justify-content: flex-end; width: 100%;">
       <el-pagination
-          v-model:current-page="currentPage4"
-          v-model:page-size="pageSize4"
-          :page-sizes="[100, 200, 300, 400]"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 30, 40]"
           style="margin-top: 20px;"
           :disabled="disabled"
           :background="background"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="400"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
+          :total="total"
+          @size-change="getRoleList"
+          @current-change="getRoleList"
       />
     </div>
   </div>

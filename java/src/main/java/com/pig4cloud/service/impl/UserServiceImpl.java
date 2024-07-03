@@ -88,6 +88,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Response updatePassword(UserEntity userEntity) {
+        return null;
+    }
+
+    @Override
+    public Response resetPassword(UserEntity userEntity) {
+        return null;
+    }
+
+    @Override
     public Response getUser(String username) {
         QueryWrapper<UserEntity> wrapper = new QueryWrapper<>();
         wrapper.eq("username", username);
