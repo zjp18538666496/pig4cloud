@@ -1,7 +1,8 @@
 <script setup>
-import {ref, computed, onUnmounted, onMounted} from "vue";
-import {getRoleLists, delRole} from "@/api/role.js";
+import {onMounted, onUnmounted, ref} from "vue";
+import {delRole, getRoleLists} from "@/api/role.js";
 import {ElMessage, ElMessageBox} from "element-plus";
+import {debounce} from "@/utils/utils.js";
 
 let roleName = ref('')
 let tableData = ref([])
@@ -10,9 +11,7 @@ let pageSize = ref(10)
 let total = ref(0)
 let background = ref(false)
 let disabled = ref(false)
-const computedTableHeight = computed(() => {
-  return window.innerHeight - 50 - 30 - 40 - 52 - 52; // 例如减去页面上方和下方的高度
-});
+const computedTableHeight = ref(window.innerHeight - 50 - 30 - 40 - 52 - 52);
 const getRoleList = () => {
   getRoleLists({
     page: currentPage.value,
@@ -49,16 +48,14 @@ const handleDelete = (index, row) => {
       .catch(() => {
 
       });
-  //getRoleList()
 }
-
+const updateTableHeight = () => {
+  computedTableHeight.value = window.innerHeight - 50 - 30 - 40 - 52 - 52; // 根据实际情况调整
+};
 onMounted(() => {
-  // 窗口大小改变时重新计算表格高度
-  const updateTableHeight = () => {
-    computedTableHeight.value = window.innerHeight - 50 - 30 - 40 - 52 - 52; // 根据实际情况调整
-  };
-
-  window.addEventListener('resize', updateTableHeight);
+  // 监听窗口大小改变，重新计算表格高度
+  const updateTableHeightFunc = debounce(updateTableHeight, 500);
+  window.addEventListener('resize', updateTableHeightFunc);
 });
 
 onUnmounted(() => {
@@ -76,8 +73,7 @@ onUnmounted(() => {
       <el-button style="margin: 0 0 0 10px;" @click="getRoleList">查询</el-button>
       <el-button type="primary" @click="roleName=''">重置</el-button>
     </div>
-    <el-table :data="tableData" border style="width: 100%; overflow: auto;"
-              :style="{ 'max-height': computedTableHeight + 'px' }">
+    <el-table :data="tableData" border style="width: 100%; overflow: auto;" :max-height="computedTableHeight">
       <el-table-column prop="date" label="序号">
         <template #default="scope">
           <span>{{ scope.$index + 1 }}</span>

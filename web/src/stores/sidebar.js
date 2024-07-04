@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import {defineStore} from 'pinia'
 
 /**
  * 侧边栏
@@ -11,7 +11,8 @@ export const useSidebarStore = defineStore('sidebar',  {
       borderRight: {
         borderRight: '1px solid #9a9a9a'
       },
-      logo: 'PIGX ADMIN'
+      logo: 'PIGX ADMIN',
+      defaultActive : '/home'
     }
   },
   //数据持久化

@@ -12,7 +12,7 @@
   </div>
 </template>
 <script setup>
-import { shallowRef } from 'vue'
+import {shallowRef} from 'vue'
 import Login from "@/views/login/components/Login.vue";
 import Register from "@/views/login/components/Register.vue";
 

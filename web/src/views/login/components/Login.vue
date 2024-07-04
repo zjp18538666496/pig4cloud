@@ -4,7 +4,7 @@ import {reactive, ref} from 'vue'
 import {ElMessage, ElNotification} from 'element-plus'
 import {login} from "@/api/login.js";
 import {useRouter} from "vue-router";
-import {valiUsername, valiPassword} from "@/utils/validate.js";
+import {valiPassword, valiUsername} from "@/utils/validate.js";
 
 const router = useRouter()
 let loading = ref(false);

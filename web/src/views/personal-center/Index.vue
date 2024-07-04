@@ -66,10 +66,10 @@
 <script setup>
 import {reactive, ref} from 'vue'
 import {useRouter} from "vue-router";
+import {delUser, updateUser} from '@/api/user.js'
+import {ElMessage, ElMessageBox} from "element-plus";
 
 const router = useRouter()
-import {updateUser, delUser} from '@/api/user.js'
-import {ElMessage, ElMessageBox} from "element-plus";
 
 const activeName = ref('basic')
 debugger

@@ -4,10 +4,11 @@
       {{ logo }}
     </div>
     <el-menu
-        default-active="/home"
+        :default-active="defaultActive || '/home'"
         class="el-menu-vertical-demo"
         @open="handleOpen"
         @close="handleClose"
+        @select="handleSelect"
         :collapse="isCollapse"
         :router="true"
     >
@@ -74,14 +75,11 @@
 </template>
 
 <script setup>
-import {
-  Menu as IconMenu,
-} from '@element-plus/icons-vue'
+import {Menu as IconMenu,} from '@element-plus/icons-vue'
 import {storeToRefs} from 'pinia'
 import {useSidebarStore} from '@/stores/sidebar.js'
-
 const store = useSidebarStore()
-let {isCollapse, width, logo, borderRight} = storeToRefs(store)
+let {isCollapse, width, logo, borderRight, defaultActive} = storeToRefs(store)
 
 /**
  * 折叠面板
@@ -108,6 +106,10 @@ const handleOpen = (key, keyPath) => {
 }
 const handleClose = (key, keyPath) => {
   console.log(key, keyPath)
+}
+const handleSelect = (key, keyPath) => {
+  console.log(key, keyPath)
+  defaultActive.value = `/${key}`
 }
 </script>
 <style scoped lang="scss">
