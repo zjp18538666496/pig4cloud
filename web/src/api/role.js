@@ -20,3 +20,18 @@ export function delRole(data) {
         data,
     });
 }
+export function updateRole(data) {
+    return service({
+        url: "/role/updateRole",
+        method: "post",
+        data,
+    });
+}
+
+export function createRole(data) {
+    return service({
+        url: "/role/createRole",
+        method: "post",
+        data,
+    });
+}

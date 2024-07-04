@@ -12,7 +12,7 @@ const service = axios.create({
     // 如果 `validateStatus` 返回 `true` (或者设置为 `null` 或 `undefined`)，
     // 则promise 将会 resolved，否则是 rejected。
     validateStatus: function (status) {
-        return status >= -200;
+        return status >= -200 || status <= 400;
     },
 })
 
@@ -53,6 +53,7 @@ service.interceptors.response.use(
     response => {
         switch (response.data.code) {
             case 403:
+            case 401:
                 handleUnauthorized()
                 return
             default:
