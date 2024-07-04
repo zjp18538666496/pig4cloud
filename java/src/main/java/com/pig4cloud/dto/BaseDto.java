@@ -1,12 +1,11 @@
-package com.pig4cloud.entity;
+package com.pig4cloud.dto;
 
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
 @Setter
-public class PagingQuery{
+@Getter
+public class BaseDto {
     Long page;
     Long pageSize;
-    String roleName;
 }

@@ -1,10 +1,13 @@
 package com.pig4cloud.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pig4cloud.dao.Response;
 import com.pig4cloud.dao.UserMapper;
 import com.pig4cloud.dao.impl.ResponseImpl;
+import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
 import com.pig4cloud.util.verify.VerifyResult;
@@ -83,8 +86,16 @@ public class UserServiceImpl implements UserService {
         return new ResponseImpl(rows > 0 ? 200 : -200, rows > 0 ? "删除成功" : "删除失败", null);
     }
 
-    public Response getUserLists() {
-        return new ResponseImpl(200, "请求成功", userMapper.selectList(null));
+    @Override
+    public Response getUserLists(UserDto userDto) {
+        long page = userDto.getPage();
+        long pageSize = userDto.getPageSize();
+        Page<UserEntity> rowPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<UserEntity> queryWrapper = new LambdaQueryWrapper<>();
+        rowPage = userMapper.selectPage(rowPage, queryWrapper);
+        Response response = new ResponseImpl(200, "获取数据成功", null);
+        response.pagination(rowPage);
+        return response;
     }
 
     @Override

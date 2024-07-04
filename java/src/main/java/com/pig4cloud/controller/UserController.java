@@ -1,6 +1,7 @@
 package com.pig4cloud.controller;
 
 import com.pig4cloud.dao.Response;
+import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,8 @@ public class UserController {
     }
 
     @GetMapping("/getUserList")
-    public Response getListUser(){
-        return userService.getUserLists();
+    public Response getListUser(@RequestBody UserDto userDto){
+        return userService.getUserLists(userDto);
     }
 
     @GetMapping("/getUser")

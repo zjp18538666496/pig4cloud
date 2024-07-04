@@ -1,10 +1,9 @@
 package com.pig4cloud.controller;
 
 import com.pig4cloud.dao.Response;
-import com.pig4cloud.entity.PagingQuery;
+import com.pig4cloud.dto.RoleDto;
 import com.pig4cloud.entity.RoleEntity;
 import com.pig4cloud.service.RoleService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,7 +38,7 @@ public class RoleController {
     }
 
     @PostMapping("/getRoleLists")
-    public Response getRoleLists(@RequestBody PagingQuery pagingQuery) {
-        return roleService.getRoleLists(pagingQuery);
+    public Response getRoleLists(@RequestBody RoleDto roleDto) {
+        return roleService.getRoleLists(roleDto);
     }
 }

@@ -1,9 +1,8 @@
 package com.pig4cloud.service;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
 import com.pig4cloud.dao.Response;
-import com.pig4cloud.entity.PagingQuery;
+import com.pig4cloud.dto.RoleDto;
 import com.pig4cloud.entity.RoleEntity;
-import jakarta.servlet.http.HttpServletRequest;
 
 public interface RoleService {
 
@@ -30,5 +29,5 @@ public interface RoleService {
     /**
      * 获取角色列表
      */
-    Response getRoleLists(PagingQuery pagingQuery);
+    Response getRoleLists(RoleDto roleDto);
 }

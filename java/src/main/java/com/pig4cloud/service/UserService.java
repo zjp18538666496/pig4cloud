@@ -1,6 +1,7 @@
 package com.pig4cloud.service;
 
 import com.pig4cloud.dao.Response;
+import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
 
 public interface UserService {
@@ -28,7 +29,7 @@ public interface UserService {
     /**
      * 获取用户列表
      */
-    Response getUserLists();
+    Response getUserLists(UserDto userDto);
 
     /**
      * 更新密码
