@@ -1,10 +1,9 @@
 <script setup>
-import {inject, onMounted, onUnmounted, reactive, ref} from "vue";
+import {onMounted, onUnmounted, reactive, ref} from "vue";
 import {delRole, getRoleLists, updateRole, createRole} from "@/api/role.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import EditRole from "@/views/role-manager/components/EditRole.vue";
 import {debounce} from "@/utils/utils.js";
-import {valiPassword, valiUsername} from "@/utils/validate.js";
 
 let roleTable = ref({
   // 表格数据
@@ -24,33 +23,43 @@ let roleTable = ref({
     background: false,
   }
 });
-// 角色信息
-let roleInfo = ref(null);
-// 弹窗是否显示
-const dialogVisible = ref(false)
+
+let role = ref({
+  roleRef: null,
+  roleInfo: null,
+  dialogVisible: false,
+})
+
+const initRoleInfo = () => {
+  role.value.roleInfo = {
+    roleName: '',
+    roleCode: '',
+    description: ''
+  }
+}
+
 let type = null;
 /**
  * 表单验证
  */
 const verifyUsername = (rule, value, callback) => {
-  if (valiUsername(value)) {
+  if (value) {
     callback()
   } else {
-    callback(new Error('请输入4到12位的用户名，支持字母合数字'))
+    callback(new Error('角色名称不能为空'))
   }
 
 }
 const verifyPassword = (rule, value, callback) => {
-  if (valiPassword(value)) {
+  if (value) {
     callback()
   } else {
-    callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'))
+    callback(new Error('角色编码不能为空'))
   }
 }
 const rules = reactive({
   roleName: [{validator: verifyUsername, trigger: 'blur'}],
   roleCode: [{validator: verifyPassword, trigger: 'blur'}],
-  description: [{validator: verifyPassword, trigger: 'blur'}]
 })
 /**
  * 获取角色列表
@@ -75,38 +84,21 @@ const updateTableHeight = () => {
   roleTable.value.height = window.innerHeight - 50 - 30 - 40 - 52 - 52; // 根据实际情况调整
 };
 
-/**
- * 监听窗口大小改变，重新计算表格高度
- */
-onMounted(() => {
-  // 监听窗口大小改变，重新计算表格高度
-  const updateTableHeightFunc = debounce(updateTableHeight, 500);
-  window.addEventListener('resize', updateTableHeightFunc);
-});
-
-/**
- * 监听窗口大小改变，重新计算表格高度
- */
-onUnmounted(() => {
-  window.removeEventListener('resize', updateTableHeight);
-});
 
 /*
  * 弹窗关闭
  */
 const handleClose = (() => {
-  dialogVisible.value = false
-  roleInfo.value = null
+  1
+  role.value.roleRef.ruleFormRef.resetFields()
+  setTimeout(() => role.value.dialogVisible = false)
+  initRoleInfo()
 })
 
 const createRole1 = () => {
   type = 'create'
-  roleInfo.value = {
-    roleName: '',
-    roleCode: '',
-    description: ''
-  }
-  dialogVisible.value = true
+  initRoleInfo()
+  role.value.dialogVisible = true
 }
 
 /**
@@ -142,53 +134,63 @@ const handleDelete = (index, row) => {
  */
 const handleEdit = (index, row) => {
   type = 'edit'
-  roleInfo.value = {...row}
-  dialogVisible.value = true
+  role.value.roleInfo = {...row}
+  role.value.dialogVisible = true
 }
 
 /**
  * 保存角色
  */
 const saveRole = () => {
-  const ruleFormRef = inject('ruleFormRef');
-  ruleFormRef.validate((valid) => {
-    debugger
+  role.value.roleRef.ruleFormRef.validate((valid) => {
     if (valid) {
-
+      switch (type) {
+        case 'create':
+          createRole(role.value.roleInfo).then(res => {
+            if (res?.code === 200) {
+              role.value.dialogVisible = false
+              initRoleInfo()
+              ElMessage({message: '保存成功', type: 'success'})
+              getRoleList()
+            } else {
+              ElMessage.error(`保存失败！${res.message}`)
+            }
+          })
+          break;
+        case 'edit':
+          updateRole(role.value.roleInfo).then(res => {
+            if (res?.code === 200) {
+              role.value.dialogVisible = false
+              initRoleInfo()
+              ElMessage({message: '保存成功', type: 'success'})
+              getRoleList()
+            } else {
+              ElMessage.error(`保存失败！${res.message}`)
+            }
+          })
+          break;
+        default:
+          break;
+      }
     }
-
   })
-
-  switch (type) {
-    case 'create':
-      createRole(roleInfo.value).then(res => {
-        if (res?.code === 200) {
-          dialogVisible.value = false
-          roleInfo.value = {}
-          ElMessage({message: '保存成功', type: 'success'})
-          getRoleList()
-        } else {
-          ElMessage.error(`保存失败！${res.message}`)
-        }
-      })
-      break;
-    case 'edit':
-      updateRole(roleInfo.value).then(res => {
-        if (res?.code === 200) {
-          dialogVisible.value = false
-          roleInfo.value = null
-          ElMessage({message: '保存成功', type: 'success'})
-          getRoleList()
-        } else {
-          ElMessage.error(`保存失败！${res.message}`)
-        }
-      })
-      break;
-    default:
-      break;
-  }
-
 }
+
+/**
+ * 监听窗口大小改变，重新计算表格高度
+ */
+onMounted(() => {
+  // 监听窗口大小改变，重新计算表格高度
+  const updateTableHeightFunc = debounce(updateTableHeight, 500);
+  window.addEventListener('resize', updateTableHeightFunc);
+});
+
+/**
+ * 监听窗口大小改变，重新计算表格高度
+ */
+onUnmounted(() => {
+  window.removeEventListener('resize', updateTableHeight);
+});
 </script>
 
 <template>
@@ -242,18 +244,19 @@ const saveRole = () => {
     </div>
     <div>
       <el-dialog
-          v-model="dialogVisible"
+          v-model="role.dialogVisible"
           title="编辑角色"
           width="800"
           :before-close="handleClose"
       >
         <EditRole
             :rules="rules"
-            :roleInfo="roleInfo"
+            :roleInfo="role.roleInfo"
+            ref="role.roleRef"
         />
         <template #footer>
           <div class="dialog-footer">
-            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button @click="role.dialogVisible = false">取消</el-button>
             <el-button type="primary" @click="saveRole">
               保存
             </el-button>

@@ -13,8 +13,8 @@
 </template>
 
 <script setup>
-import {provide, ref} from "vue";
-
+import {ref} from "vue";
+const ruleFormRef = ref();
 const props = defineProps({
   roleInfo: {
     type: Object,
@@ -25,8 +25,7 @@ const props = defineProps({
     required: true
   }
 });
-const ruleFormRef = ref(); // 创建一个 ref 引用
-
-// 提供 formRef 实例
-provide('ruleFormRef', ruleFormRef);
+defineExpose({
+  ruleFormRef
+})
 </script>
