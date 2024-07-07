@@ -50,3 +50,11 @@ export function delUser(data) {
         data
     });
 }
+
+export function getUserLists(data){
+    return service({
+        url: "/user/getUserList",
+        method: "POST",
+        data
+    });
+}

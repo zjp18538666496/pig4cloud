@@ -4,6 +4,8 @@ import com.pig4cloud.dao.Response;
 import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
 
+import java.util.Map;
+
 public interface UserService {
 
     /**
@@ -41,4 +43,6 @@ public interface UserService {
      */
 
     Response resetPassword(UserEntity userEntity);
+
+    Response updateUser1(Map<String, Object> map);
 }

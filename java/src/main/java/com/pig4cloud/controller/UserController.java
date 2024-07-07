@@ -20,8 +20,8 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/getUserList")
-    public Response getListUser(@RequestBody UserDto userDto){
+    @PostMapping("/getUserList")
+    public Response getUserList(@RequestBody UserDto userDto){
         return userService.getUserLists(userDto);
     }
 
@@ -31,17 +31,22 @@ public class UserController {
     }
 
     @PostMapping("/createUser")
-    public Response createUser(@RequestBody UserEntity userEntity, @RequestParam Map<String, Object> map) {
+    public Response createUser(@RequestBody UserEntity userEntity) {
         return userService.createUser(userEntity);
     }
 
     @PostMapping("/updateUser")
-    public Response updateUser(@RequestBody UserEntity userEntity, @RequestParam Map<String, Object> map) {
+    public Response updateUser(@RequestBody UserEntity userEntity) {
         return userService.updateUser(userEntity);
     }
 
+    @PostMapping("/updateUser1")
+    public Response updateUser(@RequestBody Map<String, Object> map) {
+        return userService.updateUser1(map);
+    }
+
     @PostMapping("/delUser")
-    public Response delUser(@RequestBody UserEntity userEntity, @RequestParam Map<String, Object> map) {
+    public Response delUser(@RequestBody UserEntity userEntity) {
         return userService.deleteUser(userEntity);
     }
 }

@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pig4cloud.dao.Response;
+import com.pig4cloud.dao.RoleMapper;
 import com.pig4cloud.dao.UserMapper;
 import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.dto.UserDto;
+import com.pig4cloud.entity.RoleEntity;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
 import com.pig4cloud.util.verify.VerifyResult;
@@ -17,6 +19,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -90,11 +94,10 @@ public class UserServiceImpl implements UserService {
     public Response getUserLists(UserDto userDto) {
         long page = userDto.getPage();
         long pageSize = userDto.getPageSize();
-        Page<UserEntity> rowPage = new Page<>(page, pageSize);
-        LambdaQueryWrapper<UserEntity> queryWrapper = new LambdaQueryWrapper<>();
-        rowPage = userMapper.selectPage(rowPage, queryWrapper);
+        List<Map<String, Object>> list = userMapper.selectPage(pageSize, page - 1);
+        long total = userMapper.selectUserList2Count();
         Response response = new ResponseImpl(200, "获取数据成功", null);
-        response.pagination(rowPage);
+        response.pagination(list, total, pageSize, page);
         return response;
     }
 
@@ -105,6 +108,31 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response resetPassword(UserEntity userEntity) {
+        return null;
+    }
+
+    @Override
+    public Response updateUser1(Map<String, Object> map) {
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("username", map.get("username"))
+                .set("name",  map.get("name"))
+                .set("email", map.get("email"))
+                .set("mobile", map.get("mobile"))
+                .set("update_time", new Timestamp(System.currentTimeMillis()));
+        int rows = userMapper.update(null, updateWrapper);
+        if (rows > 0) {
+//            String[] role_codes = map.get("role_codes").toString().split(",");
+//            for (String role_code : role_codes) {
+//                RoleMapper roleMapper;
+//                QueryWrapper<RoleEntity> queryWrapper = new QueryWrapper<>();
+//                RoleUserEntity roleUser = new RoleUserEntity();
+//                roleUser.setUsername(map.get("username").toString());
+//                roleUser.setRoleCode(role_code);
+//                userMapper.insert(roleUser);
+//            }
+            return new ResponseImpl(200, "更新成功", null);
+        }
+
         return null;
     }
 

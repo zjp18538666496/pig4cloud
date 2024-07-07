@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Component
 public class RoleServicelmpl implements RoleService {
@@ -44,8 +46,8 @@ public class RoleServicelmpl implements RoleService {
     public Response updateRole(RoleEntity roleEntity) {
         UpdateWrapper<RoleEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", roleEntity.getId());
-        updateWrapper.set("role_code", roleEntity.getRoleCode());
-        updateWrapper.set("role_name", roleEntity.getRoleName());
+        updateWrapper.set("role_code", roleEntity.getRole_code());
+        updateWrapper.set("role_name", roleEntity.getRole_code());
         updateWrapper.set("description", roleEntity.getDescription());
         int rows = roleMapper.update(roleEntity, updateWrapper);
         return new ResponseImpl(rows > 0 ? 200 : -200, rows > 0 ? "更新成功" : "更新失败", null);
@@ -57,7 +59,7 @@ public class RoleServicelmpl implements RoleService {
     @Override
     public Response deleteRole(RoleEntity roleEntity) {
         QueryWrapper<RoleEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("role_code", roleEntity.getRoleCode());
+        queryWrapper.eq("role_code", roleEntity.getRole_code());
         int rows = roleMapper.delete(queryWrapper);
         return new ResponseImpl(rows > 0 ? 200 : -200, rows > 0 ? "删除成功" : "删除失败", null);
     }
@@ -70,14 +72,20 @@ public class RoleServicelmpl implements RoleService {
         long page = roleDto.getPage();
         long pageSize = roleDto.getPageSize();
         String roleName = roleDto.getRoleName();
-        Page<RoleEntity> rowPage = new Page<>(page, pageSize);
-        LambdaQueryWrapper<RoleEntity> queryWrapper = new LambdaQueryWrapper<>();
-        if (!roleName.isEmpty()) {
-            queryWrapper.like(RoleEntity::getRoleName, roleName);
+        if (page >= 0 && pageSize >= 0) {
+            Page<RoleEntity> rowPage = new Page<>(page, pageSize);
+            LambdaQueryWrapper<RoleEntity> queryWrapper = new LambdaQueryWrapper<>();
+            if (!roleName.isEmpty()) {
+                queryWrapper.like(RoleEntity::getRole_name, roleName);
+            }
+            rowPage = roleMapper.selectPage(rowPage, queryWrapper);
+            Response response = new ResponseImpl(200, "获取数据成功", null);
+            response.pagination(rowPage);
+            return response;
+        } else {
+            QueryWrapper<RoleEntity> queryWrapper = new QueryWrapper<>();
+            List<RoleEntity> rows = roleMapper.selectList(queryWrapper);
+            return new ResponseImpl(200, "获取数据成功", rows);
         }
-        rowPage = roleMapper.selectPage(rowPage, queryWrapper);
-        Response response = new ResponseImpl(200, "获取数据成功", null);
-        response.pagination(rowPage);
-        return response;
     }
 }

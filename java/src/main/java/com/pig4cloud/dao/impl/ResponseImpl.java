@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -21,9 +22,16 @@ public class ResponseImpl implements Response {
         this.data = data;
     }
 
-    /**
-     * 数据分页
-     */
+    public void pagination(List<?> rows, long total, long pageSize, long page) {
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("rows", rows);
+        dataMap.put("total", total);
+        dataMap.put("pages",(long) Math.ceil((double) (long) total / pageSize));
+        dataMap.put("size", pageSize);
+        dataMap.put("current", page);
+        this.setData(dataMap);
+    }
+
     /**
      * 数据分页
      */

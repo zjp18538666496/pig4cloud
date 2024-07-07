@@ -32,7 +32,7 @@
             </el-icon>
             <span>权限管理</span>
           </template>
-          <el-menu-item index="1-1">
+          <el-menu-item index="/user-manager">
             <el-icon>
               <icon-menu/>
             </el-icon>
@@ -44,7 +44,7 @@
             </el-icon>
             <span>角色管理</span>
           </el-menu-item>
-          <el-menu-item index="1-2">
+          <el-menu-item index="/menu-manager">
             <el-icon>
               <icon-menu/>
             </el-icon>

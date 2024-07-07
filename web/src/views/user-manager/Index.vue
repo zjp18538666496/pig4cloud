@@ -1,11 +1,11 @@
 <script setup>
 import {onMounted, onUnmounted, reactive, ref} from "vue";
-import {delRole, getRoleLists, updateRole, createRole} from "@/api/role.js";
 import {ElMessage, ElMessageBox} from "element-plus";
-import EditRole from "@/views/role-manager/components/EditRole.vue";
+import EditUser from "@/views/user-manager/components/EditUser.vue";
 import {debounce} from "@/utils/utils.js";
+import {createUser, delUser, getUserLists, updateUser} from "@/api/user.js";
 
-let roleTable = ref({
+let userTable = ref({
   // 表格数据
   rows: [],
   // 表格高度
@@ -24,18 +24,16 @@ let roleTable = ref({
   }
 });
 
-let role = ref({
-  roleRef: null,
+
+let roleRef = ref();
+
+let user = ref({
   roleInfo: null,
   dialogVisible: false,
 })
 
 const initRoleInfo = () => {
-  role.value.roleInfo = {
-    roleName: '',
-    roleCode: '',
-    description: ''
-  }
+  user.value.roleInfo = {}
 }
 
 let type = null;
@@ -46,7 +44,7 @@ const verifyUsername = (rule, value, callback) => {
   if (value) {
     callback()
   } else {
-    callback(new Error('角色名称不能为空'))
+    callback(new Error('用户名称不能为空'))
   }
 
 }
@@ -54,7 +52,7 @@ const verifyPassword = (rule, value, callback) => {
   if (value) {
     callback()
   } else {
-    callback(new Error('角色编码不能为空'))
+    callback(new Error('用户编码不能为空'))
   }
 }
 const rules = reactive({
@@ -62,26 +60,26 @@ const rules = reactive({
   roleCode: [{validator: verifyPassword, trigger: 'blur'}],
 })
 /**
- * 获取角色列表
+ * 获取用户列表
  */
-const getRoleList = () => {
-  getRoleLists(roleTable.value.query).then(res => {
+const getUserLise = () => {
+  getUserLists(userTable.value.query).then(res => {
     if (res?.code === 200) {
-      roleTable.value.rows = res.data.rows;
-      roleTable.value.pagination.total = res.data.total
-      roleTable.value.query.pageSize = res.data.size
+      userTable.value.rows = res.data.rows;
+      userTable.value.pagination.total = res.data.total
+      userTable.value.query.pageSize = res.data.size
     }
   })
 }
 
-getRoleList()
+getUserLise()
 
 
 /**
  * 更新表格高度
  */
 const updateTableHeight = () => {
-  roleTable.value.height = window.innerHeight - 50 - 30 - 40 - 52 - 52; // 根据实际情况调整
+  userTable.value.height = window.innerHeight - 50 - 30 - 40 - 52 - 52; // 根据实际情况调整
 };
 
 
@@ -89,16 +87,15 @@ const updateTableHeight = () => {
  * 弹窗关闭
  */
 const handleClose = (() => {
-  1
-  role.value.roleRef.ruleFormRef.resetFields()
-  setTimeout(() => role.value.dialogVisible = false)
+  roleRef.value.ruleFormRef.resetFields()
+  setTimeout(() => user.value.dialogVisible = false)
   initRoleInfo()
 })
 
 const createRole1 = () => {
   type = 'create'
   initRoleInfo()
-  role.value.dialogVisible = true
+  user.value.dialogVisible = true
 }
 
 /**
@@ -107,17 +104,15 @@ const createRole1 = () => {
  * @param row
  */
 const handleDelete = (index, row) => {
-  ElMessageBox.confirm(`您确定删除【${row.roleName}】吗？`, '提示', {
+  ElMessageBox.confirm(`您确定删除【${row.name}】吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    delRole({
-      roleCode: row.roleCode
-    }).then(res => {
+    delUser(row).then(res => {
       if (res?.code === 200) {
         ElMessage({message: '删除成功', type: 'success'})
-        getRoleList()
+        getUserLise()
       } else {
         ElMessage.error(`删除失败！${res.message}`)
       }
@@ -134,36 +129,38 @@ const handleDelete = (index, row) => {
  */
 const handleEdit = (index, row) => {
   type = 'edit'
-  role.value.roleInfo = {...row}
-  role.value.dialogVisible = true
+  user.value.roleInfo = {...row}
+  user.value.roleInfo.role_codes = row.role_codes?.split(',')
+  user.value.dialogVisible = true
 }
 
 /**
- * 保存角色
+ * 保存用户
  */
 const saveRole = () => {
-  role.value.roleRef.ruleFormRef.validate((valid) => {
+  roleRef.value.ruleFormRef.validate((valid) => {
     if (valid) {
+      user.value.roleInfo.role_codes = user.value.roleInfo.role_codes?.join(',')
       switch (type) {
         case 'create':
-          createRole(role.value.roleInfo).then(res => {
+          createUser(user.value.roleInfo).then(res => {
             if (res?.code === 200) {
-              role.value.dialogVisible = false
+              user.value.dialogVisible = false
               initRoleInfo()
               ElMessage({message: '保存成功', type: 'success'})
-              getRoleList()
+              getUserLise()
             } else {
               ElMessage.error(`保存失败！${res.message}`)
             }
           })
           break;
         case 'edit':
-          updateRole(role.value.roleInfo).then(res => {
+          updateUser(user.value.roleInfo).then(res => {
             if (res?.code === 200) {
-              role.value.dialogVisible = false
+              user.value.dialogVisible = false
               initRoleInfo()
               ElMessage({message: '保存成功', type: 'success'})
-              getRoleList()
+              getUserLise()
             } else {
               ElMessage.error(`保存失败！${res.message}`)
             }
@@ -196,23 +193,32 @@ onUnmounted(() => {
 <template>
   <div>
     <div style="margin-bottom: 20px;">
-      角色名称
-      <el-input v-model="roleTable.query.roleName" style="width: 240px" placeholder="角色名称"/>
-      <el-button style="margin: 0 0 0 10px;" @click="getRoleList">查询</el-button>
-      <el-button type="primary" @click="roleTable.query.roleName=''">重置</el-button>
+      用户名称
+      <el-input v-model="userTable.query.roleName" style="width: 240px" placeholder="用户名称"/>
+      <el-button style="margin: 0 0 0 10px;" @click="getUserLise">查询</el-button>
+      <el-button type="primary" @click="userTable.query.roleName=''">重置</el-button>
       <el-button type="primary" @click="createRole1">新增</el-button>
     </div>
-    <el-table :data="roleTable.rows" border style="width: 100%; overflow: auto;" :max-height="roleTable.height">
+    <el-table :data="userTable.rows" border style="width: 100%; overflow: auto;" :max-height="userTable.height">
       <el-table-column prop="date" label="序号">
         <template #default="scope">
           <span>{{ scope.$index + 1 }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="role_name" label="角色名称"/>
-      <el-table-column prop="role_code" label="角色标识"/>
-      <el-table-column prop="description" label="角色描述"/>
-      <el-table-column prop="address" label="数据权限"/>
-      <el-table-column prop="address" label="创建时间"/>
+      <el-table-column prop="name" label="昵称"/>
+      <el-table-column prop="username" label="用户名称"/>
+      <el-table-column prop="mobile" label="手机号"/>
+      <el-table-column prop="email" label="邮箱"/>
+      <el-table-column prop="role_names" label="角色">
+        <template #default="scope">
+          <span v-for="(item, key) in scope.row.role_names.split(',')" :key="key" style="display: inline-block; margin: 0 5px; padding: 2px 4px; background-color: #9faedc; border-radius: 5px;color: #fff;">
+            {{item}}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="create_time" label="创建时间"/>
+      <el-table-column prop="update_time" label="更新时间"/>
+      <el-table-column prop="last_login_time" label="最后登录时间"/>
       <el-table-column prop="address" label="操作">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.$index, scope.row)">
@@ -230,33 +236,33 @@ onUnmounted(() => {
     </el-table>
     <div style="display: flex; justify-content: flex-end; width: 100%;">
       <el-pagination
-          v-model:current-page="roleTable.query.page"
-          v-model:page-size="roleTable.query.pageSize"
+          v-model:current-page="userTable.query.page"
+          v-model:page-size="userTable.query.pageSize"
           :page-sizes="[10, 20, 30, 40]"
           style="margin-top: 20px;"
-          :disabled="roleTable.pagination.disabled"
-          :background="roleTable.pagination.background"
+          :disabled="userTable.pagination.disabled"
+          :background="userTable.pagination.background"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="roleTable.pagination.total"
-          @size-change="getRoleList"
-          @current-change="getRoleList"
+          :total="userTable.pagination.total"
+          @size-change="getUserLise"
+          @current-change="getUserLise"
       />
     </div>
     <div>
       <el-dialog
-          v-model="role.dialogVisible"
-          title="编辑角色"
+          v-model="user.dialogVisible"
+          title="编辑用户"
           width="800"
           :before-close="handleClose"
       >
-        <EditRole
+        <EditUser
             :rules="rules"
-            :roleInfo="role.roleInfo"
-            ref="role.roleRef"
+            :roleInfo="user.roleInfo"
+            ref="roleRef"
         />
         <template #footer>
           <div class="dialog-footer">
-            <el-button @click="role.dialogVisible = false">取消</el-button>
+            <el-button @click="user.dialogVisible = false">取消</el-button>
             <el-button type="primary" @click="saveRole">
               保存
             </el-button>

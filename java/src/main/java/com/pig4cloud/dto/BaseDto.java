@@ -6,6 +6,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class BaseDto {
-    Long page;
-    Long pageSize;
+    Long page = -1L;
+    Long pageSize = -1L;
 }

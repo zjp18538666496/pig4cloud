@@ -14,11 +14,11 @@ public class RoleEntity{
     /**
      * 角色名称
      */
-    private String roleName;
+    private String role_name;
     /**
      * role_code
      */
-    private String roleCode;
+    private String role_code;
     /**
      * 角色描述
      */

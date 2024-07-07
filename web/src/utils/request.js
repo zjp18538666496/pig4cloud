@@ -52,7 +52,6 @@ service.interceptors.request.use(
 service.interceptors.response.use(
     response => {
         switch (response.data.code) {
-            case 403:
             case 401:
                 handleUnauthorized()
                 return
