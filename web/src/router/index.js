@@ -21,12 +21,12 @@ const router = createRouter({
                 {
                     path: '/role-manager',
                     name: 'role-manager',
-                    component: import('@/views/role-manager/Index.vue')
+                    component: () => import('@/views/role-manager/Index.vue')
                 },
                 {
                     path: '/user-manager',
                     name: 'user-manager',
-                    component: import('@/views/user-manager/Index.vue')
+                    component: () => import('@/views/user-manager/Index.vue')
                 }
             ]
         },

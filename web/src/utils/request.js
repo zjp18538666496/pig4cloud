@@ -3,7 +3,7 @@ import {ElMessage, ElMessageBox} from "element-plus";
 
 const service = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
-    timeout: 5000,
+    // timeout: 5000,
     headers: {
         'Access-Control-Allow-Origin': '*', // 设置允许跨域的域名，* 代表允许所有域名
         'Content-Type': 'application/json', // 设置请求的内容类型为 JSON

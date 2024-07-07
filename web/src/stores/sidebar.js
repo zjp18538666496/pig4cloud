@@ -11,8 +11,7 @@ export const useSidebarStore = defineStore('sidebar',  {
       borderRight: {
         borderRight: '1px solid #9a9a9a'
       },
-      logo: 'PIGX ADMIN',
-      defaultActive : '/home'
+      logo: 'PIGX ADMIN'
     }
   },
   //数据持久化

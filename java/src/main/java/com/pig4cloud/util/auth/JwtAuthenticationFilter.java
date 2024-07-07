@@ -70,7 +70,7 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter {
             filterChain.doFilter(request, response);
         } catch (Exception ex) {
             //过滤器中抛出的异常无法被全局异常处理器捕获，直接返回错误结果
-            Response res = new ResponseImpl(401, "用户未登录", ex.getMessage());
+            Response res = new ResponseImpl(403, ex.getMessage(), null);
             new WriteResponse(response, res);
         }
     }

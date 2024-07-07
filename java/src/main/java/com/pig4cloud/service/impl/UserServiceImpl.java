@@ -17,8 +17,10 @@ import com.pig4cloud.util.verify.VerifyUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +32,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private VerifyUser verifyUser;
+
+    @Autowired
+    RoleMapper roleMapper;
 
     public Response createUser(UserEntity userEntity) {
         verifyUser.setUsername(userEntity.getUsername());
@@ -112,29 +117,55 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public Response updateUser1(Map<String, Object> map) {
-        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.eq("username", map.get("username"))
-                .set("name",  map.get("name"))
-                .set("email", map.get("email"))
-                .set("mobile", map.get("mobile"))
-                .set("update_time", new Timestamp(System.currentTimeMillis()));
-        int rows = userMapper.update(null, updateWrapper);
-        if (rows > 0) {
-//            String[] role_codes = map.get("role_codes").toString().split(",");
-//            for (String role_code : role_codes) {
-//                RoleMapper roleMapper;
-//                QueryWrapper<RoleEntity> queryWrapper = new QueryWrapper<>();
-//                RoleUserEntity roleUser = new RoleUserEntity();
-//                roleUser.setUsername(map.get("username").toString());
-//                roleUser.setRoleCode(role_code);
-//                userMapper.insert(roleUser);
-//            }
-            return new ResponseImpl(200, "更新成功", null);
-        }
+        try {
+            Long userId = ((Number) map.get("id")).longValue();
 
-        return null;
+            // 更新用户信息
+            UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", userId)
+                    .set("username", map.get("username"))
+                    .set("name", map.get("name"))
+                    .set("email", map.get("email"))
+                    .set("mobile", map.get("mobile"))
+                    .set("update_time", new Timestamp(System.currentTimeMillis()));
+            int updateResult = userMapper.update(null, updateWrapper);
+
+            // 更新角色信息
+            if (updateResult > 0) {
+                String roleCodesStr = map.get("role_codes").toString().trim();
+                List<String> roleCodes = roleCodesStr.isEmpty() ? Collections.emptyList() : List.of(roleCodesStr.split(","));
+
+                // 查询角色是否存在
+                List<Map<String, Object>> roles = roleCodes.isEmpty() ? Collections.emptyList() : userMapper.selectUserRoles(roleCodes);
+                roles.forEach(role -> role.put("user_id", userId));
+
+                // 删除原有角色关联
+                int deleteResult = userMapper.deleteUserRoles(userId);
+
+                // 插入新的角色关联
+                if (!roles.isEmpty()) {
+                    int insertResult = userMapper.insertUserRoles(roles);
+                    if (deleteResult >= 0 && insertResult > 0) {
+                        return new ResponseImpl(200, "更新成功", null);
+                    } else {
+                        throw new RuntimeException("更新用户角色关联失败");
+                    }
+                } else {
+                    // 如果角色列表为空，直接返回更新成功
+                    return new ResponseImpl(200, "更新成功", null);
+                }
+            } else {
+                throw new RuntimeException("更新用户信息失败");
+            }
+        } catch (Exception e) {
+            // 异常处理
+            return new ResponseImpl(-200, "更新失败：" + e.getMessage(), null);
+        }
     }
+
+
 
     @Override
     public Response getUser(String username) {

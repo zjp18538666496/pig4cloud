@@ -24,16 +24,17 @@ let roleTable = ref({
   }
 });
 
+let roleRef = ref();
+
 let role = ref({
-  roleRef: null,
   roleInfo: null,
   dialogVisible: false,
 })
 
 const initRoleInfo = () => {
   role.value.roleInfo = {
-    roleName: '',
-    roleCode: '',
+    role_name: '',
+    role_code: '',
     description: ''
   }
 }
@@ -58,8 +59,8 @@ const verifyPassword = (rule, value, callback) => {
   }
 }
 const rules = reactive({
-  roleName: [{validator: verifyUsername, trigger: 'blur'}],
-  roleCode: [{validator: verifyPassword, trigger: 'blur'}],
+  role_name: [{validator: verifyUsername, trigger: 'blur'}],
+  role_code: [{validator: verifyPassword, trigger: 'blur'}],
 })
 /**
  * 获取角色列表
@@ -89,8 +90,7 @@ const updateTableHeight = () => {
  * 弹窗关闭
  */
 const handleClose = (() => {
-  1
-  role.value.roleRef.ruleFormRef.resetFields()
+roleRef.value.ruleFormRef.resetFields()
   setTimeout(() => role.value.dialogVisible = false)
   initRoleInfo()
 })
@@ -107,13 +107,13 @@ const createRole1 = () => {
  * @param row
  */
 const handleDelete = (index, row) => {
-  ElMessageBox.confirm(`您确定删除【${row.roleName}】吗？`, '提示', {
+  ElMessageBox.confirm(`您确定删除【${row.role_name}】吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
     delRole({
-      roleCode: row.roleCode
+      role_code: row.role_code
     }).then(res => {
       if (res?.code === 200) {
         ElMessage({message: '删除成功', type: 'success'})
@@ -142,7 +142,7 @@ const handleEdit = (index, row) => {
  * 保存角色
  */
 const saveRole = () => {
-  role.value.roleRef.ruleFormRef.validate((valid) => {
+  roleRef.value.ruleFormRef.validate((valid) => {
     if (valid) {
       switch (type) {
         case 'create':
@@ -252,7 +252,7 @@ onUnmounted(() => {
         <EditRole
             :rules="rules"
             :roleInfo="role.roleInfo"
-            ref="role.roleRef"
+            ref="roleRef"
         />
         <template #footer>
           <div class="dialog-footer">

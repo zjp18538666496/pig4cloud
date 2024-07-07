@@ -130,7 +130,7 @@ const handleDelete = (index, row) => {
 const handleEdit = (index, row) => {
   type = 'edit'
   user.value.roleInfo = {...row}
-  user.value.roleInfo.role_codes = row.role_codes?.split(',')
+  user.value.roleInfo.role_codes = row.role_codes?.split(',').filter(item => item !== '')
   user.value.dialogVisible = true
 }
 
@@ -211,8 +211,8 @@ onUnmounted(() => {
       <el-table-column prop="email" label="邮箱"/>
       <el-table-column prop="role_names" label="角色">
         <template #default="scope">
-          <span v-for="(item, key) in scope.row.role_names.split(',')" :key="key" style="display: inline-block; margin: 0 5px; padding: 2px 4px; background-color: #9faedc; border-radius: 5px;color: #fff;">
-            {{item}}
+          <span v-if="scope.row.role_names" v-for="(item, key) in scope.row.role_names.split(',')" :key="key" style="display: inline-block; margin: 0 5px; padding: 2px 4px; background-color: #9faedc; border-radius: 5px;color: #fff;">
+            {{ item }}
           </span>
         </template>
       </el-table-column>

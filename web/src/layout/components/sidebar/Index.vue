@@ -4,11 +4,8 @@
       {{ logo }}
     </div>
     <el-menu
-        :default-active="defaultActive || '/home'"
+        :default-active="route.path"
         class="el-menu-vertical-demo"
-        @open="handleOpen"
-        @close="handleClose"
-        @select="handleSelect"
         :collapse="isCollapse"
         :router="true"
     >
@@ -38,7 +35,7 @@
             </el-icon>
             <span>用户管理</span>
           </el-menu-item>
-          <el-menu-item index="role-manager">
+          <el-menu-item index="/role-manager">
             <el-icon>
               <icon-menu/>
             </el-icon>
@@ -78,8 +75,10 @@
 import {Menu as IconMenu,} from '@element-plus/icons-vue'
 import {storeToRefs} from 'pinia'
 import {useSidebarStore} from '@/stores/sidebar.js'
+import { useRoute } from "vue-router"
+const route = useRoute()
 const store = useSidebarStore()
-let {isCollapse, width, logo, borderRight, defaultActive} = storeToRefs(store)
+let {isCollapse, width, logo, borderRight} = storeToRefs(store)
 
 /**
  * 折叠面板
@@ -99,17 +98,6 @@ const toggleCollapse = () => {
       logo.value = 'PIGX ADMIN'
     }, 500)
   }
-}
-
-const handleOpen = (key, keyPath) => {
-  console.log(key, keyPath)
-}
-const handleClose = (key, keyPath) => {
-  console.log(key, keyPath)
-}
-const handleSelect = (key, keyPath) => {
-  console.log(key, keyPath)
-  defaultActive.value = `/${key}`
 }
 </script>
 <style scoped lang="scss">
