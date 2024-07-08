@@ -27,6 +27,11 @@ const router = createRouter({
                     path: '/user-manager',
                     name: 'user-manager',
                     component: () => import('@/views/user-manager/Index.vue')
+                },
+                {
+                    path: '/menu-manager',
+                    name: 'menu-manager',
+                    component: () => import('@/views/menu-manager/Index.vue')
                 }
             ]
         },

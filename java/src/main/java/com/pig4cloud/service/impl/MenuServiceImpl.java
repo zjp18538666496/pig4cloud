@@ -14,6 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @Component
 public class MenuServiceImpl implements MenuService {
@@ -44,13 +49,36 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public Response getMenuLists(MenuDto menuDto) {
-        long page = menuDto.getPage();
-        long pageSize = menuDto.getPageSize();
-        Page<MenuEntity> rowPage = new Page<>(page, pageSize);
-        LambdaQueryWrapper<MenuEntity> queryWrapper = new LambdaQueryWrapper<>();
-        rowPage = menuMapper.selectPage(rowPage, queryWrapper);
-        Response response = new ResponseImpl(200, "获取数据成功", null);
-        response.pagination(rowPage);
-        return response;
+        QueryWrapper<MenuEntity> queryWrapper = new QueryWrapper<>();
+        List<MenuEntity> selectList = menuMapper.selectList(queryWrapper);
+        List<MenuEntity> menus = buildMenuTree(selectList);
+        return new ResponseImpl(200, "获取数据成功", menus);
+    }
+
+    public List<MenuEntity> buildMenuTree(List<MenuEntity> menus) {
+        Map<Integer, MenuEntity> menuMap = new HashMap<>();
+        List<MenuEntity> rootMenus = new ArrayList<>();
+
+        // 将菜单项放入Map中
+        for (MenuEntity menu : menus) {
+            menuMap.put(menu.getId(), menu);
+        }
+
+        // 构建树结构
+        for (MenuEntity menu : menus) {
+            if (menu.getParent_id() == 0) {
+                rootMenus.add(menu);
+            } else {
+                MenuEntity parentMenu = menuMap.get(menu.getParent_id());
+                if (parentMenu != null) {
+                    if (parentMenu.getChildren() == null) {
+                        parentMenu.setChildren(new ArrayList<>());
+                    }
+                    parentMenu.getChildren().add(menu);
+                }
+            }
+        }
+
+        return rootMenus;
     }
 }
