@@ -13,9 +13,7 @@ let userTable = ref({
   height: window.innerHeight - 50 - 30 - 40 - 52 - 52,
   // 查询条件
   query: {
-    roleName: '',
-    page: 1,
-    pageSize: 10
+    menu_name: ''
   },
   // 表格分页组件属性
   pagination: {
@@ -194,10 +192,10 @@ onUnmounted(() => {
 <template>
   <div>
     <div style="margin-bottom: 20px;">
-      用户名称
-      <el-input v-model="userTable.query.roleName" style="width: 240px" placeholder="用户名称"/>
+      菜单名称
+      <el-input v-model="userTable.query.menu_name" style="width: 240px" placeholder="菜单名称"/>
       <el-button style="margin: 0 0 0 10px;" @click="getUserLise">查询</el-button>
-      <el-button type="primary" @click="userTable.query.roleName=''">重置</el-button>
+      <el-button type="primary" @click="userTable.query.menu_name=''">重置</el-button>
       <el-button type="primary" @click="createRole1">新增</el-button>
     </div>
     <el-table :data="userTable.rows"
@@ -256,7 +254,7 @@ onUnmounted(() => {
     <div>
       <el-dialog
           v-model="user.dialogVisible"
-          title="编辑用户"
+          title="编辑菜单"
           width="800"
           :before-close="handleClose"
       >

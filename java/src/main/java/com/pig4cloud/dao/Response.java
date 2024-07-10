@@ -17,6 +17,8 @@ public interface Response {
 
     void setData(Object data);
 
+    void  pagination1(List<?> rows);
+
     void  pagination(Page<?> rowPage);
 
     void  pagination(List<?> rows, long total, long pageSize, long page);

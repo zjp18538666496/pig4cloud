@@ -200,26 +200,32 @@ onUnmounted(() => {
       <el-button type="primary" @click="createRole1">新增</el-button>
     </div>
     <el-table :data="userTable.rows" border style="width: 100%; overflow: auto;" :max-height="userTable.height">
-      <el-table-column prop="date" label="序号">
+      <el-table-column prop="date" label="序号" align="center" width="60">
         <template #default="scope">
           <span>{{ scope.$index + 1 }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="昵称"/>
-      <el-table-column prop="username" label="用户名称"/>
-      <el-table-column prop="mobile" label="手机号"/>
-      <el-table-column prop="email" label="邮箱"/>
-      <el-table-column prop="role_names" label="角色">
+      <el-table-column prop="name" label="昵称" align="center"/>
+      <el-table-column prop="username" label="用户名称" align="center"/>
+      <el-table-column prop="mobile" label="手机号" align="center"/>
+      <el-table-column prop="email" label="邮箱" align="center"/>
+      <el-table-column prop="role_names" label="角色" align="center">
         <template #default="scope">
-          <span v-if="scope.row.role_names" v-for="(item, key) in scope.row.role_names.split(',')" :key="key" style="display: inline-block; margin: 0 5px; padding: 2px 4px; background-color: #9faedc; border-radius: 5px;color: #fff;">
+          <el-tag
+              type="primary"
+              v-if="scope.row.role_names"
+              v-for="(item, key) in scope.row.role_names.split(',')"
+              :key="key"
+              style="margin-right: 2px;"
+          >
             {{ item }}
-          </span>
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="create_time" label="创建时间"/>
-      <el-table-column prop="update_time" label="更新时间"/>
-      <el-table-column prop="last_login_time" label="最后登录时间"/>
-      <el-table-column prop="address" label="操作">
+      <el-table-column prop="create_time" label="创建时间" align="center"/>
+      <el-table-column prop="update_time" label="更新时间" align="center"/>
+      <el-table-column prop="last_login_time" label="最后登录时间" align="center"/>
+      <el-table-column prop="address" label="操作" align="center">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.$index, scope.row)">
             编辑

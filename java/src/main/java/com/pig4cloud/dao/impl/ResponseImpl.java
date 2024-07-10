@@ -22,6 +22,13 @@ public class ResponseImpl implements Response {
         this.data = data;
     }
 
+
+    public void pagination1(List<?> rows) {
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("rows", rows);
+        this.setData(dataMap);
+    }
+
     public void pagination(List<?> rows, long total, long pageSize, long page) {
         Map<String, Object> dataMap = new HashMap<>();
         dataMap.put("rows", rows);

@@ -203,17 +203,21 @@ onUnmounted(() => {
       <el-button type="primary" @click="createRole1">新增</el-button>
     </div>
     <el-table :data="roleTable.rows" border style="width: 100%; overflow: auto;" :max-height="roleTable.height">
-      <el-table-column prop="date" label="序号">
+      <el-table-column prop="date" label="序号" align="center" width="60">
         <template #default="scope">
           <span>{{ scope.$index + 1 }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="role_name" label="角色名称"/>
-      <el-table-column prop="role_code" label="角色标识"/>
-      <el-table-column prop="description" label="角色描述"/>
-      <el-table-column prop="address" label="数据权限"/>
-      <el-table-column prop="address" label="创建时间"/>
-      <el-table-column prop="address" label="操作">
+      <el-table-column prop="role_name" label="角色名称" align="center"/>
+      <el-table-column prop="role_code" label="角色标识" align="center">
+        <template #default="scope">
+          <el-tag type="primary">{{ scope.row.role_code }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="description" label="角色描述" align="center"/>
+      <el-table-column prop="address" label="数据权限" align="center"/>
+      <el-table-column prop="address" label="创建时间" align="center"/>
+      <el-table-column prop="address" label="操作" align="center">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.$index, scope.row)">
             编辑

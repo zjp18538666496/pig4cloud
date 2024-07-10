@@ -50,11 +50,21 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public Response getMenuLists(MenuDto menuDto) {
         QueryWrapper<MenuEntity> queryWrapper = new QueryWrapper<>();
+        String menuName = menuDto.getMenu_name();
+        if (menuName != null && !menuName.isEmpty()) {
+            queryWrapper.like("menu_name", menuName);
+        }
         List<MenuEntity> selectList = menuMapper.selectList(queryWrapper);
+
+        // 构建菜单树
         List<MenuEntity> menus = buildMenuTree(selectList);
+
         return new ResponseImpl(200, "获取数据成功", menus);
     }
 
+    /**
+     * 构建树形菜单
+     */
     public List<MenuEntity> buildMenuTree(List<MenuEntity> menus) {
         Map<Integer, MenuEntity> menuMap = new HashMap<>();
         List<MenuEntity> rootMenus = new ArrayList<>();
@@ -66,19 +76,35 @@ public class MenuServiceImpl implements MenuService {
 
         // 构建树结构
         for (MenuEntity menu : menus) {
-            if (menu.getParent_id() == 0) {
-                rootMenus.add(menu);
-            } else {
-                MenuEntity parentMenu = menuMap.get(menu.getParent_id());
-                if (parentMenu != null) {
-                    if (parentMenu.getChildren() == null) {
-                        parentMenu.setChildren(new ArrayList<>());
-                    }
-                    parentMenu.getChildren().add(menu);
+            MenuEntity parentMenu = menuMap.get(menu.getParent_id());
+            if (parentMenu != null) {
+                if (parentMenu.getChildren() == null) {
+                    parentMenu.setChildren(new ArrayList<>());
                 }
+                parentMenu.getChildren().add(menu);
+
+                rootMenus.add(parentMenu);
             }
+
+
+//            if (menu.getParent_id() == 0) {
+//                rootMenus.add(menu);
+//            } else {
+//                MenuEntity parentMenu = menuMap.get(menu.getParent_id());
+//                if (parentMenu != null) {
+//                    if (parentMenu.getChildren() == null) {
+//                        parentMenu.setChildren(new ArrayList<>());
+//                    }
+//                    parentMenu.getChildren().add(menu);
+//                }
+//            }
         }
 
         return rootMenus;
+    }
+
+
+    public List<MenuEntity> ss() {
+        return null;
     }
 }
