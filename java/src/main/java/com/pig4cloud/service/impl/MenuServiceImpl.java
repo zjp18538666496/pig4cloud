@@ -14,10 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Component
@@ -68,6 +65,9 @@ public class MenuServiceImpl implements MenuService {
     public List<MenuEntity> buildMenuTree(List<MenuEntity> menus) {
         Map<Integer, MenuEntity> menuMap = new HashMap<>();
         List<MenuEntity> rootMenus = new ArrayList<>();
+        if (menus.size() == 1) {
+            return menus;
+        }
 
         // 将菜单项放入Map中
         for (MenuEntity menu : menus) {
@@ -76,35 +76,19 @@ public class MenuServiceImpl implements MenuService {
 
         // 构建树结构
         for (MenuEntity menu : menus) {
-            MenuEntity parentMenu = menuMap.get(menu.getParent_id());
-            if (parentMenu != null) {
-                if (parentMenu.getChildren() == null) {
-                    parentMenu.setChildren(new ArrayList<>());
+            if (menu.getParent_id() == 0) {
+                rootMenus.add(menu);
+            } else {
+                MenuEntity parentMenu = menuMap.get(menu.getParent_id());
+                if (parentMenu != null) {
+                    if (parentMenu.getChildren() == null) {
+                        parentMenu.setChildren(new ArrayList<>());
+                    }
+                    parentMenu.getChildren().add(menu);
                 }
-                parentMenu.getChildren().add(menu);
-
-                rootMenus.add(parentMenu);
             }
-
-
-//            if (menu.getParent_id() == 0) {
-//                rootMenus.add(menu);
-//            } else {
-//                MenuEntity parentMenu = menuMap.get(menu.getParent_id());
-//                if (parentMenu != null) {
-//                    if (parentMenu.getChildren() == null) {
-//                        parentMenu.setChildren(new ArrayList<>());
-//                    }
-//                    parentMenu.getChildren().add(menu);
-//                }
-//            }
         }
 
         return rootMenus;
-    }
-
-
-    public List<MenuEntity> ss() {
-        return null;
     }
 }

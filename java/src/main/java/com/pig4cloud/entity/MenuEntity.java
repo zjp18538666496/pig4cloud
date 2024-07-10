@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @TableName("sys_menu")
 @Data
@@ -32,5 +33,12 @@ public class MenuEntity {
     private String level;
 
     @TableField(exist = false)
+    private Boolean disabled = false;
+
+    @TableField(exist = false)
     private List<MenuEntity> children = new ArrayList<>();
+
+    public Boolean getDisabled() {
+        return !Objects.equals(this.type, "0");
+    }
 }

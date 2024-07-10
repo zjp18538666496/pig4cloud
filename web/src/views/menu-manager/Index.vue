@@ -1,9 +1,9 @@
 <script setup>
 import {onMounted, onUnmounted, reactive, ref} from "vue";
 import {ElMessage, ElMessageBox} from "element-plus";
-import EditUser from "@/views/user-manager/components/EditUser.vue";
+import EditMenu from "@/views/menu-manager/components/EditMenu.vue";
 import {debounce} from "@/utils/utils.js";
-import {createUser, delUser, getUserLists, updateUser} from "@/api/user.js";
+import {createUser, delUser, updateUser} from "@/api/user.js";
 import {getMenuLists} from "@/api/menu.js";
 
 let userTable = ref({
@@ -258,7 +258,7 @@ onUnmounted(() => {
           width="800"
           :before-close="handleClose"
       >
-        <EditUser
+        <EditMenu
             :rules="rules"
             :roleInfo="user.roleInfo"
             ref="roleRef"
