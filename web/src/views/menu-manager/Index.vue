@@ -3,10 +3,9 @@ import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EditMenu from '@/views/menu-manager/components/EditMenu.vue'
 import { debounce } from '@/utils/utils.js'
-import { createUser, delUser, updateUser } from '@/api/user.js'
-import { getMenuLists } from '@/api/menu.js'
+import { createMenu, delMenu, getMenuLists, updateMenu } from '@/api/menu.js'
 
-let userTable = ref({
+let menuTable = ref({
     // 表格数据
     rows: [],
     // 表格高度
@@ -23,15 +22,15 @@ let userTable = ref({
     },
 })
 
-let roleRef = ref()
+let menuRef = ref()
 
-let user = ref({
-    roleInfo: null,
+let menu = ref({
+    menuInfo: null,
     dialogVisible: false,
 })
 
-const initRoleInfo = () => {
-    user.value.roleInfo = {}
+const initMenuInfo = () => {
+    menu.value.menuInfo = {}
 }
 
 let type = null
@@ -53,18 +52,18 @@ const verifyPassword = (rule, value, callback) => {
     }
 }
 const rules = reactive({
-    roleName: [{ validator: verifyUsername, trigger: 'blur' }],
-    roleCode: [{ validator: verifyPassword, trigger: 'blur' }],
+    menuName: [{ validator: verifyUsername, trigger: 'blur' }],
+    menuCode: [{ validator: verifyPassword, trigger: 'blur' }],
 })
 /**
  * 获取用户列表
  */
 const getUserLise = () => {
-    getMenuLists(userTable.value.query).then((res) => {
+    getMenuLists(menuTable.value.query).then((res) => {
         if (res?.code === 200) {
-            userTable.value.rows = res.data
-            // userTable.value.pagination.total = res.data.total
-            // userTable.value.query.pageSize = res.data.size
+            menuTable.value.rows = res.data
+            // menuTable.value.pagination.total = res.data.total
+            // menuTable.value.query.pageSize = res.data.size
         }
     })
 }
@@ -75,22 +74,22 @@ getUserLise()
  * 更新表格高度
  */
 const updateTableHeight = () => {
-    userTable.value.height = window.innerHeight - 50 - 30 - 40 - 52 - 52 // 根据实际情况调整
+    menuTable.value.height = window.innerHeight - 50 - 30 - 40 - 52 - 52 // 根据实际情况调整
 }
 
 /*
  * 弹窗关闭
  */
 const handleClose = () => {
-    roleRef.value.ruleFormRef.resetFields()
-    setTimeout(() => (user.value.dialogVisible = false))
-    initRoleInfo()
+    menuRef.value.ruleFormRef.resetFields()
+    setTimeout(() => (menu.value.dialogVisible = false))
+    initMenuInfo()
 }
 
-const createRole1 = () => {
+const createMenu1 = () => {
     type = 'create'
-    initRoleInfo()
-    user.value.dialogVisible = true
+    initMenuInfo()
+    menu.value.dialogVisible = true
 }
 
 /**
@@ -99,13 +98,13 @@ const createRole1 = () => {
  * @param row
  */
 const handleDelete = (index, row) => {
-    ElMessageBox.confirm(`您确定删除【${row.name}】吗？`, '提示', {
+    ElMessageBox.confirm(`删除当前菜单时，会删除当前菜单下的所有子菜单，您确定删除【${row.menu_name}】吗？`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
     })
         .then(() => {
-            delUser(row).then((res) => {
+            delMenu(row).then((res) => {
                 if (res?.code === 200) {
                     ElMessage({ message: '删除成功', type: 'success' })
                     getUserLise()
@@ -124,24 +123,22 @@ const handleDelete = (index, row) => {
  */
 const handleEdit = (index, row) => {
     type = 'edit'
-    user.value.roleInfo = { ...row }
-    user.value.roleInfo.role_codes = row.role_codes?.split(',').filter((item) => item !== '')
-    user.value.dialogVisible = true
+    menu.value.menuInfo = { ...row }
+    menu.value.dialogVisible = true
 }
 
 /**
  * 保存用户
  */
-const saveRole = () => {
-    roleRef.value.ruleFormRef.validate((valid) => {
+const saveMenu = () => {
+    menuRef.value.ruleFormRef.validate((valid) => {
         if (valid) {
-            user.value.roleInfo.role_codes = user.value.roleInfo.role_codes?.join(',')
             switch (type) {
                 case 'create':
-                    createUser(user.value.roleInfo).then((res) => {
+                    createMenu(menu.value.menuInfo).then((res) => {
                         if (res?.code === 200) {
-                            user.value.dialogVisible = false
-                            initRoleInfo()
+                            menu.value.dialogVisible = false
+                            initMenuInfo()
                             ElMessage({ message: '保存成功', type: 'success' })
                             getUserLise()
                         } else {
@@ -150,10 +147,10 @@ const saveRole = () => {
                     })
                     break
                 case 'edit':
-                    updateUser(user.value.roleInfo).then((res) => {
+                    updateMenu(menu.value.menuInfo).then((res) => {
                         if (res?.code === 200) {
-                            user.value.dialogVisible = false
-                            initRoleInfo()
+                            menu.value.dialogVisible = false
+                            initMenuInfo()
                             ElMessage({ message: '保存成功', type: 'success' })
                             getUserLise()
                         } else {
@@ -189,12 +186,12 @@ onUnmounted(() => {
     <div>
         <div style="margin-bottom: 20px">
             菜单名称
-            <el-input v-model="userTable.query.menu_name" style="width: 240px" placeholder="菜单名称" />
+            <el-input v-model="menuTable.query.menu_name" style="width: 240px" placeholder="菜单名称" />
             <el-button style="margin: 0 0 0 10px" @click="getUserLise">查询</el-button>
-            <el-button type="primary" @click="userTable.query.menu_name = ''">重置</el-button>
-            <el-button type="primary" @click="createRole1">新增</el-button>
+            <el-button type="primary" @click="menuTable.query.menu_name = ''">重置</el-button>
+            <el-button type="primary" @click="createMenu1">新增</el-button>
         </div>
-        <el-table :data="userTable.rows" border style="width: 100%; overflow: auto" :max-height="userTable.height" row-key="id">
+        <el-table :data="menuTable.rows" border style="width: 100%; overflow: auto" :max-height="menuTable.height" row-key="id">
             <el-table-column prop="menu_name" label="菜单名称" align="center" />
             <el-table-column prop="route" label="路由地址" align="left">
                 <template #default="scope">
@@ -235,12 +232,12 @@ onUnmounted(() => {
             </el-table-column>
         </el-table>
         <div>
-            <el-dialog v-model="user.dialogVisible" title="编辑菜单" width="800" :before-close="handleClose">
-                <EditMenu v-if="user.dialogVisible" :rules="rules" :roleInfo="user.roleInfo" ref="roleRef" />
+            <el-dialog v-model="menu.dialogVisible" title="编辑菜单" width="800" :before-close="handleClose">
+                <EditMenu v-if="menu.dialogVisible" :rules="rules" :menuInfo="menu.menuInfo" ref="menuRef" />
                 <template #footer>
                     <div class="dialog-footer">
-                        <el-button @click="user.dialogVisible = false">取消</el-button>
-                        <el-button type="primary" @click="saveRole"> 保存</el-button>
+                        <el-button @click="menu.dialogVisible = false">取消</el-button>
+                        <el-button type="primary" @click="saveMenu"> 保存</el-button>
                     </div>
                 </template>
             </el-dialog>

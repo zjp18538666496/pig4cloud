@@ -1,28 +1,28 @@
 <template>
-    <el-form ref="ruleFormRef" :model="props.roleInfo" :rules="rules" label-width="auto" style="max-width: 600px">
+    <el-form ref="ruleFormRef" :model="props.menuInfo" :rules="rules" label-width="auto" style="max-width: 600px">
         <el-form-item prop="menu_name" label="上级菜单">
             <el-tree-select v-model="terrNode" :data="menuList" :render-after-expand="false" :props="defaultProps" :check-strictly="true" @current-change="currentChange"></el-tree-select>
         </el-form-item>
         <el-form-item prop="menu_name" label="菜单名称">
-            <el-input v-model="props.roleInfo.menu_name" />
+            <el-input v-model="props.menuInfo.menu_name" />
         </el-form-item>
         <el-form-item prop="route" label="路由地址">
-            <el-input v-model="props.roleInfo.route" />
+            <el-input v-model="props.menuInfo.route" />
         </el-form-item>
         <el-form-item prop="status" label="状态">
-            <el-radio-group v-model="props.roleInfo.status">
+            <el-radio-group v-model="props.menuInfo.status">
                 <el-radio value="0" size="large">禁用</el-radio>
                 <el-radio value="1" size="large">启用</el-radio>
             </el-radio-group>
         </el-form-item>
         <el-form-item prop="type" label="菜单类型">
-            <el-radio-group v-model="props.roleInfo.type">
+            <el-radio-group v-model="props.menuInfo.type">
                 <el-radio value="0" size="large">目录</el-radio>
                 <el-radio value="1" size="large">菜单</el-radio>
             </el-radio-group>
         </el-form-item>
         <el-form-item prop="level" label="层级">
-            <el-input v-model="props.roleInfo.level" />
+            <el-input v-model="props.menuInfo.level" disabled />
         </el-form-item>
     </el-form>
 </template>
@@ -32,7 +32,7 @@ import { ref } from 'vue'
 import { getMenuLists } from '@/api/menu.js'
 
 const props = defineProps({
-    roleInfo: {
+    menuInfo: {
         type: Object,
         required: true,
     },
@@ -48,7 +48,7 @@ const defaultProps = {
     label: 'menu_name', // 指定节点标签为节点对象的某个属性值
     value: 'id', // 指定节点值为节点对象的某个属性值
 }
-const terrNode = ref(props.roleInfo.parent_id)
+const terrNode = ref(props.menuInfo.parent_id)
 
 getMenuLists({}).then((res) => {
     if (res?.code === 200) {
@@ -65,7 +65,7 @@ getMenuLists({}).then((res) => {
 
 const currentChange = (node) => {
     console.log(terrNode)
-    props.roleInfo.parent_id = node.id
+    props.menuInfo.parent_id = node.id
 }
 
 defineExpose({
