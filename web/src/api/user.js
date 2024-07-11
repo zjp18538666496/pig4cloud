@@ -1,4 +1,4 @@
-import service from "@/utils/request.js";
+import service from '@/utils/request.js'
 
 /**
  * 查询用户列表
@@ -7,9 +7,9 @@ import service from "@/utils/request.js";
  */
 export function getUser(id) {
     return service({
-        url: "/user/id/" + id,
-        method: "get"
-    });
+        url: '/user/id/' + id,
+        method: 'get',
+    })
 }
 
 /**
@@ -19,10 +19,10 @@ export function getUser(id) {
  */
 export function createUser(data) {
     return service({
-        url: "/user/createUser",
-        method: "POST",
-        data
-    });
+        url: '/user/createUser',
+        method: 'POST',
+        data,
+    })
 }
 
 /**
@@ -32,10 +32,10 @@ export function createUser(data) {
  */
 export function updateUser(data) {
     return service({
-        url: "/user/updateUser1",
-        method: "POST",
-        data
-    });
+        url: '/user/updateUser1',
+        method: 'POST',
+        data,
+    })
 }
 
 /**
@@ -45,16 +45,16 @@ export function updateUser(data) {
  */
 export function delUser(data) {
     return service({
-        url: "/user/delUser",
-        method: "POST",
-        data
-    });
+        url: '/user/delUser',
+        method: 'POST',
+        data,
+    })
 }
 
-export function getUserLists(data){
+export function getUserLists(data) {
     return service({
-        url: "/user/getUserList",
-        method: "POST",
-        data
-    });
+        url: '/user/getUserList',
+        method: 'POST',
+        data,
+    })
 }

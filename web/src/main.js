@@ -1,7 +1,7 @@
 import './assets/main.css'
 
-import {createApp} from 'vue'
-import {createPinia} from 'pinia'
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import piniaPersist from 'pinia-plugin-persist'
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
@@ -16,7 +16,7 @@ const pinia = createPinia()
 pinia.use(piniaPersist)
 app.use(pinia)
 app.use(ElementPlus, {
-    locale: zhCn
+    locale: zhCn,
 })
 app.use(router)
 

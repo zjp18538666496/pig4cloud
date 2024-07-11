@@ -1,4 +1,4 @@
-import service from "@/utils/request.js";
+import service from '@/utils/request.js'
 
 /**
  * 登录
@@ -6,9 +6,9 @@ import service from "@/utils/request.js";
  * @return {*}
  */
 export function login(data) {
-  return service({
-    url: "/api/user/login",
-    method: "post",
-    data,
-  });
+    return service({
+        url: '/api/user/login',
+        method: 'post',
+        data,
+    })
 }

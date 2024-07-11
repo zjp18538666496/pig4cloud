@@ -1,4 +1,4 @@
-import service from "@/utils/request.js";
+import service from '@/utils/request.js'
 
 /**
  * 登录
@@ -7,31 +7,31 @@ import service from "@/utils/request.js";
  */
 export function getMenuLists(data) {
     return service({
-        url: "/menu/getMenuLists",
-        method: "post",
+        url: '/menu/getMenuLists',
+        method: 'post',
         data,
-    });
+    })
 }
 
 export function delMenu(data) {
     return service({
-        url: "/menu/delMenu",
-        method: "post",
+        url: '/menu/delMenu',
+        method: 'post',
         data,
-    });
+    })
 }
 export function updateMenu(data) {
     return service({
-        url: "/menu/updateMenu",
-        method: "post",
+        url: '/menu/updateMenu',
+        method: 'post',
         data,
-    });
+    })
 }
 
 export function createMenu(data) {
     return service({
-        url: "/menu/createMenu",
-        method: "post",
+        url: '/menu/createMenu',
+        method: 'post',
         data,
-    });
+    })
 }

@@ -5,12 +5,12 @@
  * @return {(function(...[*]): void)|*}
  */
 export function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
-    };
+    let timeout
+    return function (...args) {
+        const context = this
+        clearTimeout(timeout)
+        timeout = setTimeout(() => func.apply(context, args), wait)
+    }
 }
 
 /**
@@ -20,13 +20,13 @@ export function debounce(func, wait) {
  * @return {(function(...[*]): void)|*}
  */
 export function throttle(func, limit) {
-    let inThrottle;
-    return function(...args) {
-        const context = this;
+    let inThrottle
+    return function (...args) {
+        const context = this
         if (!inThrottle) {
-            func.apply(context, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
+            func.apply(context, args)
+            inThrottle = true
+            setTimeout(() => (inThrottle = false), limit)
         }
-    };
+    }
 }

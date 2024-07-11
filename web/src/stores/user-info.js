@@ -1,17 +1,17 @@
-import {defineStore} from 'pinia'
+import { defineStore } from 'pinia'
 
 /**
  * 侧边栏
  */
-export const useUserInfoStore = defineStore('userInfo',  {
+export const useUserInfoStore = defineStore('userInfo', {
     state: () => {
         return {
             token: null,
-            userInfo: {}
+            userInfo: {},
         }
     },
     //数据持久化
     persist: {
-        enabled: true
-    }
+        enabled: true,
+    },
 })

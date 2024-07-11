@@ -1,5 +1,5 @@
 import axios from 'axios'
-import {ElMessage, ElMessageBox} from "element-plus";
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const service = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
@@ -12,7 +12,7 @@ const service = axios.create({
     // 如果 `validateStatus` 返回 `true` (或者设置为 `null` 或 `undefined`)，
     // 则promise 将会 resolved，否则是 rejected。
     validateStatus: function (status) {
-        return status >= -200 || status <= 400;
+        return status >= -200 || status <= 400
     },
 })
 
@@ -20,22 +20,21 @@ const service = axios.create({
  * 403 拦截器
  */
 const handleUnauthorized = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('token')
     ElMessageBox.confirm('您还没有登录，请先登录', '提示', {
         confirmButtonText: '去登录',
         cancelButtonText: '取消',
-        type: 'warning'
+        type: 'warning',
     })
         .then(() => {
             window.location = '/login'
         })
-        .catch(() => {
-        });
+        .catch(() => {})
 }
 
 // request 拦截器
 service.interceptors.request.use(
-    config => {
+    (config) => {
         const token = localStorage.getItem('token')
         if (token) {
             // 每个请求携带 token
@@ -43,31 +42,31 @@ service.interceptors.request.use(
         }
         return config
     },
-    error => {
+    (error) => {
         return Promise.reject(error)
-    }
+    },
 )
 
 // response 拦截器
 service.interceptors.response.use(
-    response => {
+    (response) => {
         switch (response.data.code) {
             case 401:
                 handleUnauthorized()
                 return
             default:
-                return response.data;
+                return response.data
         }
     },
-    error => {
+    (error) => {
         if (error?.response?.status === 403) {
-            localStorage.removeItem('token');
+            localStorage.removeItem('token')
             handleUnauthorized()
         } else {
-            ElMessage({message: error, type: 'error'})
+            ElMessage({ message: error, type: 'error' })
         }
         return Promise.reject(error)
-    }
+    },
 )
 
 export default service
