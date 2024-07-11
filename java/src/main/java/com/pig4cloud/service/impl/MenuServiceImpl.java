@@ -30,6 +30,19 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public Response updateMenu(MenuEntity menuEntity) {
+        Integer parent_id = menuEntity.getParent_id();
+        if (parent_id == null) {
+            return new ResponseImpl(-200, "父级菜单不能为空！", null);
+        }
+        if (parent_id == 0) {
+
+        } else {
+            QueryWrapper<MenuEntity> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("parent_id", parent_id);
+            List<MenuEntity> parentMenu = menuMapper.selectList(queryWrapper);
+        }
+
+
         UpdateWrapper<MenuEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", menuEntity.getId());
         int rows = menuMapper.update(menuEntity, updateWrapper);

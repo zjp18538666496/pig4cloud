@@ -229,18 +229,18 @@ onUnmounted(() => {
             <el-table-column prop="level" label="层级" align="center" />
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
-                    <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑 </el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
+                    <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
+                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
         <div>
             <el-dialog v-model="user.dialogVisible" title="编辑菜单" width="800" :before-close="handleClose">
-                <EditMenu :rules="rules" :roleInfo="user.roleInfo" ref="roleRef" />
+                <EditMenu v-if="user.dialogVisible" :rules="rules" :roleInfo="user.roleInfo" ref="roleRef" />
                 <template #footer>
                     <div class="dialog-footer">
                         <el-button @click="user.dialogVisible = false">取消</el-button>
-                        <el-button type="primary" @click="saveRole"> 保存 </el-button>
+                        <el-button type="primary" @click="saveRole"> 保存</el-button>
                     </div>
                 </template>
             </el-dialog>
