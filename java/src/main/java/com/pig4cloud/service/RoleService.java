@@ -4,6 +4,8 @@ import com.pig4cloud.dao.Response;
 import com.pig4cloud.dto.RoleDto;
 import com.pig4cloud.entity.RoleEntity;
 
+import java.util.Map;
+
 public interface RoleService {
 
     /**
@@ -14,12 +16,12 @@ public interface RoleService {
     /**
      * 创建角色
      */
-    Response createRole(RoleEntity RoleEntity);
+    Response createRole(Map<String, Object> map);
 
     /**
      * 修改角色信息
      */
-    Response updateRole(RoleEntity RoleEntity);
+    Response updateRole(Map<String, Object> map);
 
     /**
      * 删除角色

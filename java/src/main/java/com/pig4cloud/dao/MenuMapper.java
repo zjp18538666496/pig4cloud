@@ -22,10 +22,12 @@ public interface MenuMapper extends BaseMapper<MenuEntity> {
 
     @Insert({
             "<script>",
+            "<if test='userRoles != null and !userRoles.isEmpty()'>",
             "INSERT INTO role_menu (menu_id, role_id) VALUES ",
             "<foreach collection='userRoles' item='userRole' separator=','>",
-            "(#{userRole.menu_id}, #{userRole.id})",
+            "(#{userRole.menu_id}, #{userRole.role_id})",
             "</foreach>",
+            "</if>",
             "</script>"
     })
     int insertUserRoles(@Param("userRoles") List<Map<String, Object>> userRoles);

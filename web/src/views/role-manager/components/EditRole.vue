@@ -12,9 +12,11 @@
         <el-form-item prop="description" label="菜单权限">
             <el-tree-select
                 v-model="terrNode"
+                :default-checked-keys="terrNode"
                 :data="menuList"
                 :render-after-expand="false"
                 :props="defaultProps"
+                node-key="id"
                 multiple
                 collapse-tags
                 show-checkbox
@@ -30,6 +32,7 @@
 <script setup>
 import { ref } from 'vue'
 import { getMenuLists } from '@/api/menu.js'
+
 const props = defineProps({
     roleInfo: {
         type: Object,
@@ -59,10 +62,12 @@ getMenuLists({}).then((res) => {
 const getCheckedNodes = () => {
     // 获取所有选中节点的数据
     terrNode.value = []
+
     const checkedNodes = tree.value.getCheckedNodes()
     checkedNodes.forEach(function (item) {
         terrNode.value.push(item.id)
     })
+    props.roleInfo.menu_codes = terrNode.value
     console.log('选中的节点数据:', checkedNodes)
 }
 const currentChange = (node) => {

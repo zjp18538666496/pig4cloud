@@ -132,7 +132,7 @@ const handleDelete = (index, row) => {
 const handleEdit = (index, row) => {
     type = 'edit'
     role.value.roleInfo = { ...row }
-    role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes.split(',').map((item) => Number(item.trim()))
+    role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes === '' ? [] : role.value.roleInfo.menu_codes.split(',').map((item) => Number(item.trim()))
     role.value.dialogVisible = true
 }
 
@@ -140,6 +140,7 @@ const handleEdit = (index, row) => {
  * 保存角色
  */
 const saveRole = () => {
+    role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes?.join(',')
     roleRef.value.ruleFormRef.validate((valid) => {
         if (valid) {
             switch (type) {
@@ -213,12 +214,16 @@ onUnmounted(() => {
                 </template>
             </el-table-column>
             <el-table-column prop="description" label="角色描述" align="center" />
-            <el-table-column prop="address" label="数据权限" align="center" />
+            <el-table-column prop="address" label="菜单权限" align="center" >
+              <template #default="scope">
+                <el-tag v-for="(itme,key) in scope.row.menu_names?.split(',')" type="primary">{{ itme }}</el-tag>
+              </template>
+            </el-table-column>
             <el-table-column prop="address" label="创建时间" align="center" />
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
                     <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
+                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -238,7 +243,7 @@ onUnmounted(() => {
         </div>
         <div>
             <el-dialog v-model="role.dialogVisible" title="编辑角色" width="800" :before-close="handleClose">
-                <EditRole :rules="rules" :roleInfo="role.roleInfo" ref="roleRef" />
+                <EditRole v-if="role.dialogVisible" :rules="rules" :roleInfo="role.roleInfo" ref="roleRef" />
                 <template #footer>
                     <div class="dialog-footer">
                         <el-button @click="role.dialogVisible = false">取消</el-button>

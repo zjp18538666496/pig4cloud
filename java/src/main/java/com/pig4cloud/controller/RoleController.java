@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @Controller
 @RestController
 @RequestMapping("/role")
@@ -23,8 +25,8 @@ public class RoleController {
     }
 
     @PostMapping("/createRole")
-    public Response createRole(@RequestBody RoleEntity roleEntity) {
-        return roleService.createRole(roleEntity);
+    public Response createRole(@RequestBody Map<String, Object> map) {
+        return roleService.createRole(map);
     }
 
     @PostMapping("/delRole")
@@ -33,8 +35,8 @@ public class RoleController {
     }
 
     @PostMapping("/updateRole")
-    public Response updateRole(@RequestBody RoleEntity roleEntity) {
-        return roleService.updateRole(roleEntity);
+    public Response updateRole(@RequestBody Map<String, Object> map) {
+        return roleService.updateRole(map);
     }
 
     @PostMapping("/getRoleLists")
