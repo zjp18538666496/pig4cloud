@@ -84,7 +84,7 @@ public class MenuServiceImpl implements MenuService {
             }
         }
 
-        if (newId != null && !Objects.equals(newId, menuEntity.getId())) {
+        if (!Objects.equals(newId, menuEntity.getId())) {
             // 删除旧菜单
             int deleteRows = menuMapper.deleteById(menuEntity.getId());
             if (deleteRows <= 0) {

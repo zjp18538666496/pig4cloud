@@ -132,6 +132,7 @@ const handleDelete = (index, row) => {
 const handleEdit = (index, row) => {
     type = 'edit'
     role.value.roleInfo = { ...row }
+    role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes.split(',').map((item) => Number(item.trim()))
     role.value.dialogVisible = true
 }
 

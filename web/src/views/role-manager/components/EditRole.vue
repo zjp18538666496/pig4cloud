@@ -30,8 +30,17 @@
 <script setup>
 import { ref } from 'vue'
 import { getMenuLists } from '@/api/menu.js'
-
-const terrNode = ref()
+const props = defineProps({
+    roleInfo: {
+        type: Object,
+        required: true,
+    },
+    rules: {
+        type: Object,
+        required: true,
+    },
+})
+const terrNode = ref(props.roleInfo.menu_codes)
 const tree = ref()
 const menuList = ref([])
 const ruleFormRef = ref()
@@ -43,26 +52,10 @@ const defaultProps = {
 }
 getMenuLists({}).then((res) => {
     if (res?.code === 200) {
-        menuList.value = [
-            {
-                id: 0,
-                menu_name: '根菜单',
-                disabled: false,
-                children: res.data,
-            },
-        ]
+        menuList.value = res.data
     }
 })
-const props = defineProps({
-    roleInfo: {
-        type: Object,
-        required: true,
-    },
-    rules: {
-        type: Object,
-        required: true,
-    },
-})
+
 const getCheckedNodes = () => {
     // 获取所有选中节点的数据
     terrNode.value = []

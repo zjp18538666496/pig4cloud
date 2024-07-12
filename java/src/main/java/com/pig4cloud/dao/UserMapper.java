@@ -43,7 +43,7 @@ public interface UserMapper extends BaseMapper<UserEntity> {
                  sys_user
              LEFT JOIN user_role ON sys_user.id = user_role.user_id
              LEFT JOIN sys_role ON user_role.role_id = sys_role.id
-             """)
+            """)
     int selectUserList2Count();
 
 
