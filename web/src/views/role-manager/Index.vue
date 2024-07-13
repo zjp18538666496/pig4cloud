@@ -214,10 +214,12 @@ onUnmounted(() => {
                 </template>
             </el-table-column>
             <el-table-column prop="description" label="角色描述" align="center" />
-            <el-table-column prop="address" label="菜单权限" align="center" >
-              <template #default="scope">
-                <el-tag v-for="(itme,key) in scope.row.menu_names?.split(',')" type="primary">{{ itme }}</el-tag>
-              </template>
+            <el-table-column prop="address" label="菜单权限" align="center">
+                <template #default="scope">
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px">
+                        <el-tag v-for="(itme, key) in scope.row.menu_names?.split(',')" type="primary">{{ itme }}</el-tag>
+                    </div>
+                </template>
             </el-table-column>
             <el-table-column prop="address" label="创建时间" align="center" />
             <el-table-column prop="address" label="操作" align="center">

@@ -84,7 +84,7 @@ public class MenuServiceImpl implements MenuService {
             }
         }
 
-        if (!Objects.equals(newId, menuEntity.getId())) {
+        if (newId > 0) {
             // 删除旧菜单
             int deleteRows = menuMapper.deleteById(menuEntity.getId());
             if (deleteRows <= 0) {
@@ -118,6 +118,17 @@ public class MenuServiceImpl implements MenuService {
             queryWrapper.like("menu_name", menuName);
         }
         List<MenuEntity> selectList = menuMapper.selectList(queryWrapper);
+
+        // 构建菜单树
+        List<MenuEntity> menus = buildMenuTree(selectList);
+
+        return new ResponseImpl(200, "获取数据成功", menus);
+    }
+
+    @Override
+    public Response selectMenuLists(MenuDto menuDto) {
+        String menuName = menuDto.getMenu_name();
+        List<MenuEntity> selectList = menuMapper.selectMenuLists(menuName);
 
         // 构建菜单树
         List<MenuEntity> menus = buildMenuTree(selectList);

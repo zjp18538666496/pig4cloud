@@ -13,6 +13,14 @@ export function getMenuLists(data) {
     })
 }
 
+export function selectMenuLists(data) {
+    return service({
+        url: '/menu/selectMenuLists',
+        method: 'post',
+        data,
+    })
+}
+
 export function delMenu(data) {
     return service({
         url: '/menu/delMenu',

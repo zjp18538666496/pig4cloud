@@ -10,58 +10,7 @@
                 </el-icon>
                 <span>首页</span>
             </el-menu-item>
-            <el-sub-menu index="1">
-                <template #title>
-                    <el-icon>
-                        <icon-menu />
-                    </el-icon>
-                    <span>系统管理</span>
-                </template>
-                <el-sub-menu index="2">
-                    <template #title>
-                        <el-icon>
-                            <icon-menu />
-                        </el-icon>
-                        <span>权限管理</span>
-                    </template>
-                    <el-menu-item index="/user-manager">
-                        <el-icon>
-                            <icon-menu />
-                        </el-icon>
-                        <span>用户管理</span>
-                    </el-menu-item>
-                    <el-menu-item index="/role-manager">
-                        <el-icon>
-                            <icon-menu />
-                        </el-icon>
-                        <span>角色管理</span>
-                    </el-menu-item>
-                    <el-menu-item index="/menu-manager">
-                        <el-icon>
-                            <icon-menu />
-                        </el-icon>
-                        <span>菜单管理</span>
-                    </el-menu-item>
-                    <el-menu-item index="1-2">
-                        <el-icon>
-                            <icon-menu />
-                        </el-icon>
-                        <span>部门管理</span>
-                    </el-menu-item>
-                    <el-menu-item index="1-2">
-                        <el-icon>
-                            <icon-menu />
-                        </el-icon>
-                        <span>岗位管理</span>
-                    </el-menu-item>
-                    <el-menu-item index="1-2">
-                        <el-icon>
-                            <icon-menu />
-                        </el-icon>
-                        <span>租户管理</span>
-                    </el-menu-item>
-                </el-sub-menu>
-            </el-sub-menu>
+            <menu-item v-for="menu in menuTree" :key="menu.id" :menu="menu" />
         </el-menu>
     </div>
 </template>
@@ -71,9 +20,35 @@ import { Menu as IconMenu } from '@element-plus/icons-vue'
 import { storeToRefs } from 'pinia'
 import { useSidebarStore } from '@/stores/sidebar.js'
 import { useRoute } from 'vue-router'
+import MenuItem from '@/layout/components/sidebar/MenuItem.vue'
+import { selectMenuLists } from '@/api/menu.js'
+import { onMounted, onUnmounted, ref } from 'vue'
+import emitter from '@/utils/mitt.js'
+
 const route = useRoute()
 const store = useSidebarStore()
 let { isCollapse, width, logo, borderRight } = storeToRefs(store)
+const userInfo = JSON.parse(localStorage.getItem('userinfo') || '{}')
+
+const refreshMenu = () => {
+    selectMenuLists({ menu_name: userInfo?.username }).then((res) => {
+        if (res?.code === 200) {
+            menuTree.value = res.data
+        }
+    })
+}
+
+const handleRefreshMenu = () => {
+    refreshMenu()
+}
+
+onMounted(() => {
+    emitter.on('refreshMenu', handleRefreshMenu)
+})
+
+onUnmounted(() => {
+    emitter.off('refreshMenu', handleRefreshMenu)
+})
 
 /**
  * 折叠面板
@@ -96,6 +71,14 @@ const toggleCollapse = () => {
         }, 500)
     }
 }
+
+let menuTree = ref([])
+
+selectMenuLists({ menu_name: userInfo?.username }).then((res) => {
+    if (res?.code === 200) {
+        menuTree.value = res.data
+    }
+})
 </script>
 <style scoped lang="scss">
 .sidebar {

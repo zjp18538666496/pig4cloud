@@ -18,21 +18,6 @@ const router = createRouter({
                     name: 'home',
                     component: Home,
                 },
-                {
-                    path: '/role-manager',
-                    name: 'role-manager',
-                    component: () => import('@/views/role-manager/Index.vue'),
-                },
-                {
-                    path: '/user-manager',
-                    name: 'user-manager',
-                    component: () => import('@/views/user-manager/Index.vue'),
-                },
-                {
-                    path: '/menu-manager',
-                    name: 'menu-manager',
-                    component: () => import('@/views/menu-manager/Index.vue'),
-                },
             ],
         },
         {
@@ -40,17 +25,17 @@ const router = createRouter({
             name: '登录',
             component: Login,
         },
-        {
-            path: '/:catchAll(.*)',
-            name: '*',
-            redirect: '/404',
-        },
-        {
-            path: '/404',
-            name: '/404',
-            component: errorPage,
-            hidden: true,
-        },
+        // {
+        //     path: '/:catchAll(.*)',
+        //     name: '*',
+        //     redirect: '/404',
+        // },
+        // {
+        //     path: '/404',
+        //     name: '/404',
+        //     component: errorPage,
+        //     hidden: true,
+        // },
     ],
 })
 

@@ -31,4 +31,19 @@ public interface MenuMapper extends BaseMapper<MenuEntity> {
             "</script>"
     })
     int insertUserRoles(@Param("userRoles") List<Map<String, Object>> userRoles);
+
+    @Select("SELECT DISTINCT" +
+            "  m.id AS id1," +
+            "  m.* " +
+            "FROM" +
+            "  sys_menu m" +
+            "  LEFT JOIN role_menu ON m.id = role_menu.menu_id" +
+            "  LEFT JOIN sys_role r ON r.id = role_menu.role_id" +
+            "  LEFT JOIN user_role ON r.id = user_role.role_id" +
+            "  LEFT JOIN sys_user u ON u.id = user_role.user_id " +
+            "WHERE" +
+            "  u.username = #{username} " +
+            "ORDER BY" +
+            "  m.id ASC;")
+    List<MenuEntity> selectMenuLists(String username);
 }

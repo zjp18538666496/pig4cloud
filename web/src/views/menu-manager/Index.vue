@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import EditMenu from '@/views/menu-manager/components/EditMenu.vue'
 import { debounce } from '@/utils/utils.js'
 import { createMenu, delMenu, getMenuLists, updateMenu } from '@/api/menu.js'
+import emitter from '@/utils/mitt.js'
 
 let menuTable = ref({
     // 表格数据
@@ -108,6 +109,7 @@ const handleDelete = (index, row) => {
                 if (res?.code === 200) {
                     ElMessage({ message: '删除成功', type: 'success' })
                     getUserLise()
+                    emitter.emit('refreshMenu')
                 } else {
                     ElMessage.error(`删除失败！${res.message}`)
                 }
@@ -141,6 +143,7 @@ const saveMenu = () => {
                             initMenuInfo()
                             ElMessage({ message: '保存成功', type: 'success' })
                             getUserLise()
+                            emitter.emit('refreshMenu')
                         } else {
                             ElMessage.error(`保存失败！${res.message}`)
                         }
@@ -153,6 +156,7 @@ const saveMenu = () => {
                             initMenuInfo()
                             ElMessage({ message: '保存成功', type: 'success' })
                             getUserLise()
+                            emitter.emit('refreshMenu')
                         } else {
                             ElMessage.error(`保存失败！${res.message}`)
                         }

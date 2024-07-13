@@ -24,4 +24,7 @@ public interface MenuService {
      * 获取菜单列表
      */
     Response getMenuLists(MenuDto menuDto);
+
+
+    Response selectMenuLists(MenuDto menuDto);
 }

@@ -9,8 +9,9 @@ import 'element-plus/dist/index.css'
 
 import App from './App.vue'
 import router from './router'
+import DynamicRouter from '@/router/dynamicRouter.js'
 import './permission'
-
+new DynamicRouter().addDynamicRoutes()
 const app = createApp(App)
 const pinia = createPinia()
 pinia.use(piniaPersist)
@@ -21,3 +22,5 @@ app.use(ElementPlus, {
 app.use(router)
 
 app.mount('#app')
+
+

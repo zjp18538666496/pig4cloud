@@ -41,4 +41,9 @@ public class MenuController {
     public Response getMenuLists(@RequestBody MenuDto MenuDto) {
         return menuService.getMenuLists(MenuDto);
     }
+
+    @PostMapping("/selectMenuLists")
+    public Response selectMenuLists(@RequestBody MenuDto MenuDto) {
+        return menuService.selectMenuLists(MenuDto);
+    }
 }

@@ -207,9 +207,11 @@ onUnmounted(() => {
             <el-table-column prop="email" label="邮箱" align="center" />
             <el-table-column prop="role_names" label="角色" align="center">
                 <template #default="scope">
-                    <el-tag type="primary" v-if="scope.row.role_names" v-for="(item, key) in scope.row.role_names.split(',')" :key="key" style="margin-right: 2px">
-                        {{ item }}
-                    </el-tag>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px">
+                        <el-tag type="primary" v-if="scope.row.role_names" v-for="(item, key) in scope.row.role_names.split(',')" :key="key" style="margin-right: 2px">
+                            {{ item }}
+                        </el-tag>
+                    </div>
                 </template>
             </el-table-column>
             <el-table-column prop="create_time" label="创建时间" align="center" />
@@ -217,8 +219,8 @@ onUnmounted(() => {
             <el-table-column prop="last_login_time" label="最后登录时间" align="center" />
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
-                    <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑 </el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
+                    <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
+                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -242,7 +244,7 @@ onUnmounted(() => {
                 <template #footer>
                     <div class="dialog-footer">
                         <el-button @click="user.dialogVisible = false">取消</el-button>
-                        <el-button type="primary" @click="saveRole"> 保存 </el-button>
+                        <el-button type="primary" @click="saveRole"> 保存</el-button>
                     </div>
                 </template>
             </el-dialog>
