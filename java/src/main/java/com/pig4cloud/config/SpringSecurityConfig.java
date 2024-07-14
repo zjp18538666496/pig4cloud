@@ -84,6 +84,7 @@ class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/user/createUser").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/file/**").permitAll()
                         // 允许任意请求被已登录用户访问，不检查Authority
                         .anyRequest().authenticated()
         );

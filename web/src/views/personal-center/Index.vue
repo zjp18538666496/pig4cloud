@@ -15,13 +15,13 @@
                     <el-input v-model="form.email" />
                 </el-form-item>
                 <el-form-item label="更新时间">
-                    <el-date-picker v-model="form.updateTime" type="datetime" placeholder="更新时间" disabled />
+                    <el-date-picker v-model="form.update_time" type="datetime" placeholder="更新时间" disabled />
                 </el-form-item>
                 <el-form-item label="创建时间">
-                    <el-date-picker v-model="form.createTime" type="datetime" placeholder="创建时间" disabled />
+                    <el-date-picker v-model="form.create_time" type="datetime" placeholder="创建时间" disabled />
                 </el-form-item>
                 <el-form-item label="最后登录时间">
-                    <el-date-picker v-model="form.lastLoginTime" type="datetime" placeholder="最后登录时间" disabled />
+                    <el-date-picker v-model="form.last_login_time" type="datetime" placeholder="最后登录时间" disabled />
                 </el-form-item>
                 <el-form-item>
                     <el-button @click="logOut">注销账号</el-button>
