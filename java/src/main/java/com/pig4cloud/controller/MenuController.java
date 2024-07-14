@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @Controller
 @RestController
 @RequestMapping("/menu")
@@ -43,7 +45,7 @@ public class MenuController {
     }
 
     @PostMapping("/selectMenuLists")
-    public Response selectMenuLists(@RequestBody MenuDto MenuDto) {
-        return menuService.selectMenuLists(MenuDto);
+    public Response selectMenuLists(@RequestBody Map<String, Object> map) {
+        return menuService.selectMenuLists(map);
     }
 }

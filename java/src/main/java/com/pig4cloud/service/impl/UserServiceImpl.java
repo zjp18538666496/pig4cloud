@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
             password = new BCryptPasswordEncoder().encode(password);
             userEntity.setPassword(password);
             userEntity.setName(userEntity.getUsername());
-            userEntity.setCreateTime(new Timestamp(System.currentTimeMillis()));
+            userEntity.setCreate_time(new Timestamp(System.currentTimeMillis()));
             int rows = userMapper.insert(userEntity);
             return new ResponseImpl(200, rows > 0 ? "注册成功" : "注册失败", null);
         } else {
@@ -76,12 +76,12 @@ public class UserServiceImpl implements UserService {
 //            return new ResponseImpl(-200, verify.getMessage(), null);
 //        }
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
-        userEntity.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+        userEntity.setUpdate_time(new Timestamp(System.currentTimeMillis()));
         updateWrapper.eq("username", userEntity.getUsername())
                 .set("name", userEntity.getName())
                 .set("email", userEntity.getEmail())
                 .set("mobile", userEntity.getMobile())
-                .set("update_time", userEntity.getUpdateTime());
+                .set("update_time", userEntity.getUpdate_time());
 
         int rows = userMapper.update(null, updateWrapper);
         return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", userEntity);

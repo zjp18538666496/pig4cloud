@@ -1,6 +1,10 @@
 import router from './router'
 import { ElMessageBox } from 'element-plus'
-
+import DynamicRouter from '@/router/dynamicRouter.js'
+//加载动态路由
+if (window.location.pathname.indexOf('/login') === -1) {
+    await new DynamicRouter().addDynamicRoutes()
+}
 router.beforeEach(async (to, from, next) => {
     const token = localStorage.getItem('token')
     if (token) {

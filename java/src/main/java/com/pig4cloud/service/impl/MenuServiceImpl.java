@@ -12,6 +12,10 @@ import com.pig4cloud.entity.MenuEntity;
 import com.pig4cloud.service.MenuService;
 import org.apache.ibatis.annotations.Insert;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -126,13 +130,19 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public Response selectMenuLists(MenuDto menuDto) {
-        String menuName = menuDto.getMenu_name();
-        List<MenuEntity> selectList = menuMapper.selectMenuLists(menuName);
+    public Response selectMenuLists(Map<String, Object> map) {
 
-        // 构建菜单树
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String name = authentication.getName();
+        if (name == null) {
+            return new ResponseImpl(-200, "获取用户信息失败", null);
+        }
+        List<MenuEntity> selectList = menuMapper.selectMenuLists(name);
+        String menuType = (String) map.get("menuType");
+        if (menuType.equals("flatMenu")) {
+            return new ResponseImpl(200, "获取数据成功", selectList);
+        }
         List<MenuEntity> menus = buildMenuTree(selectList);
-
         return new ResponseImpl(200, "获取数据成功", menus);
     }
 

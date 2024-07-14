@@ -140,6 +140,7 @@ const handleEdit = (index, row) => {
  * 保存角色
  */
 const saveRole = () => {
+    role.value.roleInfo.menu_codes = Array.from(new Set([...role.value.roleInfo.menu_codes, ...roleRef.value.HalfCheckedKeys]))
     role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes?.join(',')
     roleRef.value.ruleFormRef.validate((valid) => {
         if (valid) {

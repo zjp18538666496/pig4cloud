@@ -21,7 +21,6 @@
                 collapse-tags
                 show-checkbox
                 :check-strictly="false"
-                @current-change="currentChange"
                 ref="tree"
                 @check-change="getCheckedNodes"
             ></el-tree-select>
@@ -44,6 +43,7 @@ const props = defineProps({
     },
 })
 const terrNode = ref(props.roleInfo.menu_codes)
+const HalfCheckedKeys = ref([])
 const tree = ref()
 const menuList = ref([])
 const ruleFormRef = ref()
@@ -61,8 +61,8 @@ getMenuLists({}).then((res) => {
 
 const getCheckedNodes = () => {
     // 获取所有选中节点的数据
+    HalfCheckedKeys.value = tree.value.getHalfCheckedKeys()
     terrNode.value = []
-
     const checkedNodes = tree.value.getCheckedNodes()
     checkedNodes.forEach(function (item) {
         terrNode.value.push(item.id)
@@ -70,11 +70,8 @@ const getCheckedNodes = () => {
     props.roleInfo.menu_codes = terrNode.value
     console.log('选中的节点数据:', checkedNodes)
 }
-const currentChange = (node) => {
-    terrNode.value = node.value
-    console.log(terrNode)
-}
 defineExpose({
     ruleFormRef,
+    HalfCheckedKeys,
 })
 </script>

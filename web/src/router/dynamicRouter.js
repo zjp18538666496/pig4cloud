@@ -1,38 +1,56 @@
 //动态添加路由的函数
 import router from '@/router/index.js'
+import { selectMenuLists } from '@/api/menu.js'
 
 class DynamicRouter {
-    #dynamicRoutes
+    #dynamicRoutes = []
+    #routeList = [
+        {
+            path: '/role-manager',
+            name: 'role-manager',
+            component: () => import('@/views/role-manager/Index.vue'),
+        },
+        {
+            path: '/user-manager',
+            name: 'user-manager',
+            component: () => import('@/views/user-manager/Index.vue'),
+        },
+        {
+            path: '/menu-manager',
+            name: 'menu-manager',
+            component: () => import('@/views/menu-manager/Index.vue'),
+        },
+    ]
 
-    constructor() {
-        this.#dynamicRoutes = [
-            {
-                path: '/role-manager',
-                name: 'role-manager',
-                component: () => import('@/views/role-manager/Index.vue'),
-            },
-            {
-                path: '/user-manager',
-                name: 'user-manager',
-                component: () => import('@/views/user-manager/Index.vue'),
-            },
-            {
-                path: '/menu-manager',
-                name: 'menu-manager',
-                component: () => import('@/views/menu-manager/Index.vue'),
-            },
-        ]
-    }
+    constructor() {}
 
-    addDynamicRoutes() {
-        this.#dynamicRoutes.forEach((item) => {
-            router.addRoute('Layout', item) // 添加路由
-        })
+    async addDynamicRoutes() {
+        await selectMenuLists({ menuType: 'flatMenu' })
+            .then((res) => {
+                if (res?.code === 200) {
+                    return res.data
+                }
+            })
+            .then((list) => {
+                if (list) {
+                    list.forEach((item) => {
+                        let route = this.#routeList.find((obj) => {
+                            return obj.path === item.route
+                        })
+                        if (route) {
+                            router.addRoute('Layout', route) // 添加路由
+                        }
+                    })
+                }
+                // this.#dynamicRoutes.forEach((item) => {
+                //     router.addRoute('Layout', item) // 添加路由
+                // })
+                return Promise.resolve(list)
+            })
     }
 }
 
 export default DynamicRouter
-
 
 // const modules = import.meta.glob('@/views/**/*.vue')
 // console.log('modules:', modules)

@@ -4,6 +4,8 @@ import com.pig4cloud.dao.Response;
 import com.pig4cloud.dto.MenuDto;
 import com.pig4cloud.entity.MenuEntity;
 
+import java.util.Map;
+
 public interface MenuService {
     /**
      * 创建菜单
@@ -26,5 +28,5 @@ public interface MenuService {
     Response getMenuLists(MenuDto menuDto);
 
 
-    Response selectMenuLists(MenuDto menuDto);
+    Response selectMenuLists(Map<String, Object> map);
 }

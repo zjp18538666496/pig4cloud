@@ -12,7 +12,7 @@ import java.util.Map;
 @Mapper
 public interface RoleMapper extends BaseMapper<RoleEntity> {
     @Insert("INSERT INTO sys_role (role_code, role_name, description) VALUES (#{role_code}, #{role_name}, #{description})")
-    @Options(useGeneratedKeys=true, keyProperty="id")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(RoleEntity roleEntity);
 
     @Select("""
@@ -24,15 +24,16 @@ public interface RoleMapper extends BaseMapper<RoleEntity> {
                 sys_role
             LEFT JOIN role_menu ON sys_role.id = role_menu.role_id
             LEFT JOIN sys_menu ON sys_menu.id = role_menu.menu_id
-            
+            WHERE sys_menu.type != '0'
             GROUP BY
                 sys_role.id
             LIMIT #{pageSize} OFFSET #{page};
             """)
     List<Map<String, Object>> selectList1(@Param("roleName") String roleName, @Param("pageSize") long pageSize, @Param("page") long page);
-   // WHERE sys_role.role_name LIKE CONCAT('%', #{roleName}, '%')
+    // WHERE sys_role.role_name LIKE CONCAT('%', #{roleName}, '%')
 
     List<Map<String, Object>> getSelectList();
+
     @Select("""
             SELECT
                 COUNT(DISTINCT sys_role.id)

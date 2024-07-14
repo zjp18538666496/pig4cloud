@@ -5,6 +5,7 @@ import { ElMessage, ElNotification } from 'element-plus'
 import { login } from '@/api/login.js'
 import { useRouter } from 'vue-router'
 import { valiPassword, valiUsername } from '@/utils/validate.js'
+import DynamicRouter from "@/router/dynamicRouter.js";
 
 const router = useRouter()
 let loading = ref(false)
@@ -16,15 +17,16 @@ const login1 = () => {
         username: ruleForm.username,
         password: ruleForm.password,
     })
-        .then((res) => {
-            if (res?.code === 200) {
-                ElMessage({ message: '登录成功', type: 'success' })
-                localStorage.setItem('token', res.data.token)
-                localStorage.setItem('userinfo', JSON.stringify(res.data.user))
-                router.push('/')
-            } else {
-                ElMessage.error(`登录失败！${res.message}`)
-            }
+        .then(async (res) => {
+          if (res?.code === 200) {
+            ElMessage({message: '登录成功', type: 'success'})
+            localStorage.setItem('token', res.data.token)
+            localStorage.setItem('userinfo', JSON.stringify(res.data.user))
+            await new DynamicRouter().addDynamicRoutes()
+            await router.push('/')
+          } else {
+            ElMessage.error(`登录失败！${res.message}`)
+          }
         })
         .finally(() => {
             loading.value = false

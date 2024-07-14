@@ -29,14 +29,16 @@ const route = useRoute()
 const store = useSidebarStore()
 let { isCollapse, width, logo, borderRight } = storeToRefs(store)
 const userInfo = JSON.parse(localStorage.getItem('userinfo') || '{}')
-
+let menuTree = ref([])
 const refreshMenu = () => {
-    selectMenuLists({ menu_name: userInfo?.username }).then((res) => {
+    selectMenuLists({ menuType: '' }).then((res) => {
         if (res?.code === 200) {
             menuTree.value = res.data
         }
     })
 }
+
+refreshMenu()
 
 const handleRefreshMenu = () => {
     refreshMenu()
@@ -71,14 +73,6 @@ const toggleCollapse = () => {
         }, 500)
     }
 }
-
-let menuTree = ref([])
-
-selectMenuLists({ menu_name: userInfo?.username }).then((res) => {
-    if (res?.code === 200) {
-        menuTree.value = res.data
-    }
-})
 </script>
 <style scoped lang="scss">
 .sidebar {

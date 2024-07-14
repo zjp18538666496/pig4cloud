@@ -42,17 +42,17 @@ public class UserEntity {
      * 创建时间
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private Timestamp createTime;
+    private Timestamp create_time;
 
     /**
      * 更新时间
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private Timestamp updateTime;
+    private Timestamp update_time;
 
     /**
      * 最后登录时间
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private Timestamp lastLoginTime;
+    private Timestamp last_login_time;
 }
