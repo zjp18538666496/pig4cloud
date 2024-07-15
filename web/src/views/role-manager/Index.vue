@@ -4,25 +4,11 @@ import { delRole, getRoleLists, updateRole, createRole } from '@/api/role.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EditRole from '@/views/role-manager/components/EditRole.vue'
 import { debounce } from '@/utils/utils.js'
+import BaseTable from '@/utils/table.js'
 
-let roleTable = ref({
-    // 表格数据
-    rows: [],
-    // 表格高度
-    height: window.innerHeight - 50 - 30 - 40 - 52 - 52,
-    // 查询条件
-    query: {
-        roleName: '',
-        page: 1,
-        pageSize: 10,
-    },
-    // 表格分页组件属性
-    pagination: {
-        total: 0,
-        disabled: false,
-        background: false,
-    },
-})
+let baseTable = new BaseTable()
+baseTable.table.query.roleName = ''
+let roleTable = ref(baseTable.table)
 
 let roleRef = ref()
 
@@ -218,7 +204,7 @@ onUnmounted(() => {
             <el-table-column prop="address" label="菜单权限" align="center">
                 <template #default="scope">
                     <div style="display: flex; flex-wrap: wrap; gap: 10px">
-                        <el-tag v-for="(itme, key) in scope.row.menu_names?.split(',')" type="primary">{{ itme }}</el-tag>
+                        <el-tag v-for="(item) in scope.row.menu_names?.split(',')" type="primary">{{ item }} </el-tag>
                     </div>
                 </template>
             </el-table-column>
@@ -226,19 +212,19 @@ onUnmounted(() => {
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
                     <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除</el-button>
+                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
                 </template>
             </el-table-column>
         </el-table>
         <div style="display: flex; justify-content: flex-end; width: 100%">
             <el-pagination
+                class='mb20px'
                 v-model:current-page="roleTable.query.page"
                 v-model:page-size="roleTable.query.pageSize"
-                :page-sizes="[10, 20, 30, 40]"
-                style="margin-top: 20px"
+                :page-sizes="roleTable.pagination.pageSize"
                 :disabled="roleTable.pagination.disabled"
                 :background="roleTable.pagination.background"
-                layout="total, sizes, prev, pager, next, jumper"
+                :layout="roleTable.pagination.layout"
                 :total="roleTable.pagination.total"
                 @size-change="getRoleList"
                 @current-change="getRoleList"

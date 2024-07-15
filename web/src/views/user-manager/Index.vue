@@ -5,8 +5,10 @@ import EditUser from '@/views/user-manager/components/EditUser.vue'
 import { debounce } from '@/utils/utils.js'
 import { createUser, delUser, getUserLists, updateUser } from '@/api/user.js'
 import BaseTable from '@/utils/table.js'
-const baseTable = new BaseTable();
-let userTable = ref(baseTable.table);
+
+const baseTable = new BaseTable()
+baseTable.table.query.roleName = ''
+let userTable = ref(baseTable.table)
 let roleRef = ref()
 
 let user = ref({
@@ -171,9 +173,9 @@ onUnmounted(() => {
 
 <template>
     <div>
-        <div class='mb-20px'>
+        <div class="mb-20px">
             用户名称
-            <el-input v-model="userTable.query.roleName" class='w-240px' placeholder="用户名称" />
+            <el-input v-model="userTable.query.roleName" class="w-240px" placeholder="用户名称" />
             <el-button style="margin: 0 0 0 10px" @click="getUserLise">查询</el-button>
             <el-button type="primary" @click="userTable.query.roleName = ''">重置</el-button>
             <el-button type="primary" @click="createRole1">新增</el-button>
@@ -203,19 +205,19 @@ onUnmounted(() => {
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
                     <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除</el-button>
+                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
                 </template>
             </el-table-column>
         </el-table>
         <div style="display: flex; justify-content: flex-end; width: 100%">
             <el-pagination
+                class="mb-20px"
                 v-model:current-page="userTable.query.page"
                 v-model:page-size="userTable.query.pageSize"
-                :page-sizes="[10, 20, 30, 40]"
-                style="margin-top: 20px"
+                :page-sizes="userTable.pagination.pageSize"
                 :disabled="userTable.pagination.disabled"
                 :background="userTable.pagination.background"
-                layout="total, sizes, prev, pager, next, jumper"
+                :layout="userTable.pagination.layout"
                 :total="userTable.pagination.total"
                 @size-change="getUserLise"
                 @current-change="getUserLise"

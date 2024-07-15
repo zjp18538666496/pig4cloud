@@ -5,26 +5,11 @@ import EditMenu from '@/views/menu-manager/components/EditMenu.vue'
 import { debounce } from '@/utils/utils.js'
 import { createMenu, delMenu, getMenuLists, updateMenu } from '@/api/menu.js'
 import emitter from '@/utils/mitt.js'
-
-let menuTable = ref({
-    // 表格数据
-    rows: [],
-    // 表格高度
-    height: window.innerHeight - 50 - 30 - 40 - 52 - 52,
-    // 查询条件
-    query: {
-        menu_name: '',
-    },
-    // 表格分页组件属性
-    pagination: {
-        total: 0,
-        disabled: false,
-        background: false,
-    },
-})
-
+import BaseTable from '@/utils/table.js'
+const baseTable = new BaseTable();
+baseTable.table.query.menu_name = '';
+let menuTable = ref(baseTable.table)
 let menuRef = ref()
-
 let menu = ref({
     menuInfo: null,
     dialogVisible: false,
@@ -188,10 +173,10 @@ onUnmounted(() => {
 
 <template>
     <div>
-        <div style="margin-bottom: 20px">
+        <div class='mb-20px'>
             菜单名称
-            <el-input v-model="menuTable.query.menu_name" style="width: 240px" placeholder="菜单名称" />
-            <el-button style="margin: 0 0 0 10px" @click="getUserLise">查询</el-button>
+            <el-input v-model="menuTable.query.menu_name" class='w240px' placeholder="菜单名称" />
+            <el-button class='ml-10px' @click="getUserLise">查询</el-button>
             <el-button type="primary" @click="menuTable.query.menu_name = ''">重置</el-button>
             <el-button type="primary" @click="createMenu1">新增</el-button>
         </div>

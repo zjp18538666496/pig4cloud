@@ -8,7 +8,6 @@ class BaseTable {
         height: window.innerHeight - 50 - 30 - 40 - 52 - 52,
         // 查询条件
         query: {
-            roleName: '',
             page: 1,
             pageSize: 10,
         },
@@ -17,6 +16,8 @@ class BaseTable {
             total: 0,
             disabled: false,
             background: false,
+            layout: 'total, sizes, prev, pager, next, jumper',
+            pageSize: [10, 20, 30, 40, 50],
         },
     }
 
