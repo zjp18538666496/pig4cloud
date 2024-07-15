@@ -12,6 +12,9 @@ import java.util.Map;
 @Repository
 @Mapper
 public interface MenuMapper extends BaseMapper<MenuEntity> {
+    /**
+     * 获取父级菜单下的最大ID
+     */
     @Select("SELECT MAX(id) FROM sys_menu WHERE ${ew.sqlSegment}")
     Integer getMaxAgeByCondition(@Param("ew") Wrapper<MenuEntity> wrapper);
 

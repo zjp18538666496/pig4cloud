@@ -37,6 +37,8 @@ public class MenuServiceImpl implements MenuService {
         } else {
             newId += 1;
         }
+        String level = calcMenuLevel(newId);
+        menuEntity.setLevel(level);
         menuEntity.setId(newId);
         int rows = menuMapper.insert(menuEntity);
         return new ResponseImpl(200, rows > 0 ? "创建成功" : "创建失败", null);
@@ -75,6 +77,8 @@ public class MenuServiceImpl implements MenuService {
             } else {
                 newId += 1;
             }
+            String level = calcMenuLevel(newId);
+            menuEntity.setLevel(level);
         }
 
         // 检查是否修改了菜单类型，若修改则判断是否有子菜单
@@ -195,9 +199,24 @@ public class MenuServiceImpl implements MenuService {
         return deleteCount;
     }
 
+    /**
+     * 获取子菜单
+     */
     private List<MenuEntity> getSubmenuList(Integer parentId) {
         QueryWrapper<MenuEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("parent_id", parentId);
         return menuMapper.selectList(queryWrapper);
+    }
+
+    /**
+     * 计算菜单层级
+     */
+    private String calcMenuLevel(long id) {
+        long level = 1L;
+        while (id < 1 || id > 99) {
+            id = id / 100;
+            level++;
+        }
+        return Long.toString(level);
     }
 }

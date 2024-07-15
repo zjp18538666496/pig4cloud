@@ -8,21 +8,22 @@ class DynamicRouter {
         {
             path: '/role-manager',
             name: 'role-manager',
-            component: () => import('@/views/role-manager/Index.vue'),
+            component: () => import('@/views/role-manager/Index.vue')
         },
         {
             path: '/user-manager',
             name: 'user-manager',
-            component: () => import('@/views/user-manager/Index.vue'),
+            component: () => import('@/views/user-manager/Index.vue')
         },
         {
             path: '/menu-manager',
             name: 'menu-manager',
-            component: () => import('@/views/menu-manager/Index.vue'),
-        },
+            component: () => import('@/views/menu-manager/Index.vue')
+        }
     ]
 
-    constructor() {}
+    constructor() {
+    }
 
     async addDynamicRoutes() {
         await selectMenuLists({ menuType: 'flatMenu' })
@@ -42,7 +43,7 @@ class DynamicRouter {
                         }
                     })
                 }
-                // this.#dynamicRoutes.forEach((item) => {
+                // this.#routeList.forEach((item) => {
                 //     router.addRoute('Layout', item) // 添加路由
                 // })
                 return Promise.resolve(list)
@@ -95,3 +96,7 @@ export default DynamicRouter
 //     console.log(`/src${item.component}`)
 // })
 // console.log('getRoutes:', router.getRoutes())
+
+
+
+
