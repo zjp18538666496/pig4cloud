@@ -23,5 +23,6 @@ export default defineConfig({
     shortcuts: {
         'f-c-c': 'flex justify-center items-center',
     },
+    //用于规则之间共享配置的主题对象。
     theme: {},
 })
