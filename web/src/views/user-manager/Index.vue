@@ -4,26 +4,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import EditUser from '@/views/user-manager/components/EditUser.vue'
 import { debounce } from '@/utils/utils.js'
 import { createUser, delUser, getUserLists, updateUser } from '@/api/user.js'
-
-let userTable = ref({
-    // 表格数据
-    rows: [],
-    // 表格高度
-    height: window.innerHeight - 50 - 30 - 40 - 52 - 52,
-    // 查询条件
-    query: {
-        roleName: '',
-        page: 1,
-        pageSize: 10,
-    },
-    // 表格分页组件属性
-    pagination: {
-        total: 0,
-        disabled: false,
-        background: false,
-    },
-})
-
+import BaseTable from '@/utils/table.js'
+const baseTable = new BaseTable();
+let userTable = ref(baseTable.table);
 let roleRef = ref()
 
 let user = ref({
@@ -188,9 +171,9 @@ onUnmounted(() => {
 
 <template>
     <div>
-        <div style="margin-bottom: 20px">
+        <div class='mb-20px'>
             用户名称
-            <el-input v-model="userTable.query.roleName" style="width: 240px" placeholder="用户名称" />
+            <el-input v-model="userTable.query.roleName" class='w-240px' placeholder="用户名称" />
             <el-button style="margin: 0 0 0 10px" @click="getUserLise">查询</el-button>
             <el-button type="primary" @click="userTable.query.roleName = ''">重置</el-button>
             <el-button type="primary" @click="createRole1">新增</el-button>
