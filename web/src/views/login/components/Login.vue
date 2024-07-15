@@ -4,11 +4,12 @@ import { reactive, ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { login } from '@/api/login.js'
 import { useRouter } from 'vue-router'
-import { valiPassword, valiUsername } from '@/utils/validate.js'
-import DynamicRouter from "@/router/dynamicRouter.js";
+import DynamicRouter from '@/router/dynamicRouter.js'
+import { VerifyUser } from '@/utils/vali.js'
 
 const router = useRouter()
 let loading = ref(false)
+const verifyUser = new VerifyUser()
 /**
  * 密码登录
  */
@@ -18,15 +19,15 @@ const login1 = () => {
         password: ruleForm.password,
     })
         .then(async (res) => {
-          if (res?.code === 200) {
-            ElMessage({message: '登录成功', type: 'success'})
-            localStorage.setItem('token', res.data.token)
-            localStorage.setItem('userinfo', JSON.stringify(res.data.user))
-            await new DynamicRouter().addDynamicRoutes()
-            await router.push('/')
-          } else {
-            ElMessage.error(`登录失败！${res.message}`)
-          }
+            if (res?.code === 200) {
+                ElMessage({ message: '登录成功', type: 'success' })
+                localStorage.setItem('token', res.data.token)
+                localStorage.setItem('userinfo', JSON.stringify(res.data.user))
+                await new DynamicRouter().addDynamicRoutes()
+                await router.push('/')
+            } else {
+                ElMessage.error(`登录失败！${res.message}`)
+            }
         })
         .finally(() => {
             loading.value = false
@@ -57,20 +58,6 @@ const registration = () => {
  * 表单验证
  */
 const ruleFormRef = ref()
-const verifyUsername = (rule, value, callback) => {
-    if (valiUsername(value)) {
-        callback()
-    } else {
-        callback(new Error('请输入4到12位的用户名，支持字母合数字'))
-    }
-}
-const verifyPassword = (rule, value, callback) => {
-    if (valiPassword(value)) {
-        callback()
-    } else {
-        callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'))
-    }
-}
 
 const ruleForm = reactive({
     username: '',
@@ -78,8 +65,8 @@ const ruleForm = reactive({
 })
 
 const rules = reactive({
-    username: [{ validator: verifyUsername, trigger: 'blur' }],
-    password: [{ validator: verifyPassword, trigger: 'blur' }],
+    username: [{ validator: verifyUser.username, trigger: 'blur' }],
+    password: [{ validator: verifyUser.password, trigger: 'blur' }],
 })
 
 /**
@@ -102,7 +89,7 @@ const submitForm = (formEl) => {
 </script>
 
 <template>
-    <el-form ref="ruleFormRef" style="max-width: 400px" :model="ruleForm" status-icon :rules="rules" label-width="auto" class="demo-ruleForm">
+    <el-form ref="ruleFormRef" :model="ruleForm" status-icon :rules="rules" label-width="auto" class="demo-ruleForm max-w-400px">
         <el-form-item prop="username">
             <el-input :prefix-icon="User" v-model="ruleForm.username" placeholder="请输入用户名" size="large" type="text" autocomplete="off" clearable />
         </el-form-item>

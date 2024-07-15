@@ -3,9 +3,12 @@ import { Lock, User } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { createUser } from '@/api/user.js'
-import { valiPassword, valiUsername } from '@/utils/validate.js'
+import { VerifyUser } from '@/utils/vali.js'
+
+const verifyUser = new VerifyUser()
 
 let loading = ref(false)
+
 /**
  * 注册账号
  */
@@ -37,6 +40,7 @@ const codeLogin = () => {
     })
 }
 const emit = defineEmits(['zc'])
+
 /**
  * 注册账号
  */
@@ -48,20 +52,6 @@ const registration = () => {
  * 表单验证
  */
 const ruleFormRef = ref()
-const verifyUsername = (rule, value, callback) => {
-    if (valiUsername(value)) {
-        callback()
-    } else {
-        callback(new Error('请输入4到12位的用户名，支持字母合数字'))
-    }
-}
-const verifyPassword = (rule, value, callback) => {
-    if (valiPassword(value)) {
-        callback()
-    } else {
-        callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'))
-    }
-}
 
 const ruleForm = reactive({
     username: '',
@@ -69,8 +59,8 @@ const ruleForm = reactive({
 })
 
 const rules = reactive({
-    username: [{ validator: verifyUsername, trigger: 'blur' }],
-    password: [{ validator: verifyPassword, trigger: 'blur' }],
+    username: [{ validator: verifyUser.username, trigger: 'blur' }],
+    password: [{ validator: verifyUser.password, trigger: 'blur' }],
 })
 
 /**

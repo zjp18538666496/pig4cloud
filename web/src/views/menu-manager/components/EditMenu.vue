@@ -1,5 +1,5 @@
 <template>
-    <el-form ref="ruleFormRef" :model="props.menuInfo" :rules="rules" label-width="auto" style="max-width: 600px">
+    <el-form ref="ruleFormRef" :model="props.menuInfo" :rules="rules" label-width="auto" class="max-w600px">
         <el-form-item prop="menu_name" label="上级菜单">
             <el-tree-select v-model="terrNode" :data="menuList" :render-after-expand="false" :props="defaultProps" :check-strictly="true" @current-change="currentChange"></el-tree-select>
         </el-form-item>
