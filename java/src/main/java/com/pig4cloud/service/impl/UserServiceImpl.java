@@ -1,15 +1,12 @@
 package com.pig4cloud.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pig4cloud.dao.Response;
 import com.pig4cloud.dao.RoleMapper;
 import com.pig4cloud.dao.UserMapper;
 import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.dto.UserDto;
-import com.pig4cloud.entity.RoleEntity;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
 import com.pig4cloud.util.verify.VerifyResult;
