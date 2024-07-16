@@ -6,8 +6,9 @@ import { debounce } from '@/utils/utils.js'
 import { createMenu, delMenu, getMenuLists, updateMenu } from '@/api/menu.js'
 import emitter from '@/utils/mitt.js'
 import BaseTable from '@/utils/table.js'
-const baseTable = new BaseTable();
-baseTable.table.query.menu_name = '';
+
+const baseTable = new BaseTable()
+baseTable.table.query.menu_name = ''
 let menuTable = ref(baseTable.table)
 let menuRef = ref()
 let menu = ref({
@@ -48,8 +49,6 @@ const getUserLise = () => {
     getMenuLists(menuTable.value.query).then((res) => {
         if (res?.code === 200) {
             menuTable.value.rows = res.data
-            // menuTable.value.pagination.total = res.data.total
-            // menuTable.value.query.pageSize = res.data.size
         }
     })
 }
@@ -89,16 +88,15 @@ const handleDelete = (index, row) => {
         cancelButtonText: '取消',
         type: 'warning',
     })
-        .then(() => {
-            delMenu(row).then((res) => {
-                if (res?.code === 200) {
-                    ElMessage({ message: '删除成功', type: 'success' })
-                    getUserLise()
-                    emitter.emit('refreshMenu')
-                } else {
-                    ElMessage.error(`删除失败！${res.message}`)
-                }
-            })
+        .then(() => delMenu(row))
+        .then((res) => {
+            if (res?.code === 200) {
+                ElMessage({ message: '删除成功', type: 'success' })
+                getUserLise()
+                emitter.emit('refreshMenu')
+            } else {
+                ElMessage.error(`删除失败！${res.message}`)
+            }
         })
         .catch(() => {})
 }
@@ -119,33 +117,25 @@ const handleEdit = (index, row) => {
  */
 const saveMenu = () => {
     menuRef.value.ruleFormRef.validate((valid) => {
+        if (!valid) return
+        const handleResponse = (res) => {
+            if (res?.code === 200) {
+                menu.value.dialogVisible = false
+                initMenuInfo()
+                ElMessage({ message: '保存成功', type: 'success' })
+                getUserLise()
+                emitter.emit('refreshMenu')
+            } else {
+                ElMessage.error(`保存失败！${res.message}`)
+            }
+        }
         if (valid) {
             switch (type) {
                 case 'create':
-                    createMenu(menu.value.menuInfo).then((res) => {
-                        if (res?.code === 200) {
-                            menu.value.dialogVisible = false
-                            initMenuInfo()
-                            ElMessage({ message: '保存成功', type: 'success' })
-                            getUserLise()
-                            emitter.emit('refreshMenu')
-                        } else {
-                            ElMessage.error(`保存失败！${res.message}`)
-                        }
-                    })
+                    createMenu(menu.value.menuInfo).then(handleResponse)
                     break
                 case 'edit':
-                    updateMenu(menu.value.menuInfo).then((res) => {
-                        if (res?.code === 200) {
-                            menu.value.dialogVisible = false
-                            initMenuInfo()
-                            ElMessage({ message: '保存成功', type: 'success' })
-                            getUserLise()
-                            emitter.emit('refreshMenu')
-                        } else {
-                            ElMessage.error(`保存失败！${res.message}`)
-                        }
-                    })
+                    updateMenu(menu.value.menuInfo).then(handleResponse)
                     break
                 default:
                     break
@@ -173,10 +163,10 @@ onUnmounted(() => {
 
 <template>
     <div>
-        <div class='mb-20px'>
+        <div class="mb-20px">
             菜单名称
-            <el-input v-model="menuTable.query.menu_name" class='w240px' placeholder="菜单名称" />
-            <el-button class='ml-10px' @click="getUserLise">查询</el-button>
+            <el-input v-model="menuTable.query.menu_name" class="w240px" placeholder="菜单名称" />
+            <el-button class="ml-10px" @click="getUserLise">查询</el-button>
             <el-button type="primary" @click="menuTable.query.menu_name = ''">重置</el-button>
             <el-button type="primary" @click="createMenu1">新增</el-button>
         </div>
@@ -216,7 +206,7 @@ onUnmounted(() => {
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
                     <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除</el-button>
+                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
                 </template>
             </el-table-column>
         </el-table>

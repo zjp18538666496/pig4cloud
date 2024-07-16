@@ -5,6 +5,9 @@ import EditUser from '@/views/user-manager/components/EditUser.vue'
 import { debounce } from '@/utils/utils.js'
 import { createUser, delUser, getUserLists, updateUser } from '@/api/user.js'
 import BaseTable from '@/utils/table.js'
+import { VerifyUser } from '@/utils/vali.js'
+
+const verifyUser = new VerifyUser()
 
 const baseTable = new BaseTable()
 baseTable.table.query.roleName = ''
@@ -21,26 +24,10 @@ const initRoleInfo = () => {
 }
 
 let type = null
-/**
- * 表单验证
- */
-const verifyUsername = (rule, value, callback) => {
-    if (value) {
-        callback()
-    } else {
-        callback(new Error('用户名称不能为空'))
-    }
-}
-const verifyPassword = (rule, value, callback) => {
-    if (value) {
-        callback()
-    } else {
-        callback(new Error('用户编码不能为空'))
-    }
-}
+
 const rules = reactive({
-    roleName: [{ validator: verifyUsername, trigger: 'blur' }],
-    roleCode: [{ validator: verifyPassword, trigger: 'blur' }],
+    roleName: [{ validator: verifyUser.username, trigger: 'blur' }],
+    roleCode: [{ validator: verifyUser.password, trigger: 'blur' }],
 })
 /**
  * 获取用户列表
@@ -81,8 +68,8 @@ const createRole1 = () => {
 
 /**
  * 删除
- * @param index
- * @param row
+ * @param {number} index
+ * @param {Object} row
  */
 const handleDelete = (index, row) => {
     ElMessageBox.confirm(`您确定删除【${row.name}】吗？`, '提示', {
@@ -90,15 +77,14 @@ const handleDelete = (index, row) => {
         cancelButtonText: '取消',
         type: 'warning',
     })
-        .then(() => {
-            delUser(row).then((res) => {
-                if (res?.code === 200) {
-                    ElMessage({ message: '删除成功', type: 'success' })
-                    getUserLise()
-                } else {
-                    ElMessage.error(`删除失败！${res.message}`)
-                }
-            })
+        .then(() => delUser(row))
+        .then((res) => {
+            if (res?.code === 200) {
+                ElMessage({ message: '删除成功', type: 'success' })
+                getUserLise()
+            } else {
+                ElMessage.error(`删除失败！${res.message}`)
+            }
         })
         .catch(() => {})
 }
@@ -120,36 +106,30 @@ const handleEdit = (index, row) => {
  */
 const saveRole = () => {
     roleRef.value.ruleFormRef.validate((valid) => {
-        if (valid) {
-            user.value.roleInfo.role_codes = user.value.roleInfo.role_codes?.join(',')
-            switch (type) {
-                case 'create':
-                    createUser(user.value.roleInfo).then((res) => {
-                        if (res?.code === 200) {
-                            user.value.dialogVisible = false
-                            initRoleInfo()
-                            ElMessage({ message: '保存成功', type: 'success' })
-                            getUserLise()
-                        } else {
-                            ElMessage.error(`保存失败！${res.message}`)
-                        }
-                    })
-                    break
-                case 'edit':
-                    updateUser(user.value.roleInfo).then((res) => {
-                        if (res?.code === 200) {
-                            user.value.dialogVisible = false
-                            initRoleInfo()
-                            ElMessage({ message: '保存成功', type: 'success' })
-                            getUserLise()
-                        } else {
-                            ElMessage.error(`保存失败！${res.message}`)
-                        }
-                    })
-                    break
-                default:
-                    break
+        if (!valid) return
+
+        user.value.roleInfo.role_codes = user.value.roleInfo.role_codes?.join(',')
+
+        const handleResponse = (res) => {
+            if (res?.code === 200) {
+                user.value.dialogVisible = false
+                ElMessage({ message: '保存成功', type: 'success' })
+                initRoleInfo()
+                getUserLise()
+            } else {
+                ElMessage.error(`保存失败！${res.message}`)
             }
+        }
+
+        switch (type) {
+            case 'create':
+                createUser(user.value.roleInfo).then(handleResponse)
+                break
+            case 'edit':
+                updateUser(user.value.roleInfo).then(handleResponse)
+                break
+            default:
+                break
         }
     })
 }
@@ -176,11 +156,11 @@ onUnmounted(() => {
         <div class="mb-20px">
             用户名称
             <el-input v-model="userTable.query.roleName" class="w-240px" placeholder="用户名称" />
-            <el-button style="margin: 0 0 0 10px" @click="getUserLise">查询</el-button>
+            <el-button class="ml-10px" @click="getUserLise">查询</el-button>
             <el-button type="primary" @click="userTable.query.roleName = ''">重置</el-button>
             <el-button type="primary" @click="createRole1">新增</el-button>
         </div>
-        <el-table :data="userTable.rows" border style="width: 100%; overflow: auto" :max-height="userTable.height">
+        <el-table :data="userTable.rows" border class="w-100% overflow-auto mb-10px" :max-height="userTable.height">
             <el-table-column prop="date" label="序号" align="center" width="60">
                 <template #default="scope">
                     <span>{{ scope.$index + 1 }}</span>
@@ -192,8 +172,8 @@ onUnmounted(() => {
             <el-table-column prop="email" label="邮箱" align="center" />
             <el-table-column prop="role_names" label="角色" align="center">
                 <template #default="scope">
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px">
-                        <el-tag type="primary" v-if="scope.row.role_names" v-for="(item, key) in scope.row.role_names.split(',')" :key="key" style="margin-right: 2px">
+                    <div class='flex flex-wrap gap-10px'>
+                        <el-tag type="primary" v-if="scope.row.role_names" v-for="(item, key) in scope.row.role_names.split(',')" :key="key">
                             {{ item }}
                         </el-tag>
                     </div>
@@ -209,7 +189,7 @@ onUnmounted(() => {
                 </template>
             </el-table-column>
         </el-table>
-        <div style="display: flex; justify-content: flex-end; width: 100%">
+        <div class='flex justify-end w-100%'>
             <el-pagination
                 class="mb-20px"
                 v-model:current-page="userTable.query.page"

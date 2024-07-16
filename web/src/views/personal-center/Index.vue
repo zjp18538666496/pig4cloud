@@ -53,11 +53,8 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { delUser, updateUser } from '@/api/user.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
-
 const router = useRouter()
-
 const activeName = ref('basic')
-debugger
 let form = ref(JSON.parse(localStorage.getItem('userinfo')))
 const passwordForm = reactive({
     password: '',
@@ -82,17 +79,14 @@ const logOut = () => {
         cancelButtonText: '取消',
         type: 'info',
     })
-        .then(() => {
-            delUser({
-                username: form.username,
-            }).then((res) => {
-                if (!res) return
-                if (res.code === 200) {
-                    localStorage.clear()
-                    ElMessage({ message: '注销成功', type: 'success' })
-                    router.push('/login')
-                }
-            })
+        .then(() => delUser({ username: form.username }))
+        .then((res) => {
+            if (!res) return
+            if (res.code === 200) {
+                localStorage.clear()
+                ElMessage({ message: '注销成功', type: 'success' })
+                router.push('/login')
+            }
         })
         .catch(() => {})
 }

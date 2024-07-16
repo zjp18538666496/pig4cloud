@@ -95,17 +95,14 @@ const handleDelete = (index, row) => {
         cancelButtonText: '取消',
         type: 'warning',
     })
-        .then(() => {
-            delRole({
-                role_code: row.role_code,
-            }).then((res) => {
-                if (res?.code === 200) {
-                    ElMessage({ message: '删除成功', type: 'success' })
-                    getRoleList()
-                } else {
-                    ElMessage.error(`删除失败！${res.message}`)
-                }
-            })
+        .then(() => delRole({ role_code: row.role_code }))
+        .then((res) => {
+            if (res?.code === 200) {
+                ElMessage({ message: '删除成功', type: 'success' })
+                getRoleList()
+            } else {
+                ElMessage.error(`删除失败！${res.message}`)
+            }
         })
         .catch(() => {})
 }
@@ -128,36 +125,29 @@ const handleEdit = (index, row) => {
 const saveRole = () => {
     role.value.roleInfo.menu_codes = Array.from(new Set([...role.value.roleInfo.menu_codes, ...roleRef.value.HalfCheckedKeys]))
     role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes?.join(',')
+
+    const handleResponse = (res) => {
+        if (res?.code === 200) {
+            role.value.dialogVisible = false
+            initRoleInfo()
+            ElMessage({ message: '保存成功', type: 'success' })
+            getRoleList()
+        } else {
+            ElMessage.error(`保存失败！${res.message}`)
+        }
+    }
+
     roleRef.value.ruleFormRef.validate((valid) => {
-        if (valid) {
-            switch (type) {
-                case 'create':
-                    createRole(role.value.roleInfo).then((res) => {
-                        if (res?.code === 200) {
-                            role.value.dialogVisible = false
-                            initRoleInfo()
-                            ElMessage({ message: '保存成功', type: 'success' })
-                            getRoleList()
-                        } else {
-                            ElMessage.error(`保存失败！${res.message}`)
-                        }
-                    })
-                    break
-                case 'edit':
-                    updateRole(role.value.roleInfo).then((res) => {
-                        if (res?.code === 200) {
-                            role.value.dialogVisible = false
-                            initRoleInfo()
-                            ElMessage({ message: '保存成功', type: 'success' })
-                            getRoleList()
-                        } else {
-                            ElMessage.error(`保存失败！${res.message}`)
-                        }
-                    })
-                    break
-                default:
-                    break
-            }
+        if (!valid) return
+        switch (type) {
+            case 'create':
+                createRole(role.value.roleInfo).then(handleResponse)
+                break
+            case 'edit':
+                updateRole(role.value.roleInfo).then(handleResponse)
+                break
+            default:
+                break
         }
     })
 }
@@ -181,14 +171,14 @@ onUnmounted(() => {
 
 <template>
     <div>
-        <div style="margin-bottom: 20px">
+        <div class="mb-20px">
             角色名称
-            <el-input v-model="roleTable.query.roleName" style="width: 240px" placeholder="角色名称" />
-            <el-button style="margin: 0 0 0 10px" @click="getRoleList">查询</el-button>
+            <el-input v-model="roleTable.query.roleName" class="w240px" placeholder="角色名称" />
+            <el-button class="ml-10px" @click="getRoleList">查询</el-button>
             <el-button type="primary" @click="roleTable.query.roleName = ''">重置</el-button>
             <el-button type="primary" @click="createRole1">新增</el-button>
         </div>
-        <el-table :data="roleTable.rows" border style="width: 100%; overflow: auto" :max-height="roleTable.height">
+        <el-table :data="roleTable.rows" border class="w-100% overflow-auto mb-10px" :max-height="roleTable.height">
             <el-table-column prop="date" label="序号" align="center" width="60">
                 <template #default="scope">
                     <span>{{ scope.$index + 1 }}</span>
@@ -203,8 +193,8 @@ onUnmounted(() => {
             <el-table-column prop="description" label="角色描述" align="center" />
             <el-table-column prop="address" label="菜单权限" align="center">
                 <template #default="scope">
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px">
-                        <el-tag v-for="(item) in scope.row.menu_names?.split(',')" type="primary">{{ item }} </el-tag>
+                    <div class="flex flex-wrap gap-10px">
+                        <el-tag v-for="item in scope.row.menu_names?.split(',')" type="primary">{{ item }}</el-tag>
                     </div>
                 </template>
             </el-table-column>
@@ -216,9 +206,9 @@ onUnmounted(() => {
                 </template>
             </el-table-column>
         </el-table>
-        <div style="display: flex; justify-content: flex-end; width: 100%">
+        <div class="flex justify-end w100%">
             <el-pagination
-                class='mb20px'
+                class="mb20px"
                 v-model:current-page="roleTable.query.page"
                 v-model:page-size="roleTable.query.pageSize"
                 :page-sizes="roleTable.pagination.pageSize"
