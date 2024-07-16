@@ -1,8 +1,13 @@
 package com.pig4cloud.controller;
 
+import com.pig4cloud.dao.Response;
+import com.pig4cloud.dao.impl.ResponseImpl;
+import com.pig4cloud.service.impl.FTPServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -10,13 +15,20 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RestController
 @RequestMapping("/file")
 public class FileController {
+    @Autowired
+    private FTPServiceImpl ftpService;
 
     @PostMapping("/upload")
     public String upload(@RequestParam("imgFile") MultipartFile file, @RequestParam("imgName") String name) throws Exception {
@@ -48,6 +60,39 @@ public class FileController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    /**
+     * 上传多个文件
+     *
+     * @param files 上传的文件列表
+     * @return 响应结果
+     */
+    @PostMapping("/uploadFile")
+    public Response uploadFile(@RequestParam("files") List<MultipartFile> files) {
+        Map<String, Object> responseMessage = new HashMap<>();
+        List<String> successList = new ArrayList<>();
+        List<String> errorList = new ArrayList<>();
+
+        try {
+            String remotePath = "/test/";
+            // 遍历上传的文件列表
+            for (MultipartFile file : files) {
+                try {
+                    // 上传每个文件
+                    ftpService.uploadFile(remotePath, file);
+                    successList.add(remotePath + file.getOriginalFilename());
+                } catch (IOException e) {
+                    errorList.add(file.getOriginalFilename() + "上传失败: " + e.getMessage());
+                }
+            }
+            responseMessage.put("successList", successList);
+            responseMessage.put("errorList", errorList);
+            return new ResponseImpl(200, "上传成功" + successList.size() + "个文件,上传失败" + errorList.size() + "个文件", responseMessage);
+        } catch (Exception e) {
+            return new ResponseImpl(-200, "上传过程中发生错误: " + e.getMessage(), null);
+        }
+    }
+
 
     private String getContentType(Path filePath) {
         String fileName = filePath.getFileName().toString().toLowerCase();

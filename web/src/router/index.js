@@ -25,17 +25,17 @@ const router = createRouter({
             name: '登录',
             component: Login,
         },
-        // {
-        //     path: '/:catchAll(.*)',
-        //     name: '*',
-        //     redirect: '/404',
-        // },
-        // {
-        //     path: '/404',
-        //     name: '/404',
-        //     component: errorPage,
-        //     hidden: true,
-        // },
+        {
+            path: '/:catchAll(.*)',
+            name: '*',
+            redirect: '/404',
+        },
+        {
+            path: '/404',
+            name: '/404',
+            component: errorPage,
+            hidden: true,
+        },
     ],
 })
 

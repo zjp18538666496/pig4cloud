@@ -61,14 +61,16 @@ service.interceptors.response.use(
                     localStorage.clear()
                 } else {
                     const token = localStorage.getItem('refreshToken')
-                    await refreshTokenFn({ refreshToken: token })
-                    const authorization = localStorage.getItem('authorization')
-                    if (authorization) {
-                        response.config.headers['authorization'] = authorization
-                        await service(response.config)
-                    } else {
-                        handleUnauthorized()
-                        localStorage.clear()
+                    let r = await refreshTokenFn({ refreshToken: token })
+                    if (r) {
+                        const authorization = localStorage.getItem('authorization')
+                        if (authorization) {
+                            response.config.headers['authorization'] = authorization
+                            await service(response.config)
+                        } else {
+                            handleUnauthorized()
+                            localStorage.clear()
+                        }
                     }
                 }
                 return
