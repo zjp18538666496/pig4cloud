@@ -35,10 +35,10 @@ const handleUnauthorized = () => {
 // request 拦截器
 service.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token')
-        if (token) {
+        const authorization = localStorage.getItem('authorization')
+        if (authorization) {
             // 每个请求携带 token
-            config.headers['token'] = token
+            config.headers['authorization'] = authorization
         }
         return config
     },
@@ -50,6 +50,10 @@ service.interceptors.request.use(
 // response 拦截器
 service.interceptors.response.use(
     (response) => {
+        const refreshToken = response.headers['refresh-token']
+        const authorization = response.headers['authorization']
+        if (authorization) localStorage.setItem('authorization', authorization)
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
         switch (response.data.code) {
             case 401:
                 handleUnauthorized()

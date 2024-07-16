@@ -1,14 +1,14 @@
 import router from './router'
 import { ElMessageBox } from 'element-plus'
 import DynamicRouter from '@/router/dynamicRouter.js'
-let token = localStorage.getItem('token')
+let authorization = localStorage.getItem('authorization')
 //加载动态路由
-if (token) {
+if (authorization) {
     await new DynamicRouter().addDynamicRoutes()
 }
 await router.beforeEach(async (to, from, next) => {
-    token = localStorage.getItem('token')
-    if (token) {
+    authorization = localStorage.getItem('authorization')
+    if (authorization) {
         if (to.path === '/login') {
             next('/')
         } else {

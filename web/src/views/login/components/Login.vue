@@ -21,8 +21,7 @@ const login1 = () => {
         .then(async (res) => {
             if (res?.code === 200) {
                 ElMessage({ message: '登录成功', type: 'success' })
-                localStorage.setItem('token', res.data.token)
-                localStorage.setItem('userinfo', JSON.stringify(res.data.user))
+                localStorage.setItem('userinfo', JSON.stringify(res.data))
                 await new DynamicRouter().addDynamicRoutes()
                 await router.push('/')
             } else {
