@@ -82,9 +82,14 @@ class SpringSecurityConfig {
                 (authz) -> authz
                         // 允许所有OPTIONS请求
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        //允许登录账号
                         .requestMatchers(HttpMethod.POST, "/api/user/login").permitAll()
+                        //允许注册账号
                         .requestMatchers(HttpMethod.POST, "/user/createUser").permitAll()
+                        //允许访问上传文件夹
                         .requestMatchers(HttpMethod.GET, "/file/**").permitAll()
+                        // 允许刷新令牌请求
+                        .requestMatchers(HttpMethod.POST, "/auth/refresh-token").permitAll()
                         // 允许任意请求被已登录用户访问，不检查Authority
                         .anyRequest().authenticated()
         );

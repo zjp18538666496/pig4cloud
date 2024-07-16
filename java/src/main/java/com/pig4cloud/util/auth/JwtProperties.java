@@ -18,7 +18,18 @@ public class JwtProperties {
         return Keys.hmacShaKeyFor(decodedKey);
     }
 
+
+    /**
+     * 令牌过期时间
+     */
     public Long getExpire() {
         return  60 * 60 *1000L;
+    }
+
+    /**
+     * 长期令牌过期时间
+     */
+    public Long getRefreshExpire() {
+        return 30 * 24 * 60 * 60 *1000L;
     }
 }
