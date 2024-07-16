@@ -7,6 +7,7 @@ import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.entity.UserDetailsEntity;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.util.auth.JwtUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,7 +35,7 @@ public class UserLoginController {
     private final UserMapper userMapper;
 
     @PostMapping
-    public Response doLogin(@RequestBody UserDetailsEntity userDetailsEntity) {
+    public Response doLogin(@RequestBody UserDetailsEntity userDetailsEntity, HttpServletResponse response) {
         try {
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(userDetailsEntity.getUsername(), userDetailsEntity.getPassword());
             Authentication authentication = authenticationManager.authenticate(auth);
@@ -59,8 +60,14 @@ public class UserLoginController {
             Map<String, Object> claims = new HashMap<>();
             claims.put("username", userDetails.getUsername());
             claims.put("authorityString", authorityString);
-            Map<String, Object> userInfo = new HashMap<>();
             String jwtToken = jwtUtils.getJwt(claims);
+            String refreshToken = jwtUtils.getRefreshToken(claims);
+
+            // 在响应头中设置token和刷新token
+            response.setHeader("Authorization", "Bearer " + jwtToken);
+            response.setHeader("Refresh-Token", refreshToken);
+
+            Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("token", jwtToken);
             userInfo.put("user", userEntity);
             return new ResponseImpl(200, "请求成功", userInfo);
