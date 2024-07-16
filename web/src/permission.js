@@ -15,6 +15,7 @@ await router.beforeEach(async (to, from, next) => {
             next()
         }
     } else if (to.path !== '/login') {
+        localStorage.clear()
         await ElMessageBox.confirm('您还没有登录，请先登录', '提示', {
             confirmButtonText: '去登录',
             cancelButtonText: '取消',

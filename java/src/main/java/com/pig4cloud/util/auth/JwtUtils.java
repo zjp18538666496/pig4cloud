@@ -1,7 +1,6 @@
 package com.pig4cloud.util.auth;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -79,12 +79,12 @@ public class JwtUtils {
     }
 
     public String refreshToken(String token) {
-        // 从token中提取subject（用户名）
-        Claims claims = parseJwt(token);
-        String subject = claims.getSubject();
-
-        // 生成新的Access Token
-        Map<String, Object> newClaims = Map.of("sub", subject);
+        Claims claims = parseRefreshToken(token);
+        String username = (String) claims.get("username");
+        String authorityString = (String) claims.get("authorityString");
+        Map<String, Object> newClaims = new HashMap<>();
+        newClaims.put("username", username);
+        newClaims.put("authorityString", authorityString);
         return getJwt(newClaims);
     }
 }
