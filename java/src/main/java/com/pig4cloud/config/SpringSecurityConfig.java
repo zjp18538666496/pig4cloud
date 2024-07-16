@@ -113,8 +113,8 @@ class SpringSecurityConfig {
         http.addFilterBefore(new JwtAuthenticationFilter(authenticationManager), UsernamePasswordAuthenticationFilter.class);
         //自定义处理器
         http.exceptionHandling(exceptionHandling -> exceptionHandling
-                .accessDeniedHandler(authAccessDeniedHandler) //处理用户权限不足
                 .authenticationEntryPoint(authEntryPointHandler) //处理用户未登录（未携带token）
+                .accessDeniedHandler(authAccessDeniedHandler) //处理用户权限不足
         );
         return http.build();
     }
@@ -127,6 +127,8 @@ class SpringSecurityConfig {
         corsConfig.addAllowedHeader("*"); // 允许任何HTTP头
         corsConfig.setAllowCredentials(true); // 允许证书（cookies）
         corsConfig.setMaxAge(3600L); // 预检请求的缓存时间（秒）
+        corsConfig.addExposedHeader("Authorization"); //允许前端访问的头信息
+        corsConfig.addExposedHeader("Refresh-Token"); //允许前端访问的头信息
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfig); // 对所有路径应用这个配置
         return source;

@@ -66,11 +66,8 @@ public class UserLoginController {
             // 在响应头中设置token和刷新token
             response.setHeader("Authorization", "Bearer " + jwtToken);
             response.setHeader("Refresh-Token", refreshToken);
-
-            Map<String, Object> userInfo = new HashMap<>();
-            userInfo.put("token", jwtToken);
-            userInfo.put("user", userEntity);
-            return new ResponseImpl(200, "请求成功", userInfo);
+            
+            return new ResponseImpl(200, "请求成功", userEntity);
         } catch (Exception ex) {
             //用户身份验证失败，返回登陆失败提示
             return new ResponseImpl(-200, "用户名或密码不正确", ex.toString());
