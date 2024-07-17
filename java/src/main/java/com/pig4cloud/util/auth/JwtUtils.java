@@ -78,6 +78,9 @@ public class JwtUtils {
         return claims;
     }
 
+    /**
+     * 刷新token
+     */
     public String refreshToken(String token) {
         Claims claims = parseRefreshToken(token);
         String username = (String) claims.get("username");

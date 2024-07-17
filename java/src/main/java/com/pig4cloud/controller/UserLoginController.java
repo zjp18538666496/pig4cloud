@@ -7,6 +7,7 @@ import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.entity.UserDetailsEntity;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.util.auth.JwtUtils;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,7 +69,31 @@ public class UserLoginController {
             // 在响应头中设置token和刷新token
             response.setHeader("Authorization", "Bearer " + jwtToken);
             response.setHeader("Refresh-Token", refreshToken);
-            
+
+            // 使用URLEncoder来确保Cookie值中没有非法字符
+            String encodedJwtToken = URLEncoder.encode(jwtToken, StandardCharsets.UTF_8);
+            String encodedRefreshToken = URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
+
+            // 创建cookie对象
+            Cookie tokenCookie = new Cookie("Authorization", encodedJwtToken);
+            Cookie refreshTokenCookie = new Cookie("Refresh-Token", encodedRefreshToken);
+
+            // 设置cookie属性
+            tokenCookie.setHttpOnly(false);
+            tokenCookie.setSecure(false);
+            tokenCookie.setPath("/"); // 设置路径为根路径
+//            tokenCookie.setMaxAge(3600); // 1小时
+
+            refreshTokenCookie.setHttpOnly(false);
+            refreshTokenCookie.setSecure(false);
+            refreshTokenCookie.setPath("/");
+//            refreshTokenCookie.setMaxAge(86400); // 1天
+
+            // 将cookie添加到响应中
+            response.addCookie(tokenCookie);
+            response.addCookie(refreshTokenCookie);
+
+
             return new ResponseImpl(200, "请求成功", userEntity);
         } catch (Exception ex) {
             //用户身份验证失败，返回登陆失败提示

@@ -1,6 +1,7 @@
 import router from './router'
-import { ElMessageBox } from 'element-plus'
 import DynamicRouter from '@/router/dynamicRouter.js'
+import { showLoginMessageBox } from '@/utils/loginMessage.js'
+
 let authorization = localStorage.getItem('authorization')
 //加载动态路由
 if (authorization) {
@@ -16,11 +17,7 @@ await router.beforeEach(async (to, from, next) => {
         }
     } else if (to.path !== '/login') {
         localStorage.clear()
-        await ElMessageBox.confirm('您还没有登录，请先登录', '提示', {
-            confirmButtonText: '去登录',
-            cancelButtonText: '取消',
-            type: 'warning',
-        })
+        await showLoginMessageBox
             .then(() => {
                 next('/login')
             })

@@ -9,6 +9,7 @@ export function refreshToken(data) {
     return service({
         url: '/auth/refresh-token',
         method: 'post',
+        isRefreshToken: true,
         data,
     })
         .then((res) => {
