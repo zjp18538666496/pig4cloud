@@ -3,6 +3,7 @@ package com.pig4cloud.controller;
 import com.pig4cloud.dao.Response;
 import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.service.impl.FTPServiceImpl;
+import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -69,17 +70,18 @@ public class FileController {
      */
     @PostMapping("/uploadFile")
     public Response uploadFile(@RequestParam("files") List<MultipartFile> files) {
+        FTPClient ftpClient = new FTPClient();
         Map<String, Object> responseMessage = new HashMap<>();
         List<String> successList = new ArrayList<>();
         List<String> errorList = new ArrayList<>();
-
         try {
+            ftpService.configureFTPClient(ftpClient);
             String remotePath = "/test/";
             // 遍历上传的文件列表
             for (MultipartFile file : files) {
                 try {
                     // 上传每个文件
-                    ftpService.uploadFile(remotePath, file);
+                    ftpService.uploadFile(remotePath, file, ftpClient);
                     successList.add(remotePath + file.getOriginalFilename());
                 } catch (IOException e) {
                     errorList.add(file.getOriginalFilename() + "上传失败: " + e.getMessage());
@@ -90,6 +92,9 @@ public class FileController {
             return new ResponseImpl(200, "上传成功" + successList.size() + "个文件,上传失败" + errorList.size() + "个文件", responseMessage);
         } catch (Exception e) {
             return new ResponseImpl(-200, "上传过程中发生错误: " + e.getMessage(), null);
+        } finally {
+            // 断开FTP客户端连接
+            ftpService.disconnectFTPClient(ftpClient);
         }
     }
 

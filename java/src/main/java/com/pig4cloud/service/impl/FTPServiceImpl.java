@@ -32,6 +32,22 @@ public class FTPServiceImpl {
         try {
             // 配置FTP客户端
             configureFTPClient(ftpClient);
+            uploadFile(remotePath, file, ftpClient);
+        } finally {
+            // 断开FTP客户端连接
+            disconnectFTPClient(ftpClient);
+        }
+    }
+
+    /**
+     * 上传文件到FTP服务器指定路径
+     *
+     * @param remotePath FTP服务器上的目录路径
+     * @param file       要上传的文件
+     * @throws IOException 如果上传失败则抛出异常
+     */
+    public void uploadFile(String remotePath, MultipartFile file, FTPClient ftpClient) throws IOException {
+        try {
             // 确保目录存在
             ensureDirectoryExists(ftpClient, remotePath);
             // 切换到目标目录
@@ -48,11 +64,11 @@ public class FTPServiceImpl {
                     throw new IOException("Failed to upload file " + file.getOriginalFilename());
                 }
             }
-        } finally {
-            // 断开FTP客户端连接
-            disconnectFTPClient(ftpClient);
+        } catch (IOException ex) {
+            throw new IOException("Failed to upload file " + file.getOriginalFilename());
         }
     }
+
 
     /**
      * 配置FTP客户端
@@ -60,7 +76,7 @@ public class FTPServiceImpl {
      * @param ftpClient 要配置的FTP客户端
      * @throws IOException 如果配置失败则抛出异常
      */
-    private void configureFTPClient(FTPClient ftpClient) throws IOException {
+    public void configureFTPClient(FTPClient ftpClient) throws IOException {
         ftpClient.connect(ftpConfig.getServer(), ftpConfig.getPort());
         ftpClient.login(ftpConfig.getUser(), ftpConfig.getPassword());
         ftpClient.enterLocalPassiveMode();
@@ -73,7 +89,7 @@ public class FTPServiceImpl {
      *
      * @param ftpClient 要断开的FTP客户端
      */
-    private void disconnectFTPClient(FTPClient ftpClient) {
+    public void disconnectFTPClient(FTPClient ftpClient) {
         if (ftpClient.isConnected()) {
             try {
                 ftpClient.logout();
