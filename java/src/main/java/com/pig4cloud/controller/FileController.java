@@ -5,6 +5,7 @@ import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.service.impl.FTPServiceImpl;
 import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -62,6 +64,24 @@ public class FileController {
         }
     }
 
+    @GetMapping("/download1")
+    public ResponseEntity<Resource> downloadFile1(@RequestParam String filename) {
+        try {
+            // 设置FTP服务器上的文件路径
+            // 从FTP服务器下载文件
+            InputStream inputStream = ftpService.downloadFile(filename);
+
+            // 设置响应头信息
+            String contentType = getContentType(Path.of(filename));
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .body(new InputStreamResource(inputStream));
+        } catch (IOException ex) {
+            // 处理异常情况
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     /**
      * 上传多个文件
      *

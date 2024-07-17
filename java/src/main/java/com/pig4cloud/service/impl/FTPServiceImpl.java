@@ -69,6 +69,36 @@ public class FTPServiceImpl {
         }
     }
 
+    // 在 FTPServiceImpl 类中添加以下方法
+
+    public InputStream downloadFile(String remoteFilePath) throws IOException {
+        FTPClient ftpClient = new FTPClient();
+        try {
+            configureFTPClient(ftpClient);
+           return downloadFile(remoteFilePath, ftpClient);
+        } catch (IOException ex) {
+            throw new IOException("Failed to download file: " + remoteFilePath, ex);
+        }
+        finally {
+            disconnectFTPClient(ftpClient);
+        }
+    }
+
+    /**
+     * 从FTP服务器下载文件
+     *
+     * @param remoteFilePath FTP服务器上的文件路径
+     * @return 文件输入流
+     * @throws IOException 如果下载失败则抛出异常
+     */
+    public InputStream downloadFile(String remoteFilePath, FTPClient ftpClient) throws IOException {
+        try {
+            return ftpClient.retrieveFileStream(remoteFilePath);
+        } catch (IOException ex) {
+            throw new IOException("Failed to download file: " + remoteFilePath, ex);
+        }
+    }
+
 
     /**
      * 配置FTP客户端
