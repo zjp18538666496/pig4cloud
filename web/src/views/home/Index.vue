@@ -4,17 +4,16 @@
             class="upload-demo"
             :action="uploadUrl"
             :data="extraData"
-            :headers="{ token }"
+            :headers="{ authorization }"
             :on-success="handleSuccess"
             :on-error="handleError"
             :before-upload="beforeUpload"
             :file-list="fileList"
             :name="fileParamName"
+            :multiple='true'
         >
             <el-button size="small" type="primary">点击上传</el-button>
-            <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
         </el-upload>
-<!--        <img class="w50px h50px" src="http://127.0.0.1:9000/file/download?filename=imgFile/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20240322214144.png" alt="" />-->
     </div>
 </template>
 
@@ -22,14 +21,14 @@
 import { ref } from 'vue'
 import { file } from '@/api/file.js'
 
-const uploadUrl = 'http://127.0.0.1:9000/file/upload/' // 后端上传接口地址
+const uploadUrl = 'http://127.0.0.1:9000/file/uploadFile' // 后端上传接口地址
 let extraData = ref({ imgName: '' }) // 额外参数，这里包含文件名
 let fileList = ref([]) // 文件列表
-const token = localStorage.getItem('token')
-const fileParamName = ref('imgFile')
+const authorization = localStorage.getItem('authorization')
+const fileParamName = ref('files')
 const beforeUpload = (file) => {
     // 在文件上传之前设置额外参数
-    extraData.imgName = file.name.split('.')[0] // 获取文件名，不包括扩展名
+    // extraData.imgName = file.name.split('.')[0] // 获取文件名，不包括扩展名
     // 可以在这里添加文件类型和大小的校验
 }
 const handleSuccess = (response, file, fileList) => {
