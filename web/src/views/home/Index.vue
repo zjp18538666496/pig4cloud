@@ -14,7 +14,7 @@
             <el-button size="small" type="primary">点击上传</el-button>
             <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
         </el-upload>
-        <img class="w50px h50px" src="http://127.0.0.1:9000/file/download?filename=imgFile/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20240322214144.png" alt="" />
+<!--        <img class="w50px h50px" src="http://127.0.0.1:9000/file/download?filename=imgFile/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20240322214144.png" alt="" />-->
     </div>
 </template>
 
