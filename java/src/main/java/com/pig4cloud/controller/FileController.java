@@ -64,24 +64,35 @@ public class FileController {
         }
     }
 
+    /**
+     * 处理文件下载请求
+     *
+     * @param filename 要下载的文件名（FTP服务器上的路径）
+     * @return 包含文件内容的响应实体
+     */
     @GetMapping("/download1")
-    public ResponseEntity<Resource> downloadFile1(@RequestParam String filename) {
+    public ResponseEntity<InputStreamResource> downloadFile1(@RequestParam("filename") String filename) {
         try {
-            // 设置FTP服务器上的文件路径
-            // 从FTP服务器下载文件
+            // 调用服务层方法下载文件
             InputStream inputStream = ftpService.downloadFile(filename);
+            // 封装文件输入流为Spring的InputStreamResource
+            InputStreamResource resource = new InputStreamResource(inputStream);
 
-            // 设置响应头信息
-            String contentType = getContentType(Path.of(filename));
+            // 设置响应头信息，指定为附件下载
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+
+            // 返回文件流作为响应
             return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                    .body(new InputStreamResource(inputStream));
-        } catch (IOException ex) {
-            // 处理异常情况
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build(); // 如果出错，返回500错误
         }
     }
+
     /**
      * 上传多个文件
      *

@@ -7,18 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-// import java.util.logging.Level;
-// import java.util.logging.Logger;
 
 @Service
 public class FTPServiceImpl {
     @Autowired
     private FTPConfig ftpConfig;
-
-    // private static final Logger LOGGER = Logger.getLogger(FTPServiceImpl.class.getName());
 
     /**
      * 上传文件到FTP服务器指定路径
@@ -32,6 +27,7 @@ public class FTPServiceImpl {
         try {
             // 配置FTP客户端
             configureFTPClient(ftpClient);
+            // 调用上传文件的具体实现方法
             uploadFile(remotePath, file, ftpClient);
         } finally {
             // 断开FTP客户端连接
@@ -40,10 +36,11 @@ public class FTPServiceImpl {
     }
 
     /**
-     * 上传文件到FTP服务器指定路径
+     * 实际执行文件上传到FTP服务器的方法
      *
      * @param remotePath FTP服务器上的目录路径
      * @param file       要上传的文件
+     * @param ftpClient  FTP客户端实例
      * @throws IOException 如果上传失败则抛出异常
      */
     public void uploadFile(String remotePath, MultipartFile file, FTPClient ftpClient) throws IOException {
@@ -58,7 +55,6 @@ public class FTPServiceImpl {
             try (InputStream inputStream = file.getInputStream()) {
                 // 上传文件
                 if (ftpClient.storeFile(fileName, inputStream)) {
-                    // LOGGER.info("File " + file.getOriginalFilename() + " has been uploaded successfully.");
                     System.out.println("File " + file.getOriginalFilename() + " has been uploaded successfully.");
                 } else {
                     throw new IOException("Failed to upload file " + file.getOriginalFilename());
@@ -69,41 +65,98 @@ public class FTPServiceImpl {
         }
     }
 
-    // 在 FTPServiceImpl 类中添加以下方法
-
-    public InputStream downloadFile(String remoteFilePath) throws IOException {
-        FTPClient ftpClient = new FTPClient();
-        try {
-            configureFTPClient(ftpClient);
-           return downloadFile(remoteFilePath, ftpClient);
-        } catch (IOException ex) {
-            throw new IOException("Failed to download file: " + remoteFilePath, ex);
-        }
-        finally {
-            disconnectFTPClient(ftpClient);
-        }
-    }
-
     /**
-     * 从FTP服务器下载文件
+     * 下载文件并返回输入流
      *
      * @param remoteFilePath FTP服务器上的文件路径
      * @return 文件输入流
      * @throws IOException 如果下载失败则抛出异常
      */
-    public InputStream downloadFile(String remoteFilePath, FTPClient ftpClient) throws IOException {
+    public InputStream downloadFile(String remoteFilePath) throws IOException {
+        FTPClient ftpClient = new FTPClient();
+        // 使用管道流实现下载和合并文件的流式处理
+        PipedInputStream pipedInputStream = new PipedInputStream();
+        PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
+
+        // 在新线程中执行下载操作
+        new Thread(() -> {
+            try {
+                // 配置FTP客户端
+                configureFTPClient(ftpClient);
+                // 调用下载文件的具体实现方法
+                downloadFile(remoteFilePath, pipedOutputStream, ftpClient);
+                pipedOutputStream.close(); // 关闭输出流
+            } catch (IOException ex) {
+                try {
+                    pipedOutputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                ex.printStackTrace();
+            } finally {
+                // 断开FTP客户端连接
+                disconnectFTPClient(ftpClient);
+            }
+        }).start();
+
+        return pipedInputStream; // 返回管道输入流，实现流式下载
+    }
+
+    /**
+     * 实际执行文件下载并写入输出流的方法
+     *
+     * @param remoteFilePath FTP服务器上的文件路径
+     * @param outputStream   输出流，用于写入文件内容
+     * @param ftpClient      FTP客户端实例
+     * @throws IOException 如果下载失败则抛出异常
+     */
+    public void downloadFile(String remoteFilePath, OutputStream outputStream, FTPClient ftpClient) throws IOException {
+        int chunkSize = 10 * 1024 * 1024; // 10MB 每块大小
         try {
-            return ftpClient.retrieveFileStream(remoteFilePath);
-        } catch (IOException ex) {
-            throw new IOException("Failed to download file: " + remoteFilePath, ex);
+            // 获取文件大小
+            ftpClient.sendCommand("SIZE " + remoteFilePath);
+            String reply = ftpClient.getReplyString();
+            long fileSize = Long.parseLong(reply.split(" ")[1].trim());
+
+            // 计算分块数
+            int numberOfChunks = (int) Math.ceil((double) fileSize / chunkSize);
+
+            // 分块下载文件
+            for (int i = 0; i < numberOfChunks; i++) {
+                long startByte = (long) i * chunkSize;
+
+//                // 设置下载偏移量
+//                ftpClient.setRestartOffset(startByte);
+                // 设置偏移量
+                ftpClient.sendCommand("REST " + startByte);
+                try (InputStream inputStream = ftpClient.retrieveFileStream(remoteFilePath)) {
+                    if (inputStream == null) {
+                        throw new IOException("Failed to retrieve file stream: " + ftpClient.getReplyString());
+                    }
+
+                    // 缓冲区
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead); // 写入输出流
+                    }
+
+                    // 完成文件传输确认
+                    if (!ftpClient.completePendingCommand()) {
+                        throw new IOException("Failed to complete pending command: " + ftpClient.getReplyString());
+                    }
+                }
+            }
+        } finally {
+            // 不要在这里关闭 outputStream，因为它是外部传入的，应该由外部负责关闭
+            // outputStream.close();
         }
     }
 
-
     /**
-     * 配置FTP客户端
+     * 配置FTP客户端连接参数
      *
-     * @param ftpClient 要配置的FTP客户端
+     * @param ftpClient FTP客户端实例
      * @throws IOException 如果配置失败则抛出异常
      */
     public void configureFTPClient(FTPClient ftpClient) throws IOException {
@@ -111,13 +164,14 @@ public class FTPServiceImpl {
         ftpClient.login(ftpConfig.getUser(), ftpConfig.getPassword());
         ftpClient.enterLocalPassiveMode();
         ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+        ftpClient.setBufferSize(1024 * 1024 * 10); // 设置1MB的缓冲区大小
         ftpClient.setControlEncoding(StandardCharsets.UTF_8.name());
     }
 
     /**
      * 断开FTP客户端连接
      *
-     * @param ftpClient 要断开的FTP客户端
+     * @param ftpClient FTP客户端实例
      */
     public void disconnectFTPClient(FTPClient ftpClient) {
         if (ftpClient.isConnected()) {
@@ -125,7 +179,6 @@ public class FTPServiceImpl {
                 ftpClient.logout();
                 ftpClient.disconnect();
             } catch (IOException ex) {
-                // LOGGER.log(Level.WARNING, "Error disconnecting from FTP server", ex);
                 System.err.println("Error disconnecting from FTP server: " + ex.getMessage());
             }
         }
@@ -134,7 +187,7 @@ public class FTPServiceImpl {
     /**
      * 确保FTP服务器上的目录路径存在，不存在则创建
      *
-     * @param ftpClient FTP客户端
+     * @param ftpClient FTP客户端实例
      * @param dirPath   目录路径
      * @throws IOException 如果操作失败则抛出异常
      */
@@ -146,7 +199,7 @@ public class FTPServiceImpl {
                 currentPath += "/" + dir;
                 if (!ftpClient.changeWorkingDirectory(currentPath)) {
                     ftpClient.makeDirectory(currentPath);
-                    ftpClient.changeWorkingDirectory(currentPath); // 确保目录创建后切换到该目录
+                    ftpClient.changeWorkingDirectory(currentPath);
                 }
             }
         }
