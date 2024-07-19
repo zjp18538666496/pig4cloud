@@ -65,41 +65,12 @@ public class FileController {
     }
 
     /**
-     * 处理文件下载请求
-     *
-     * @param filename 要下载的文件名（FTP服务器上的路径）
-     * @return 包含文件内容的响应实体
-     */
-    @GetMapping("/download1")
-    public ResponseEntity<InputStreamResource> downloadFile1(@RequestParam("filename") String filename) {
-        try {
-            // 调用服务层方法下载文件
-            InputStream inputStream = ftpService.downloadFile(filename);
-            // 封装文件输入流为Spring的InputStreamResource
-            InputStreamResource resource = new InputStreamResource(inputStream);
-
-            // 设置响应头信息，指定为附件下载
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
-
-            // 返回文件流作为响应
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(resource);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build(); // 如果出错，返回500错误
-        }
-    }
-
-    /**
      * 上传多个文件
      *
      * @param files 上传的文件列表
      * @return 响应结果
      */
-    @PostMapping("/uploadFile")
+    @PostMapping("/FTP/uploadFile")
     public Response uploadFile(@RequestParam("files") List<MultipartFile> files) {
         FTPClient ftpClient = new FTPClient();
         Map<String, Object> responseMessage = new HashMap<>();
@@ -129,6 +100,36 @@ public class FileController {
         }
     }
 
+    /**
+     * 处理文件下载请求
+     *
+     * @param filename 要下载的文件名（FTP服务器上的路径）
+     * @return 包含文件内容的响应实体
+     */
+    @GetMapping("/FTP/download1")
+    public ResponseEntity<InputStreamResource> downloadFile1(@RequestParam("filename") String filename) {
+        try {
+            String downloadFileName = filename.substring(filename.lastIndexOf("/") + 1);
+            // 调用服务层方法下载文件
+            InputStream inputStream = ftpService.downloadFile(filename);
+            // 封装文件输入流为Spring的InputStreamResource
+            InputStreamResource resource = new InputStreamResource(inputStream);
+
+            // 设置响应头信息，指定为附件下载
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadFileName + "\"");
+
+            // 返回文件流作为响应
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build(); // 如果出错，返回500错误
+        } finally {
+
+        }
+    }
 
     private String getContentType(Path filePath) {
         String fileName = filePath.getFileName().toString().toLowerCase();

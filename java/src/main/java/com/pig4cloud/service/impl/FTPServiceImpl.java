@@ -1,8 +1,11 @@
 package com.pig4cloud.service.impl;
 
 import com.pig4cloud.config.FTPConfig;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
+@Getter
+@Setter
 @Service
 public class FTPServiceImpl {
     @Autowired
@@ -89,10 +94,8 @@ public class FTPServiceImpl {
             } catch (IOException ex) {
                 try {
                     pipedOutputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (IOException ignored) {
                 }
-                ex.printStackTrace();
             } finally {
                 // 断开FTP客户端连接
                 disconnectFTPClient(ftpClient);
@@ -111,45 +114,46 @@ public class FTPServiceImpl {
      * @throws IOException 如果下载失败则抛出异常
      */
     public void downloadFile(String remoteFilePath, OutputStream outputStream, FTPClient ftpClient) throws IOException {
-        int chunkSize = 10 * 1024 * 1024; // 10MB 每块大小
+        if (remoteFilePath == null || remoteFilePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("Remote file path cannot be null or empty.");
+        }
+        if (outputStream == null) {
+            throw new IllegalArgumentException("Output stream cannot be null.");
+        }
+        if (ftpClient == null) {
+            throw new IllegalArgumentException("FTPClient cannot be null.");
+        }
         try {
             // 获取文件大小
-            ftpClient.sendCommand("SIZE " + remoteFilePath);
-            String reply = ftpClient.getReplyString();
-            long fileSize = Long.parseLong(reply.split(" ")[1].trim());
-
-            // 计算分块数
-            int numberOfChunks = (int) Math.ceil((double) fileSize / chunkSize);
+            int sizeReply = ftpClient.sendCommand("SIZE " + remoteFilePath);
+            if (!FTPReply.isPositiveCompletion(ftpClient.getReplyCode())) {
+                throw new IOException("Failed to get the size of the remote file: " + sizeReply);
+            }
 
             // 分块下载文件
-            for (int i = 0; i < numberOfChunks; i++) {
-                long startByte = (long) i * chunkSize;
+            long startByte = 0;
+            int restReply = ftpClient.sendCommand("REST " + startByte);
+            if (!FTPReply.isPositiveIntermediate(ftpClient.getReplyCode())) {
+                throw new IOException("Failed to set the REST command: " + restReply);
+            }
 
-//                // 设置下载偏移量
-//                ftpClient.setRestartOffset(startByte);
-                // 设置偏移量
-                ftpClient.sendCommand("REST " + startByte);
-                try (InputStream inputStream = ftpClient.retrieveFileStream(remoteFilePath)) {
-                    if (inputStream == null) {
-                        throw new IOException("Failed to retrieve file stream: " + ftpClient.getReplyString());
-                    }
-
-                    // 缓冲区
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                        outputStream.write(buffer, 0, bytesRead); // 写入输出流
-                    }
-
-                    // 完成文件传输确认
-                    if (!ftpClient.completePendingCommand()) {
-                        throw new IOException("Failed to complete pending command: " + ftpClient.getReplyString());
-                    }
+            try (InputStream inputStream = ftpClient.retrieveFileStream(remoteFilePath)) {
+                if (inputStream == null) {
+                    throw new IOException("Failed to retrieve file stream: " + ftpClient.getReplyString());
+                }
+                // 缓冲区
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead); // 写入输出流
+                }
+                // 完成文件传输确认
+                if (!ftpClient.completePendingCommand()) {
+                    throw new IOException("Failed to complete pending command: " + ftpClient.getReplyString());
                 }
             }
-        } finally {
-            // 不要在这里关闭 outputStream，因为它是外部传入的，应该由外部负责关闭
-            // outputStream.close();
+        } catch (IOException ignored) {
+
         }
     }
 
