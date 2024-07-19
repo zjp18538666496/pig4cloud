@@ -132,10 +132,7 @@ public class FTPServiceImpl {
 
             // 分块下载文件
             long startByte = 0;
-            int restReply = ftpClient.sendCommand("REST " + startByte);
-            if (!FTPReply.isPositiveIntermediate(ftpClient.getReplyCode())) {
-                throw new IOException("Failed to set the REST command: " + restReply);
-            }
+            ftpClient.sendCommand("REST " + startByte);
 
             try (InputStream inputStream = ftpClient.retrieveFileStream(remoteFilePath)) {
                 if (inputStream == null) {

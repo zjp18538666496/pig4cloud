@@ -13,6 +13,7 @@
             :multiple='true'
         >
             <el-button size="small" type="primary">点击上传</el-button>
+          <img src="http://127.0.0.1:9000/file/FTP/download1?filename=/test/11.jpg" alt="66">
         </el-upload>
     </div>
 </template>
