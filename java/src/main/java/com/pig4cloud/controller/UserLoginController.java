@@ -68,31 +68,17 @@ public class UserLoginController {
 
             // 在响应头中设置token和刷新token
             response.setHeader("Authorization", "Bearer " + jwtToken);
-            response.setHeader("Refresh-Token", refreshToken);
-
             // 使用URLEncoder来确保Cookie值中没有非法字符
             String encodedJwtToken = URLEncoder.encode(jwtToken, StandardCharsets.UTF_8);
-            String encodedRefreshToken = URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
-
             // 创建cookie对象
             Cookie tokenCookie = new Cookie("Authorization", encodedJwtToken);
-            Cookie refreshTokenCookie = new Cookie("Refresh-Token", encodedRefreshToken);
-
             // 设置cookie属性
-            tokenCookie.setHttpOnly(false);
+            tokenCookie.setHttpOnly(true);
             tokenCookie.setSecure(false);
             tokenCookie.setPath("/"); // 设置路径为根路径
-//            tokenCookie.setMaxAge(3600); // 1小时
-
-            refreshTokenCookie.setHttpOnly(false);
-            refreshTokenCookie.setSecure(false);
-            refreshTokenCookie.setPath("/");
-//            refreshTokenCookie.setMaxAge(86400); // 1天
-
             // 将cookie添加到响应中
             response.addCookie(tokenCookie);
-            response.addCookie(refreshTokenCookie);
-
+            response.setHeader("Authorization", "Bearer " + jwtToken);
 
             return new ResponseImpl(200, "请求成功", userEntity);
         } catch (Exception ex) {
