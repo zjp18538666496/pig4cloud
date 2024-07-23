@@ -3,6 +3,7 @@ package com.pig4cloud.controller;
 import com.pig4cloud.dao.Response;
 import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.service.impl.FTPServiceImpl;
+import com.pig4cloud.util.file.FileUtils;
 import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -32,6 +33,9 @@ import java.util.Map;
 public class FileController {
     @Autowired
     private FTPServiceImpl ftpService;
+
+    @Autowired
+    private FileUtils fileUtils;
 
     @PostMapping("/upload")
     public String upload(@RequestParam("imgFile") MultipartFile file, @RequestParam("imgName") String name) throws Exception {
@@ -78,10 +82,10 @@ public class FileController {
         List<String> errorList = new ArrayList<>();
         try {
             ftpService.configureFTPClient(ftpClient);
-            String remotePath = "/test/";
             // 遍历上传的文件列表
             for (MultipartFile file : files) {
                 try {
+                    String remotePath = "/test/" + fileUtils.generateFilePath(file);
                     // 上传每个文件
                     ftpService.uploadFile(remotePath, file, ftpClient);
                     successList.add(remotePath + file.getOriginalFilename());

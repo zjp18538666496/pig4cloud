@@ -1,6 +1,7 @@
 package com.pig4cloud.service.impl;
 
 import com.pig4cloud.config.FTPConfig;
+import com.pig4cloud.util.file.FileUtils;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.net.ftp.FTP;
