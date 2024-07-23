@@ -43,7 +43,7 @@ const handleError = (err, file, fileList) => {
 }
 
 const onImageError= (event) => {
-    event.target.src = 'http://127.0.0.1:8090/api/file/FTP/download1?filename=/test/admin.jpg'
+    //event.target.src = 'http://127.0.0.1:8090/api/file/FTP/download1?filename=/test/admin.jpg'
 }
 
 </script>
