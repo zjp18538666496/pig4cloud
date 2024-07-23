@@ -9,13 +9,17 @@ import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
+import com.pig4cloud.util.file.FileUtils;
 import com.pig4cloud.util.verify.VerifyResult;
 import com.pig4cloud.util.verify.VerifyUser;
+import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
@@ -162,6 +166,26 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public Response updateAvatar(Map<String, Object> map) throws IOException {
+        FileUtils fileUtils = new FileUtils();
+        FTPClient ftpClient = new FTPClient();
+        FTPServiceImpl ftpService = new FTPServiceImpl();
+        Long userId = ((Number) map.get("id")).longValue();
+        MultipartFile file = (MultipartFile) map.get("avatar");
+        String remotePath = "/test/" + fileUtils.generateFilePath(file);
+        ftpService.uploadFile(remotePath, file, ftpClient);
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", userId)
+                .set("avatar", remotePath)
+                .set("update_time", new Timestamp(System.currentTimeMillis()));
+        int updateResult = userMapper.update(null, updateWrapper);
+        if (updateResult > 0) {
+            return new ResponseImpl(200, "更新成功", null);
+        }else {
+            return new ResponseImpl(-200, "更新失败", null);
+        }
+    }
 
 
     @Override

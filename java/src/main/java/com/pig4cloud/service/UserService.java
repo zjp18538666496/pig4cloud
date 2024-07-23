@@ -3,7 +3,9 @@ package com.pig4cloud.service;
 import com.pig4cloud.dao.Response;
 import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Map;
 
 public interface UserService {
@@ -41,8 +43,20 @@ public interface UserService {
     /**
      * 忘记密码 重置密码
      */
-
     Response resetPassword(UserEntity userEntity);
 
+    /**
+     * 更新用户信息
+     * @param map
+     * @return
+     */
     Response updateUser1(Map<String, Object> map);
+
+    /**
+     * 更新用户头像
+     * @param map
+     * @return
+     * @throws IOException
+     */
+    Response updateAvatar(Map<String, Object> map) throws IOException;
 }
