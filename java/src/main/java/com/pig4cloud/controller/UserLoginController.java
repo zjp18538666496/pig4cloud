@@ -66,8 +66,6 @@ public class UserLoginController {
             String jwtToken = jwtUtils.getJwt(claims);
             String refreshToken = jwtUtils.getRefreshToken(claims);
 
-            // 在响应头中设置token和刷新token
-            response.setHeader("Authorization", "Bearer " + jwtToken);
             // 使用URLEncoder来确保Cookie值中没有非法字符
             String encodedJwtToken = URLEncoder.encode(jwtToken, StandardCharsets.UTF_8);
             // 创建cookie对象
@@ -78,6 +76,7 @@ public class UserLoginController {
             tokenCookie.setPath("/"); // 设置路径为根路径
             // 将cookie添加到响应中
             response.addCookie(tokenCookie);
+            response.setHeader("Refresh-Token", refreshToken);
             response.setHeader("Authorization", "Bearer " + jwtToken);
 
             return new ResponseImpl(200, "请求成功", userEntity);
