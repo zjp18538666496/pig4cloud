@@ -3,7 +3,6 @@ package com.pig4cloud.service;
 import com.pig4cloud.dao.Response;
 import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
@@ -19,11 +18,6 @@ public interface UserService {
      * 创建用户
      */
     Response createUser(UserEntity userEntity);
-
-    /**
-     * 修改用户信息
-     */
-    Response updateUser(UserEntity userEntity);
 
     /**
      * 删除用户

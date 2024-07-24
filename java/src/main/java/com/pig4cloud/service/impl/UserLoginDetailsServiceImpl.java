@@ -38,6 +38,5 @@ public class UserLoginDetailsServiceImpl implements UserDetailsService {
         return new UserDetailsEntity(userEntity.getUsername(), userEntity.getPassword(),
                 AuthorityUtils.commaSeparatedStringToAuthorityList(stringJoiner.toString())
         );
-
     }
 }

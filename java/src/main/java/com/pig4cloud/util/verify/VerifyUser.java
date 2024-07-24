@@ -44,7 +44,6 @@ public class VerifyUser {
         if (!verify().isValid()) {
             return VerifyResult.invalid(verify.getMessage());
         }
-//        return VerifyResult.valid("用户不存在");
         // 构建查询条件，查询数据库中是否存在指定用户名的用户
         QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", username);

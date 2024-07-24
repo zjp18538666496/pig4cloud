@@ -38,54 +38,20 @@ public class UserServiceImpl implements UserService {
     RoleMapper roleMapper;
 
     public Response createUser(UserEntity userEntity) {
-        verifyUser.setUsername(userEntity.getUsername());
-        verifyUser.setPassword(userEntity.getPassword());
+        String username = userEntity.getUsername();
+        String password = userEntity.getPassword();
+        verifyUser.setUsername(username);
+        verifyUser.setPassword(password);
         VerifyResult verify = verifyUser.creactVerify();
-        if (verify.isValid()) {
-            String password = userEntity.getPassword();
-            password = new BCryptPasswordEncoder().encode(password);
-            userEntity.setPassword(password);
-            userEntity.setName(userEntity.getUsername());
-            userEntity.setCreate_time(new Timestamp(System.currentTimeMillis()));
-            int rows = userMapper.insert(userEntity);
-            return new ResponseImpl(200, rows > 0 ? "注册成功" : "注册失败", null);
-        } else {
+        if (!verify.isValid()) {
             return new ResponseImpl(-200, verify.getMessage(), null);
         }
-    }
-
-    @Override
-    public Response updateUser(UserEntity userEntity) {
-//        verifyUser.setUsername(userEntity.getUsername());
-//        verifyUser.setPassword(userEntity.getPassword());
-//        VerifyResult verify = verifyUser.updateVerify();
-//        if (verify.isValid()) {
-//            String password = userEntity.getPassword();
-//            password = new BCryptPasswordEncoder().encode(password);
-//            userEntity.setPassword(password);
-//            UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
-//            updateWrapper.eq("username", userEntity.getUsername())
-//                    .set("password", password)
-//                    .set("name", userEntity.getName())
-//                    .set("email", userEntity.getEmail())
-//                    .set("mobile", userEntity.getMobile())
-//                    .set("update_time", new Timestamp(System.currentTimeMillis()));
-//
-//            int rows = userMapper.update(null, updateWrapper);
-//            return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", userEntity);
-//        } else {
-//            return new ResponseImpl(-200, verify.getMessage(), null);
-//        }
-        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
-        userEntity.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-        updateWrapper.eq("username", userEntity.getUsername())
-                .set("name", userEntity.getName())
-                .set("email", userEntity.getEmail())
-                .set("mobile", userEntity.getMobile())
-                .set("update_time", userEntity.getUpdate_time());
-
-        int rows = userMapper.update(null, updateWrapper);
-        return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", userEntity);
+        password = new BCryptPasswordEncoder().encode(password);
+        userEntity.setPassword(password);
+        userEntity.setName(userEntity.getUsername());
+        userEntity.setCreate_time(new Timestamp(System.currentTimeMillis()));
+        int rows = userMapper.insert(userEntity);
+        return new ResponseImpl(200, rows > 0 ? "注册成功" : "注册失败", null);
     }
 
     @Override
@@ -169,22 +135,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public Response updateAvatar(Map<String, Object> map) throws IOException {
         FileUtils fileUtils = new FileUtils();
-        FTPClient ftpClient = new FTPClient();
         FTPServiceImpl ftpService = new FTPServiceImpl();
         Long userId = ((Number) map.get("id")).longValue();
         MultipartFile file = (MultipartFile) map.get("avatar");
         String remotePath = "/test/" + fileUtils.generateFilePath(file);
-        ftpService.uploadFile(remotePath, file, ftpClient);
+        ftpService.uploadFile(remotePath, file);
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", userId)
                 .set("avatar", remotePath)
                 .set("update_time", new Timestamp(System.currentTimeMillis()));
         int updateResult = userMapper.update(null, updateWrapper);
-        if (updateResult > 0) {
-            return new ResponseImpl(200, "更新成功", null);
-        }else {
-            return new ResponseImpl(-200, "更新失败", null);
-        }
+        return new ResponseImpl(updateResult > 0 ? 200 : -200, updateResult > 0 ? "更新成功" : "更新失败", null);
     }
 
 
