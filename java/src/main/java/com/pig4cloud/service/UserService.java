@@ -32,12 +32,12 @@ public interface UserService {
     /**
      * 更新密码
      */
-    Response updatePassword(UserEntity userEntity);
+    Response updatePassword(Map<String, Object> map);
 
     /**
      * 忘记密码 重置密码
      */
-    Response resetPassword(UserEntity userEntity);
+    Response resetPassword(Map<String, Object> map);
 
     /**
      * 更新用户信息

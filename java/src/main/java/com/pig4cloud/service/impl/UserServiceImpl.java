@@ -12,7 +12,6 @@ import com.pig4cloud.service.UserService;
 import com.pig4cloud.util.file.FileUtils;
 import com.pig4cloud.util.verify.VerifyResult;
 import com.pig4cloud.util.verify.VerifyUser;
-import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,13 +36,16 @@ public class UserServiceImpl implements UserService {
     @Autowired
     RoleMapper roleMapper;
 
+    @Autowired
+    private FileUtils fileUtils;
+
     public Response createUser(UserEntity userEntity) {
         String username = userEntity.getUsername();
         String password = userEntity.getPassword();
         verifyUser.setUsername(username);
         verifyUser.setPassword(password);
         VerifyResult verify = verifyUser.creactVerify();
-        if (!verify.isValid()) {
+        if (!verify.getValid()) {
             return new ResponseImpl(-200, verify.getMessage(), null);
         }
         password = new BCryptPasswordEncoder().encode(password);
@@ -74,13 +76,36 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Response updatePassword(UserEntity userEntity) {
-        return null;
+    public Response updatePassword(Map<String, Object> map) {
+        String username = map.get("username").toString();
+        String password = map.get("password").toString();
+        QueryWrapper<UserEntity> wrapper = new QueryWrapper<>();
+        wrapper.eq("username", username);
+        UserEntity user = userMapper.selectOne(wrapper);
+        VerifyResult verifyResult = verifyUser.updatePasswordVerify(user.getPassword(), password);
+        if (!verifyResult.getValid()) {
+            return new ResponseImpl(-200, verifyResult.getMessage(), null);
+        }
+        String newPassword = new BCryptPasswordEncoder().encode(password);
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("username", username);
+        updateWrapper.set("password", newPassword);
+        updateWrapper.set("create_time", new Timestamp(System.currentTimeMillis()));
+        int rows = userMapper.update(updateWrapper);
+        return new ResponseImpl(200, rows > 0 ? "更新成功" : "更新失败", null);
     }
 
     @Override
-    public Response resetPassword(UserEntity userEntity) {
-        return null;
+    public Response resetPassword(Map<String, Object> map) {
+        String username = map.get("username").toString();
+        String password = map.get("password").toString();
+        String newPassword = new BCryptPasswordEncoder().encode(password);
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("username", username);
+        updateWrapper.set("password", newPassword);
+        updateWrapper.set("create_time", new Timestamp(System.currentTimeMillis()));
+        int rows = userMapper.update(updateWrapper);
+        return new ResponseImpl(200, rows > 0 ? "重置成功" : "重置失败", null);
     }
 
     @Override
@@ -134,11 +159,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response updateAvatar(Map<String, Object> map) throws IOException {
-        FileUtils fileUtils = new FileUtils();
         FTPServiceImpl ftpService = new FTPServiceImpl();
-        Long userId = ((Number) map.get("id")).longValue();
         MultipartFile file = (MultipartFile) map.get("avatar");
         String remotePath = "/test/" + fileUtils.generateFilePath(file);
+        Long userId = ((Number) map.get("id")).longValue();
         ftpService.uploadFile(remotePath, file);
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", userId)

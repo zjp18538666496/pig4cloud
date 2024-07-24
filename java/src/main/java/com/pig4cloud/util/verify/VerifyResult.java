@@ -1,5 +1,8 @@
 package com.pig4cloud.util.verify;
 
+import lombok.Getter;
+
+@Getter
 public class VerifyResult {
     private final boolean valid;
     private final String message;
@@ -17,11 +20,7 @@ public class VerifyResult {
         return new VerifyResult(false, message);
     }
 
-    public boolean isValid() {
+    public boolean getValid() {
         return valid;
-    }
-
-    public String getMessage() {
-        return message;
     }
 }

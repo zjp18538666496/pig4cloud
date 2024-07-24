@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Map;
+
 @Controller
 @RestController
 @RequestMapping("/user")
@@ -22,7 +23,7 @@ public class UserController {
     }
 
     @PostMapping("/getUserList")
-    public Response getUserList(@RequestBody UserDto userDto){
+    public Response getUserList(@RequestBody UserDto userDto) {
         return userService.getUserLists(userDto);
     }
 
@@ -35,8 +36,6 @@ public class UserController {
     public Response createUser(@RequestBody UserEntity userEntity) {
         return userService.createUser(userEntity);
     }
-
-
 
     @PostMapping("/updateUser1")
     public Response updateUser(@RequestBody Map<String, Object> map) {
@@ -51,5 +50,15 @@ public class UserController {
     @PostMapping("/updateAvatar")
     public Response updateAvatar(@RequestBody Map<String, Object> map) throws IOException {
         return userService.updateAvatar(map);
+    }
+
+    @PostMapping("/updatePassword")
+    public Response updatePassword(@RequestBody Map<String, Object> map) {
+        return userService.updatePassword(map);
+    }
+
+    @PostMapping("/resetPassword")
+    public Response resetPassword(@RequestBody Map<String, Object> map) {
+        return userService.resetPassword(map);
     }
 }
