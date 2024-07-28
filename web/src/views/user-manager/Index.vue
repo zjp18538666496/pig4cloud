@@ -172,7 +172,7 @@ onUnmounted(() => {
             <el-table-column prop="email" label="邮箱" align="center" />
             <el-table-column prop="role_names" label="角色" align="center">
                 <template #default="scope">
-                    <div class='flex flex-wrap gap-10px'>
+                    <div class="flex flex-wrap gap-10px">
                         <el-tag type="primary" v-if="scope.row.role_names" v-for="(item, key) in scope.row.role_names.split(',')" :key="key">
                             {{ item }}
                         </el-tag>
@@ -189,7 +189,7 @@ onUnmounted(() => {
                 </template>
             </el-table-column>
         </el-table>
-        <div class='flex justify-end w-100%'>
+        <div class="flex justify-end w-100%">
             <el-pagination
                 class="mb-20px"
                 v-model:current-page="userTable.query.page"

@@ -8,7 +8,7 @@ class VerifyUser {
         }
     }
 
-    password = (rule, value, callback ) => {
+    password = (rule, value, callback) => {
         if (valiPassword(value)) {
             callback()
         } else {
@@ -17,28 +17,28 @@ class VerifyUser {
     }
 
     newPassword = (rule, value, callback, source) => {
-        const { password } = source;
+        const { password } = source
         if (valiPassword(value)) {
             if (value === password) {
-                callback(new Error('新密码不能与旧密码相同'));
+                callback(new Error('新密码不能与旧密码相同'))
             } else {
-                callback();
+                callback()
             }
         } else {
-            callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'));
+            callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'))
         }
     }
 
     confirmPassword = (rule, value, callback, source) => {
-        const { newPassword } = source;
+        const { newPassword } = source
         if (valiPassword(value)) {
             if (value === newPassword) {
-                callback();
+                callback()
             } else {
-                callback(new Error('确认密码与新密码不一致'));
+                callback(new Error('确认密码与新密码不一致'))
             }
         } else {
-            callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'));
+            callback(new Error('请输入4到18位的密码，支持字母、数字和特殊字符'))
         }
     }
 }

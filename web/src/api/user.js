@@ -76,4 +76,3 @@ export function updatePassword(data) {
         data,
     })
 }
-

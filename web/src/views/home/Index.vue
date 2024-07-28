@@ -10,12 +10,12 @@
             :before-upload="beforeUpload"
             :file-list="fileList"
             :name="fileParamName"
-            :multiple='true'
+            :multiple="true"
         >
             <el-button size="small" type="primary">点击上传</el-button>
         </el-upload>
     </div>
-<!--    <img src='http://127.0.0.1:8090/api/file/FTP/download1?filename=/test1/admin.jpg' @error="onImageError" alt='1'/>-->
+    <!--    <img src='http://127.0.0.1:8090/api/file/FTP/download1?filename=/test1/admin.jpg' @error="onImageError" alt='1'/>-->
 </template>
 
 <script setup>
@@ -41,10 +41,9 @@ const handleError = (err, file, fileList) => {
     this.$message.error('上传失败，请重试！')
 }
 
-const onImageError= (event) => {
+const onImageError = (event) => {
     //event.target.src = 'http://127.0.0.1:8090/api/file/FTP/download1?filename=/test/admin.jpg'
 }
-
 </script>
 
 <style>

@@ -30,7 +30,7 @@ import { ArrowDown } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import presonalCenter from '@/views/personal-center/Index.vue'
-const baseUrl = import.meta.env.VITE_BASE_URL;
+const baseUrl = import.meta.env.VITE_BASE_URL
 const drawer = ref(false)
 const router = useRouter()
 // 用户信息

@@ -1,10 +1,9 @@
 <template>
     <el-tabs v-model="activeName" class="demo-tabs">
         <el-tab-pane label="基本信息" name="basic">
-
             <el-form :model="form" label-width="auto" style="max-width: 600px">
                 <el-form-item label="  ">
-                  <el-avatar :size="150" shape="circle" :src="baseUrl + form.avatar" />
+                    <el-avatar :size="150" shape="circle" :src="baseUrl + form.avatar" />
                 </el-form-item>
                 <el-form-item label="昵称">
                     <el-input v-model="form.name" />
@@ -55,11 +54,11 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {delUser, updatePassword, updateUser} from '@/api/user.js'
+import { delUser, updatePassword, updateUser } from '@/api/user.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {VerifyUser} from "@/utils/vali.js";
+import { VerifyUser } from '@/utils/vali.js'
 const verifyUser = new VerifyUser()
-const baseUrl = import.meta.env.VITE_BASE_URL;
+const baseUrl = import.meta.env.VITE_BASE_URL
 const router = useRouter()
 const activeName = ref('basic')
 const formEl = ref()
@@ -101,42 +100,54 @@ const logOut = () => {
 }
 
 const rules = reactive({
-  password: [{ validator: verifyUser.password, trigger: 'blur' }],
-  newPassword: [{ validator: (rule, value, callback) => {
-      verifyUser.newPassword(rule, value, callback, passwordForm);
-    }, trigger: 'blur' }],
-  confirmPassword: [{ validator: (rule, value, callback) => {
-      verifyUser.confirmPassword(rule, value, callback, passwordForm);
-    }, trigger: 'blur' }],
+    password: [{ validator: verifyUser.password, trigger: 'blur' }],
+    newPassword: [
+        {
+            validator: (rule, value, callback) => {
+                verifyUser.newPassword(rule, value, callback, passwordForm)
+            },
+            trigger: 'blur',
+        },
+    ],
+    confirmPassword: [
+        {
+            validator: (rule, value, callback) => {
+                verifyUser.confirmPassword(rule, value, callback, passwordForm)
+            },
+            trigger: 'blur',
+        },
+    ],
 })
 
 const updatePassword1 = () => {
-  updatePassword({
-    password: passwordForm.password,
-    newPassword: passwordForm.newPassword
-  }).then((res)=> {
-    if (res?.code === 200) {
-      ElMessage({ message: '更新成功', type: 'success' })
-    } else {
-      ElMessage.error(`更新失败！${res.message}`)
-    }
-  }).finally(() => {
-    loading.value = false
-  })
+    updatePassword({
+        password: passwordForm.password,
+        newPassword: passwordForm.newPassword,
+    })
+        .then((res) => {
+            if (res?.code === 200) {
+                ElMessage({ message: '更新成功', type: 'success' })
+            } else {
+                ElMessage.error(`更新失败！${res.message}`)
+            }
+        })
+        .finally(() => {
+            loading.value = false
+        })
 }
 
-const submitForm= (formEl) => {
-  loading.value = true
-  if (!formEl) {
-    loading.value = false
-    return
-  }
-  formEl.validate((valid) => {
-    if (valid) {
-      updatePassword1()
-      return
+const submitForm = (formEl) => {
+    loading.value = true
+    if (!formEl) {
+        loading.value = false
+        return
     }
-    loading.value = false
-  })
+    formEl.validate((valid) => {
+        if (valid) {
+            updatePassword1()
+            return
+        }
+        loading.value = false
+    })
 }
 </script>

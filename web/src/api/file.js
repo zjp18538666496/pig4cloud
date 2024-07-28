@@ -8,6 +8,6 @@ import service from '@/utils/request.js'
 export function file(data) {
     return service({
         url: `/file/download?filename=${data.filename}`,
-        method: 'get'
+        method: 'get',
     })
 }
