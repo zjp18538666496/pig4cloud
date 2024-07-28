@@ -32,9 +32,6 @@ public class MenuEntity {
     // 级别
     private String level;
 
-    //头像
-    private String avatar;
-
     @TableField(exist = false)
     private Boolean disabled = false;
 

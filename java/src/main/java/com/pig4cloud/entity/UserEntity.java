@@ -38,6 +38,9 @@ public class UserEntity {
      */
     private String email;
 
+    //头像
+    private String avatar;
+
     /**
      * 创建时间
      */
