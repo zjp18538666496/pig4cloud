@@ -51,6 +51,11 @@ export function delUser(data) {
     })
 }
 
+/**
+ * 获取用户列表
+ * @param data
+ * @returns {*}
+ */
 export function getUserLists(data) {
     return service({
         url: '/user/getUserList',
@@ -58,3 +63,17 @@ export function getUserLists(data) {
         data,
     })
 }
+
+/**
+ * 更新用户密码
+ * @param data
+ * @returns {*}
+ */
+export function updatePassword(data) {
+    return service({
+        url: '/user/updatePassword',
+        method: 'POST',
+        data,
+    })
+}
+

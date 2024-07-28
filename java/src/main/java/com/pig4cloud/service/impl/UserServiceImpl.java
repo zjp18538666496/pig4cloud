@@ -13,6 +13,8 @@ import com.pig4cloud.util.file.FileUtils;
 import com.pig4cloud.util.verify.VerifyResult;
 import com.pig4cloud.util.verify.VerifyUser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,16 +79,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response updatePassword(Map<String, Object> map) {
-        String username = map.get("username").toString();
-        String password = map.get("password").toString();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        if (username == null) {
+            return new ResponseImpl(-200, "获取用户信息失败", null);
+        }
+        String oldPassword = map.get("password").toString();
+        String newPassword = map.get("newPassword").toString();
         QueryWrapper<UserEntity> wrapper = new QueryWrapper<>();
         wrapper.eq("username", username);
         UserEntity user = userMapper.selectOne(wrapper);
-        VerifyResult verifyResult = verifyUser.updatePasswordVerify(user.getPassword(), password);
+        VerifyResult verifyResult = verifyUser.updatePasswordVerify(oldPassword, newPassword, user.getPassword());
         if (!verifyResult.getValid()) {
             return new ResponseImpl(-200, verifyResult.getMessage(), null);
         }
-        String newPassword = new BCryptPasswordEncoder().encode(password);
+        newPassword = new BCryptPasswordEncoder().encode(newPassword);
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("username", username);
         updateWrapper.set("password", newPassword);

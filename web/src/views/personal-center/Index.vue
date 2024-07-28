@@ -1,7 +1,11 @@
 <template>
     <el-tabs v-model="activeName" class="demo-tabs">
         <el-tab-pane label="基本信息" name="basic">
+
             <el-form :model="form" label-width="auto" style="max-width: 600px">
+                <el-form-item label="  ">
+                  <el-avatar :size="150" shape="circle" :src="baseUrl + form.avatar" />
+                </el-form-item>
                 <el-form-item label="昵称">
                     <el-input v-model="form.name" />
                 </el-form-item>
@@ -30,18 +34,18 @@
             </el-form>
         </el-tab-pane>
         <el-tab-pane label="安全信息" name="second">
-            <el-form :model="passwordForm" label-width="auto" style="max-width: 600px">
-                <el-form-item label="原密码">
-                    <el-input v-model="passwordForm.password" />
+            <el-form ref="formEl" :rules="rules" :model="passwordForm" label-width="auto" style="max-width: 600px">
+                <el-form-item prop="password" label="原密码">
+                    <el-input type="password" v-model="passwordForm.password" show-password />
                 </el-form-item>
-                <el-form-item label="新密码">
-                    <el-input v-model="passwordForm.newPassword" />
+                <el-form-item prop="newPassword" label="新密码">
+                    <el-input type="password" v-model="passwordForm.newPassword" show-password />
                 </el-form-item>
-                <el-form-item label="确认密码">
-                    <el-input v-model="passwordForm.confirmPassword" />
+                <el-form-item prop="confirmPassword" label="确认密码">
+                    <el-input type="password" v-model="passwordForm.confirmPassword" show-password />
                 </el-form-item>
                 <el-form-item>
-                    <el-button @click="upadtePassword">更新密码</el-button>
+                    <el-button :loading="loading" @click="submitForm(formEl)">更新密码</el-button>
                 </el-form-item>
             </el-form>
         </el-tab-pane>
@@ -51,10 +55,15 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { delUser, updateUser } from '@/api/user.js'
+import {delUser, updatePassword, updateUser} from '@/api/user.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {VerifyUser} from "@/utils/vali.js";
+const verifyUser = new VerifyUser()
+const baseUrl = import.meta.env.VITE_BASE_URL;
 const router = useRouter()
 const activeName = ref('basic')
+const formEl = ref()
+let loading = ref(false)
 let form = ref(JSON.parse(localStorage.getItem('userinfo')))
 const passwordForm = reactive({
     password: '',
@@ -91,5 +100,43 @@ const logOut = () => {
         .catch(() => {})
 }
 
-const upadtePassword = () => {}
+const rules = reactive({
+  password: [{ validator: verifyUser.password, trigger: 'blur' }],
+  newPassword: [{ validator: (rule, value, callback) => {
+      verifyUser.newPassword(rule, value, callback, passwordForm);
+    }, trigger: 'blur' }],
+  confirmPassword: [{ validator: (rule, value, callback) => {
+      verifyUser.confirmPassword(rule, value, callback, passwordForm);
+    }, trigger: 'blur' }],
+})
+
+const updatePassword1 = () => {
+  updatePassword({
+    password: passwordForm.password,
+    newPassword: passwordForm.newPassword
+  }).then((res)=> {
+    if (res?.code === 200) {
+      ElMessage({ message: '更新成功', type: 'success' })
+    } else {
+      ElMessage.error(`更新失败！${res.message}`)
+    }
+  }).finally(() => {
+    loading.value = false
+  })
+}
+
+const submitForm= (formEl) => {
+  loading.value = true
+  if (!formEl) {
+    loading.value = false
+    return
+  }
+  formEl.validate((valid) => {
+    if (valid) {
+      updatePassword1()
+      return
+    }
+    loading.value = false
+  })
+}
 </script>

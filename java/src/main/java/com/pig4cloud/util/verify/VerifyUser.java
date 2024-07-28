@@ -70,12 +70,15 @@ public class VerifyUser {
         }
     }
 
-    public VerifyResult updatePasswordVerify(String oldPassword, String newPassword) {
+    public VerifyResult updatePasswordVerify(String oldPassword, String newPassword ,String dbPassword) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        if (!isValidPassword(newPassword)) {
+        if (!isValidPassword(oldPassword) || !isValidPassword(newPassword)) {
             return VerifyResult.invalid("请输入4到18位的密码，支持字母、数字和特殊字符");
         }
-        if (encoder.matches(oldPassword, newPassword)) {
+        if(!encoder.matches(oldPassword, dbPassword)){
+            return VerifyResult.invalid("密码不正确");
+        }
+        if (encoder.matches(newPassword, dbPassword)) {
             return VerifyResult.invalid("密码不能和之前一样");
         }
         return VerifyResult.valid("校验通过");

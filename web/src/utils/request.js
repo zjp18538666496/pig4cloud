@@ -50,11 +50,13 @@ service.interceptors.response.use(
         if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
         switch (response.data.code) {
             case 401:
+            case 403:
                 if (response.config.isRefreshToken) {
                     localStorage.clear()
-                    await showLoginMessageBox().then(() => {
+                    const isLogin = await showLoginMessageBox()
+                    if (isLogin) {
                         window.location = '/login'
-                    })
+                    }
                 } else {
                     await retryRequest(response.config)
                 }
@@ -63,10 +65,12 @@ service.interceptors.response.use(
                 return response.data
         }
     },
-    (error) => {
+    async (error) => {
         if (error?.response?.status === 401) {
             localStorage.clear()
-            showLoginMessageBox()
+            await showLoginMessageBox().then(() => {
+                window.location = '/login'
+            })
         } else {
             ElMessage({ message: error.message || error, type: 'error' })
         }
