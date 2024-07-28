@@ -59,14 +59,12 @@ service.interceptors.response.use(
                     await retryRequest(response.config)
                 }
                 return
-            case 403:
-                return retryRequest(response.config)
             default:
                 return response.data
         }
     },
     (error) => {
-        if (error?.response?.status === 403) {
+        if (error?.response?.status === 401) {
             localStorage.clear()
             showLoginMessageBox()
         } else {
