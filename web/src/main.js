@@ -13,6 +13,7 @@ import router from './router'
 import './permission'
 
 const app = createApp(App)
+app.config.globalProperties.$baseUrl = import.meta.env.VITE_BASE_URL
 const pinia = createPinia()
 pinia.use(piniaPersist)
 app.use(pinia)
