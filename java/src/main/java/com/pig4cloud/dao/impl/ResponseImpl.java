@@ -16,12 +16,14 @@ public class ResponseImpl implements Response {
     private String message;
     private Object data;
 
+    public ResponseImpl() {
+    }
+
     public ResponseImpl(int code, String message, Object data) {
         this.code = code;
         this.message = message;
         this.data = data;
     }
-
 
     public void pagination1(List<?> rows) {
         Map<String, Object> dataMap = new HashMap<>();
