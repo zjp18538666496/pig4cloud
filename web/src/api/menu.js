@@ -1,7 +1,7 @@
 import service from '@/utils/request.js'
 
 /**
- * 登录
+ * 获取菜单列表
  * @param data
  * @return {*}
  */
@@ -13,6 +13,11 @@ export function getMenuLists(data) {
     })
 }
 
+/**
+ * 获取左侧菜单
+ * @param data
+ * @returns {*}
+ */
 export function selectMenuLists(data) {
     return service({
         url: '/menu/selectMenuLists',
@@ -21,6 +26,11 @@ export function selectMenuLists(data) {
     })
 }
 
+/**
+ * 删除菜单
+ * @param data
+ * @returns {*}
+ */
 export function delMenu(data) {
     return service({
         url: '/menu/delMenu',
@@ -28,6 +38,12 @@ export function delMenu(data) {
         data,
     })
 }
+
+/**
+ * 更新菜单
+ * @param data
+ * @returns {*}
+ */
 export function updateMenu(data) {
     return service({
         url: '/menu/updateMenu',
@@ -36,6 +52,11 @@ export function updateMenu(data) {
     })
 }
 
+/**
+ * 新增菜单
+ * @param data
+ * @returns {*}
+ */
 export function createMenu(data) {
     return service({
         url: '/menu/createMenu',

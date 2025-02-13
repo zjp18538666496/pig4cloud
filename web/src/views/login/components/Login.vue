@@ -28,6 +28,9 @@ const login1 = () => {
                 ElMessage.error(`登录失败！${res.message}`)
             }
         })
+        .catch((error) => {
+            ElMessage.error(`登录失败！${error?.message} (${error?.code})`)
+        })
         .finally(() => {
             loading.value = false
         })

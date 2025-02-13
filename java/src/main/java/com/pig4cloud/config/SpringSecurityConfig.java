@@ -90,6 +90,8 @@ class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/file/**").permitAll()
                         // 允许刷新令牌请求
                         .requestMatchers(HttpMethod.POST, "/auth/refresh-token").permitAll()
+                        // 允许不携带token重置密码
+                        //.requestMatchers(HttpMethod.POST, "/user/resetPassword").permitAll()
                         // 允许任意请求被已登录用户访问，不检查Authority
                         .anyRequest().authenticated()
         );

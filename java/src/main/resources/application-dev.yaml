@@ -1,0 +1,23 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/pigx_admin
+    username: root
+    password: root
+#logging:
+#  level:
+#    root: info
+#    org.springframework.web: debug
+#    org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration: OFF
+#    org.springframework.security: DEBUG
+#    org:
+#      springframework:
+#        boot:
+#          autoconfigure: OFF
+ftp:
+  server: 127.0.0.1
+  port: 21
+  user: root
+  password: root

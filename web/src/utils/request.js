@@ -61,8 +61,10 @@ service.interceptors.response.use(
                     await retryRequest(response.config)
                 }
                 return
+            case 200:
+                return response.data;
             default:
-                return response.data
+                return Promise.reject(response.data)
         }
     },
     async (error) => {

@@ -37,6 +37,13 @@ public class FileController {
     @Autowired
     private FileUtils fileUtils;
 
+    /**
+     * 上传文件
+     * @param file
+     * @param name
+     * @return
+     * @throws Exception
+     */
     @PostMapping("/upload")
     public String upload(@RequestParam("imgFile") MultipartFile file, @RequestParam("imgName") String name) throws Exception {
         // 设置上传至项目文件夹下的uploadFile文件夹中，没有文件夹则创建
@@ -45,6 +52,11 @@ public class FileController {
         return "上传完成！文件名：" + name;
     }
 
+    /**
+     * 下载文件
+     * @param filename
+     * @return
+     */
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadFile(@RequestParam String filename) {
         try {

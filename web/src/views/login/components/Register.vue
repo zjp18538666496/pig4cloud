@@ -24,6 +24,9 @@ const createUser1 = () => {
                 ElMessage.error(`${res.message}`)
             }
         })
+        .catch((error) => {
+            ElMessage.error(`注册失败！${error?.message} (${error?.code})`)
+        })
         .finally(() => {
             loading.value = false
         })

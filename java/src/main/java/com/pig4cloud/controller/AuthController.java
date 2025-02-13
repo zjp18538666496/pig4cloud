@@ -23,7 +23,11 @@ public class AuthController {
     private final JwtUtils jwtUtils;
 
     /**
-     * 刷新Token
+     * 刷新访问令牌
+     *
+     * @param map {Map<String, Object>} 包含刷新令牌的请求参数，键名为 "refreshToken"
+     * @param response {HttpServletResponse} 用于设置新的访问令牌和Cookie的响应对象
+     * @return {Response} 包含状态码和消息的响应对象，成功时返回状态码 200 和消息 "请求成功"，刷新失败时返回状态码 401 和消息 "刷新token无效"
      */
     @PostMapping("/refresh-token")
     public Response refreshToken(@RequestBody Map<String, Object> map, HttpServletResponse response) {

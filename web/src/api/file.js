@@ -1,7 +1,7 @@
 import service from '@/utils/request.js'
 
 /**
- * 登录
+ * 下载文件
  * @param data
  * @return {*}
  */

@@ -15,6 +15,9 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url)),
         },
     },
+    build: {
+        target: 'esnext', // 使用 esnext 以支持最新特性
+    },
     // 打包后文件目录
     base: './',
 })
