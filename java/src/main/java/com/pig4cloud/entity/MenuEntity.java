@@ -29,6 +29,12 @@ public class MenuEntity {
     // 菜单类型 (0: 目录, 1: 菜单, 2: 按钮)
     private String type;
 
+    // 路由组件地址
+    private String component_path;
+
+    // 路由组件名称
+    private String component_name;
+
     // 级别
     private String level;
 
