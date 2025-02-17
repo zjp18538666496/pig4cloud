@@ -15,7 +15,9 @@ await router.beforeEach(async (to, from, next) => {
         } else {
             next()
         }
-    } else if (to.path !== '/login') {
+    } else if (to.path === '/login') {
+        next()
+    } else {
         localStorage.clear()
         await showLoginMessageBox()
             .then(() => {
@@ -24,7 +26,5 @@ await router.beforeEach(async (to, from, next) => {
             .catch(() => {
                 next(false)
             })
-    } else {
-        next()
     }
 })

@@ -9,6 +9,12 @@
         <el-form-item prop="route" label="路由地址">
             <el-input v-model="props.menuInfo.route" />
         </el-form-item>
+        <el-form-item prop="route" label="组件名称">
+            <el-input :disabled="props.menuInfo.type !== '1'" v-model="props.menuInfo.component_name" />
+        </el-form-item>
+        <el-form-item prop="route" label="组件地址">
+            <el-input :disabled="props.menuInfo.type !== '1'" v-model="props.menuInfo.component_path" />
+        </el-form-item>
         <el-form-item prop="status" label="状态">
             <el-radio-group v-model="props.menuInfo.status">
                 <el-radio value="0" size="large">禁用</el-radio>
@@ -16,7 +22,7 @@
             </el-radio-group>
         </el-form-item>
         <el-form-item prop="type" label="菜单类型">
-            <el-radio-group v-model="props.menuInfo.type">
+            <el-radio-group @change="changeState(props.menuInfo.type)" v-model="props.menuInfo.type">
                 <el-radio value="0" size="large">目录</el-radio>
                 <el-radio value="1" size="large">菜单</el-radio>
             </el-radio-group>
@@ -64,8 +70,14 @@ getMenuLists({}).then((res) => {
 })
 
 const currentChange = (node) => {
-    console.log(terrNode)
     props.menuInfo.parent_id = node.id
+}
+
+const changeState = (state) => {
+    if (state !== '1') {
+        props.menuInfo.component_path = ''
+        props.menuInfo.component_name = ''
+    }
 }
 
 defineExpose({

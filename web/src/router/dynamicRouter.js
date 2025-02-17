@@ -12,7 +12,7 @@ class DynamicRouter {
                 }
             })
             .then((list) => {
-                list.forEach((item) => {
+                list?.forEach((item) => {
                     if(item.type === '1') {
                         const realPath = item.component_path?.replace(/^@\//, '/src/') // 替换 @/ 为实际路径
                         router.addRoute('Layout', {
