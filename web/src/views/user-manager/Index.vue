@@ -86,7 +86,9 @@ const handleDelete = (index, row) => {
                 ElMessage.error(`删除失败！${res.message}`)
             }
         })
-        .catch(() => {})
+        .catch((error) => {
+            ElMessage({ message: error.message || error, type: 'error' })
+        })
 }
 
 /**

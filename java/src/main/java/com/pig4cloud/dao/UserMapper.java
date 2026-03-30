@@ -21,9 +21,9 @@ public interface UserMapper extends BaseMapper<UserEntity> {
                 sys_user.username,
                 sys_user.mobile,
                 sys_user.email,
-                DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%s') AS create_time,
-                DATE_FORMAT(update_time, '%Y-%m-%d %H:%i:%s') AS update_time,
-                DATE_FORMAT(last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,
+                DATE_FORMAT(sys_user.create_time, '%Y-%m-%d %H:%i:%s') AS create_time,
+                DATE_FORMAT(sys_user.update_time, '%Y-%m-%d %H:%i:%s') AS update_time,
+                DATE_FORMAT(sys_user.last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,
                 IFNULL(GROUP_CONCAT(DISTINCT sys_role.role_code ORDER BY sys_role.role_code SEPARATOR ','), '') AS role_codes,
                 IFNULL(GROUP_CONCAT(DISTINCT sys_role.role_name ORDER BY sys_role.role_name SEPARATOR ','), '') AS role_names
             FROM

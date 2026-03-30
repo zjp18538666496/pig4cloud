@@ -19,24 +19,36 @@ import java.util.StringJoiner;
 
 @Service
 @RequiredArgsConstructor
-@Component
+//@Component
 public class UserLoginDetailsServiceImpl implements UserDetailsService {
     private final UserMapper userMapper;
-    @Autowired
+
+//    @Autowired
     private final AuthorityMapper authorityMapper;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userMapper.selectUserByUsername(username);
-//        List<AuthorityEntity> authorities = authorityMapper.selectAuthorityByUsername(username);
-        List<AuthorityEntity> authorities = List.of(
-                new AuthorityEntity(1, "login", "登录权限"),
-                new AuthorityEntity(2, "root", "管理员")
-        );
+
+        if (userEntity == null) {
+            throw new UsernameNotFoundException("用户名不存在");
+        }
+
+        List<AuthorityEntity> authorities = authorityMapper.selectAuthorityByUsername(username);
+//        List<AuthorityEntity> authorities = List.of(
+//                new AuthorityEntity(1, "login", "登录权限"),
+//                new AuthorityEntity(2, "root", "管理员")
+//        );
         StringJoiner stringJoiner = new StringJoiner(",", "", "");
-        authorities.forEach(authority -> stringJoiner.add(authority.getName()));
-        return new UserDetailsEntity(userEntity.getUsername(), userEntity.getPassword(),
-                AuthorityUtils.commaSeparatedStringToAuthorityList(stringJoiner.toString())
+        if (authorities != null) {
+            authorities.forEach(authority -> stringJoiner.add(authority.getName()));
+        }
+
+        return new UserDetailsEntity(
+                userEntity.getUsername(),
+                userEntity.getPassword(),
+                AuthorityUtils.commaSeparatedStringToAuthorityList(stringJoiner.toString()
+                )
         );
     }
 }

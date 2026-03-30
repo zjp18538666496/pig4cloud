@@ -5,6 +5,7 @@ import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +44,7 @@ public class UserController {
     }
 
     @PostMapping("/delUser")
+    @PreAuthorize("hasAuthority('admin','root')")
     public Response delUser(@RequestBody UserEntity userEntity) {
         return userService.deleteUser(userEntity);
     }

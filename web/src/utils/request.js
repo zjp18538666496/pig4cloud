@@ -50,7 +50,7 @@ service.interceptors.response.use(
         if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
         switch (response.data.code) {
             case 401:
-            case 403:
+            //case 403:
                 if (response.config.isRefreshToken) {
                     localStorage.clear()
                     const isLogin = await showLoginMessageBox()
