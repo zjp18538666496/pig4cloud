@@ -9,6 +9,7 @@ import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.dto.UserDto;
 import com.pig4cloud.entity.UserEntity;
 import com.pig4cloud.service.UserService;
+import com.pig4cloud.user.vo.UserVO;
 import com.pig4cloud.util.file.FileUtils;
 import com.pig4cloud.util.verify.VerifyResult;
 import com.pig4cloud.util.verify.VerifyUser;
@@ -184,6 +185,7 @@ public class UserServiceImpl implements UserService {
     public Response getUser(String username) {
         QueryWrapper<UserEntity> wrapper = new QueryWrapper<>();
         wrapper.eq("username", username);
-        return new ResponseImpl(200, "请求成功", userMapper.selectOne(wrapper));
+        //脱敏后返回，不携带密码
+        return new ResponseImpl(200, "请求成功", UserVO.from(userMapper.selectOne(wrapper)));
     }
 }

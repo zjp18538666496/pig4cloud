@@ -1,0 +1,13 @@
+# 复制本文件为 application-local.yaml（已被.gitignore忽略），按需修改
+spring:
+  datasource:
+    username: root
+    password: your-db-password
+ftp:
+  server: 127.0.0.1
+  port: 21
+  user: root
+  password: your-ftp-password
+jwt:
+  # 生成方式: openssl rand -base64 32
+  secret: your-base64-secret-at-least-32-bytes

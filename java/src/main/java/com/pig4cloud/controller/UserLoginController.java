@@ -6,11 +6,14 @@ import com.pig4cloud.dao.UserMapper;
 import com.pig4cloud.dao.impl.ResponseImpl;
 import com.pig4cloud.entity.UserDetailsEntity;
 import com.pig4cloud.entity.UserEntity;
+import com.pig4cloud.user.vo.UserVO;
 import com.pig4cloud.util.auth.JwtUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -79,10 +82,13 @@ public class UserLoginController {
             response.setHeader("Refresh-Token", refreshToken);
             response.setHeader("Authorization", "Bearer " + jwtToken);
 
-            return new ResponseImpl(200, "请求成功", userEntity);
+            //脱敏后返回用户信息，不携带密码
+            return new ResponseImpl(200, "请求成功", UserVO.from(userEntity));
+        } catch (BadCredentialsException | UsernameNotFoundException ex) {
+            //用户身份验证失败，返回登陆失败提示（不区分账号或密码错误，避免枚举探测）
+            return new ResponseImpl(-200, "用户名或密码不正确", null);
         } catch (Exception ex) {
-            //用户身份验证失败，返回登陆失败提示
-            return new ResponseImpl(-200, "用户名或密码不正确", ex.toString());
+            return new ResponseImpl(-200, "登录失败，请稍后重试", null);
         }
     }
 }

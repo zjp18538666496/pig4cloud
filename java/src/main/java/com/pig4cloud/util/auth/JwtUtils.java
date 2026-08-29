@@ -2,11 +2,9 @@ package com.pig4cloud.util.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,80 +12,70 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class JwtUtils {
+    private static final String TOKEN_TYPE = "token_type";
+    private static final String TYPE_ACCESS = "access";
+    private static final String TYPE_REFRESH = "refresh";
+
     private final JwtProperties jwtProperties;
 
     /**
-     * 生成令牌
+     * 生成访问令牌
      */
     public String getJwt(Map<String, Object> claims) {
-        Key signingKey = jwtProperties.getSigningKey();
-        Long expire = jwtProperties.getExpire();
-        claims.put("token_type", "access");
-        return Jwts.builder()
-                .setClaims(claims) //设置载荷内容
-                .signWith(SignatureAlgorithm.HS256, signingKey) //设置签名算法
-                .setExpiration(new Date(System.currentTimeMillis() + expire)) //设置有效时间
-                .compact();
+        return buildToken(claims, jwtProperties.getExpire(), TYPE_ACCESS);
     }
 
     /**
-     * 解析令牌
-     */
-    public Claims parseJwt(String jwt) {
-        Key signingKey = jwtProperties.getSigningKey();
-        Claims claims = Jwts.parser()
-                .setSigningKey(signingKey) //指定签名密钥
-                .build()
-                .parseClaimsJws(jwt) //开始解析令牌
-                .getBody();
-        if (!"access".equals(claims.get("token_type"))) {
-            throw new IllegalArgumentException("无效的token");
-        }
-
-        return claims;
-    }
-
-    /**
-     * 生成长期令牌
+     * 生成刷新令牌
      */
     public String getRefreshToken(Map<String, Object> claims) {
-        Key signingKey = jwtProperties.getSigningKey();
-        Long refreshExpire = jwtProperties.getRefreshExpire();
-        claims.put("token_type", "refresh");
-        return Jwts.builder()
-                .setClaims(claims) //设置载荷内容
-                .signWith(SignatureAlgorithm.HS256, signingKey) //设置签名算法
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpire)) //设置长期有效时间
-                .compact();
+        return buildToken(claims, jwtProperties.getRefreshExpire(), TYPE_REFRESH);
     }
 
     /**
-     * 解析长期令牌
+     * 解析访问令牌
+     */
+    public Claims parseJwt(String jwt) {
+        return parse(jwt, TYPE_ACCESS);
+    }
+
+    /**
+     * 解析刷新令牌
      */
     public Claims parseRefreshToken(String refreshToken) {
-        Key signingKey = jwtProperties.getSigningKey();
-        Claims claims = Jwts.parser()
-                .setSigningKey(signingKey) //指定签名密钥
-                .build()
-                .parseClaimsJws(refreshToken) //开始解析令牌
-                .getBody();
-
-        if (!"refresh".equals(claims.get("token_type"))) {
-            throw new IllegalArgumentException("无效的token");
-        }
-        return claims;
+        return parse(refreshToken, TYPE_REFRESH);
     }
 
     /**
-     * 刷新token
+     * 用刷新令牌换取新的访问令牌
      */
     public String refreshToken(String token) {
         Claims claims = parseRefreshToken(token);
-        String username = (String) claims.get("username");
-        String authorityString = (String) claims.get("authorityString");
         Map<String, Object> newClaims = new HashMap<>();
-        newClaims.put("username", username);
-        newClaims.put("authorityString", authorityString);
+        newClaims.put("username", claims.get("username"));
+        newClaims.put("authorityString", claims.get("authorityString"));
         return getJwt(newClaims);
+    }
+
+    private String buildToken(Map<String, Object> claims, long ttlMillis, String tokenType) {
+        Map<String, Object> payload = new HashMap<>(claims);
+        payload.put(TOKEN_TYPE, tokenType);
+        return Jwts.builder()
+                .claims(payload)
+                .signWith(jwtProperties.getSigningKey(), Jwts.SIG.HS256)
+                .expiration(new Date(System.currentTimeMillis() + ttlMillis))
+                .compact();
+    }
+
+    private Claims parse(String jwt, String expectedType) {
+        Claims claims = Jwts.parser()
+                .verifyWith(jwtProperties.getSigningKey())
+                .build()
+                .parseSignedClaims(jwt)
+                .getPayload();
+        if (!expectedType.equals(claims.get(TOKEN_TYPE))) {
+            throw new IllegalArgumentException("无效的token");
+        }
+        return claims;
     }
 }

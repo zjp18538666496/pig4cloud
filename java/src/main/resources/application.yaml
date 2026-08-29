@@ -3,6 +3,9 @@ server:
 spring:
   profiles:
     active: dev  # 默认环境
+  # 本地敏感配置（数据库/FTP/JWT密钥），不入库，参考 application-local.yaml.example
+  config:
+    import: optional:classpath:application-local.yaml,optional:file:./application-local.yaml
   servlet:
     multipart:
       max-file-size: -1
@@ -11,17 +14,10 @@ mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:
     map-underscore-to-camel-case: false
-#logging:
-#  level:
-#    root: debug
-#    org.springframework.web: debug
-#    org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration: OFF
-#    org.springframework.security: DEBUG
-#    org:
-#      springframework:
-#        boot:
-#          autoconfigure: OFF
+jwt:
+  # 通过环境变量JWT_SECRET或application-local.yaml提供，禁止提交到仓库
+  secret: ${JWT_SECRET:}
+  expire: 3600000          # 访问令牌1小时
+  refresh-expire: 2592000000  # 刷新令牌30天
 tomcat:
   max-http-form-post-size: -1
-
-
