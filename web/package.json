@@ -39,5 +39,8 @@
     },
     "resolutions": {
         "esbuild": "0.21.5"
+    },
+    "volta": {
+        "node": "24.14.1"
     }
 }
