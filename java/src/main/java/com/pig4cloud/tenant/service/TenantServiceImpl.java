@@ -74,7 +74,8 @@ public class TenantServiceImpl implements TenantService {
         tenantMapper.insert(tenant);
 
         // 2. 创建租户管理员账号（初始密码12345678）
-        String adminUsername = dto.getTenantCode() + "_admin";
+        // 账号格式 t{租户ID}admin：纯字母数字且4~12位，满足登录/注册表单的统一校验规则
+        String adminUsername = "t" + tenant.getId() + "admin";
         if (userMapper.selectUserByUsername(adminUsername) != null) {
             throw new BizException("管理员账号已存在：" + adminUsername);
         }

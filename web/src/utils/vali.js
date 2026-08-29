@@ -4,7 +4,7 @@ class VerifyUser {
         if (valiUsername(value)) {
             callback()
         } else {
-            callback(new Error('请输入4到12位的用户名，支持字母合数字'))
+            callback(new Error('请输入4到12位的用户名，支持字母和数字'))
         }
     }
 

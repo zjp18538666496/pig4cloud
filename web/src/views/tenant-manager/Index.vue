@@ -54,7 +54,7 @@
                     v-if="dialog.type === 'create'"
                     type="info"
                     :closable="false"
-                    title="开通后自动创建管理员账号：{编码}_admin，初始密码 12345678，并授予全部菜单权限"
+                    title="开通后自动创建租户管理员账号：t{租户ID}admin，初始密码 12345678，并授予全部菜单权限"
                 />
             </el-form>
             <template #footer>
