@@ -7,6 +7,7 @@ import com.pig4cloud.auth.service.AuthService;
 import com.pig4cloud.auth.JwtUtils;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.user.vo.UserVO;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +42,13 @@ public class AuthController {
      */
     @PostMapping("/refresh-token")
     public R<Void> refreshToken(@Valid @RequestBody RefreshTokenRequest request, HttpServletResponse response) {
-        String newAccessToken = jwtUtils.refreshToken(request.getRefreshToken());
-        response.setHeader("Authorization", "Bearer " + newAccessToken);
-        return R.ok("请求成功", null);
+        try {
+            String newAccessToken = jwtUtils.refreshToken(request.getRefreshToken());
+            response.setHeader("Authorization", "Bearer " + newAccessToken);
+            return R.ok("请求成功", null);
+        } catch (JwtException | IllegalArgumentException e) {
+            // 返回code=401，前端据此清理本地缓存并引导重新登录
+            return R.fail(R.UNAUTHORIZED, "刷新token无效");
+        }
     }
 }

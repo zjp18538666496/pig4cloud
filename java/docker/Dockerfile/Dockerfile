@@ -1,15 +1,17 @@
-#基础镜像
-FROM m.daocloud.io/docker.io/ubuntu
+# 先在宿主机执行 mvn -DskipTests package 生成 target/pig4cloud-1.0-SNAPSHOT.jar
+# 构建阶段：按Spring Boot分层解压jar，依赖层与应用层分离，充分利用镜像缓存
+FROM m.daocloud.io/docker.io/eclipse-temurin:17-jre AS extraction
+WORKDIR /app
+COPY target/pig4cloud-1.0-SNAPSHOT.jar ./app.jar
+RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
-#工作目录
-WORKDIR /servers
-
-#jdk
-ADD jdk-17.0.13_linux-x64_bin.tar.gz .
-
-#配置环境变量
-ENV JAVA_VERSION=17.0.13
-ENV JAVA_HOME=/servers/jdk-17.0.13
-ENV PATH=$JAVA_HOME/bin:$PATH
-
-ENTRYPOINT ["java", "-jar", "/app/pig4cloud-1.0-SNAPSHOT.jar"]
+# 运行阶段
+FROM m.daocloud.io/docker.io/eclipse-temurin:17-jre
+WORKDIR /app
+COPY --from=extraction /app/extracted/dependencies/ ./
+COPY --from=extraction /app/extracted/spring-boot-loader/ ./
+COPY --from=extraction /app/extracted/snapshot-dependencies/ ./
+COPY --from=extraction /app/extracted/application/ ./
+ENV TZ=Asia/Shanghai
+EXPOSE 9000
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

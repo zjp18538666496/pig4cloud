@@ -76,6 +76,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh-token").permitAll()
                 // 允许访问上传文件夹
                 .requestMatchers(HttpMethod.GET, "/api/file/**").permitAll()
+                // 接口文档
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // 其余接口要求已登录，接口级权限用@PreAuthorize控制
                 .anyRequest().authenticated()
         );
