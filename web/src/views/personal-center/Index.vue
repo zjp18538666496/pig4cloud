@@ -87,7 +87,7 @@ const logOut = () => {
         cancelButtonText: '取消',
         type: 'info',
     })
-        .then(() => delUser({ username: form.username }))
+        .then(() => delUser({ username: form.value.username }))
         .then((res) => {
             if (!res) return
             if (res.code === 200) {

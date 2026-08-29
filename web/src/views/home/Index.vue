@@ -22,7 +22,7 @@
 import { ref } from 'vue'
 import { file } from '@/api/file.js'
 
-const uploadUrl = import.meta.env.VITE_BASE_URL + '/file/uploadFile' // 后端上传接口地址
+const uploadUrl = import.meta.env.VITE_BASE_URL + 'file/ftp/upload' // 后端FTP批量上传接口地址
 let extraData = ref({ imgName: '' }) // 额外参数，这里包含文件名
 let fileList = ref([]) // 文件列表
 const authorization = localStorage.getItem('authorization')

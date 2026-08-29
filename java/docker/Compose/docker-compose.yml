@@ -1,15 +1,18 @@
 services:
-  java:
+  pig4cloud:
     build:
-      context:  ../  # 指向 Dockerfile 的父目录
-      dockerfile: Dockerfile/Dockerfile  # 指向 Dockerfile 的确切位置
-    image: pig4cloud  # 指定镜像名称
-    container_name: pig4cloud  # 指定容器名称
+      context: ../../  # java目录，Dockerfile从target/读取jar，先执行mvn package
+      dockerfile: docker/Dockerfile/Dockerfile
+    image: pig4cloud
+    container_name: pig4cloud
     ports:
-      - "9000:9000"  # 将容器的9000端口映射到主机的9000端口
-    volumes:
-      - /home/java/pig4cloud/jar:/app/  # 将本地目录挂载到容器
+      - "9000:9000"
+    environment:
+      - TZ=Asia/Shanghai
+      # 生产环境必须通过环境变量注入密钥与来源白名单
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
     networks:
-      - network  # 使用共享网络
+      - network
 networks:
-  network:  # 创建一个名为 network 的网络
+  network:

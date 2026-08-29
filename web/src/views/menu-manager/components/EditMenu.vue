@@ -25,7 +25,11 @@
             <el-radio-group @change="changeState(props.menuInfo.type)" v-model="props.menuInfo.type">
                 <el-radio value="0" size="large">目录</el-radio>
                 <el-radio value="1" size="large">菜单</el-radio>
+                <el-radio value="2" size="large">按钮</el-radio>
             </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="props.menuInfo.type === '2'" prop="perms" label="权限标识">
+            <el-input v-model="props.menuInfo.perms" placeholder="如user:remove" />
         </el-form-item>
         <el-form-item prop="level" label="层级">
             <el-input v-model="props.menuInfo.level" disabled />

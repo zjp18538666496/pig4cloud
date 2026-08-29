@@ -3,21 +3,9 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/pigx_admin
-    username: root
-    password: root
-#logging:
-#  level:
-#    root: info
-#    org.springframework.web: debug
-#    org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration: OFF
-#    org.springframework.security: DEBUG
-#    org:
-#      springframework:
-#        boot:
-#          autoconfigure: OFF
-ftp:
-  server: 127.0.0.1
-  port: 21
-  user: root
-  password: root
+    # createDatabaseIfNotExist=true：库不存在时自动创建；首次启动时表结构和演示数据由DatabaseInitializer自动初始化
+    url: jdbc:mysql://10.126.126.3:3306/pigx_admin_test?createDatabaseIfNotExist=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    # 账号密码放在application-local.yaml（不入库），参考application-local.yaml.example
+log:
+  # 操作日志开关（MongoDB）
+  enabled: ${LOG_ENABLED:true}

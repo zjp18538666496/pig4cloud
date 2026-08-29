@@ -3,25 +3,36 @@ server:
 spring:
   profiles:
     active: dev  # 默认环境
+  # 本地敏感配置（数据库/FTP/JWT密钥），不入库，参考 application-local.yaml.example
+  config:
+    import: optional:classpath:application-local.yaml,optional:file:./application-local.yaml
   servlet:
     multipart:
       max-file-size: -1
       max-request-size: -1
+  jackson:
+    deserialization:
+      # DTO字段按需声明，未声明的请求字段忽略而不是报错
+      fail-on-unknown-properties: false
+  data:
+    mongodb:
+      # 按@CompoundIndex/@Indexed注解自动建索引
+      auto-index-creation: true
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:
     map-underscore-to-camel-case: false
-#logging:
-#  level:
-#    root: debug
-#    org.springframework.web: debug
-#    org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration: OFF
-#    org.springframework.security: DEBUG
-#    org:
-#      springframework:
-#        boot:
-#          autoconfigure: OFF
+jwt:
+  # 通过环境变量JWT_SECRET或application-local.yaml提供，禁止提交到仓库
+  secret: ${JWT_SECRET:}
+  expire: 3600000          # 访问令牌1小时
+  refresh-expire: 2592000000  # 刷新令牌30天
+cors:
+  # 允许的来源，多个用逗号分隔；生产环境用环境变量CORS_ORIGINS收紧
+  allowed-origins: ${CORS_ORIGINS:*}
+app:
+  db-init:
+    # 首次启动自动建表+灌入演示数据，生产环境置为false或用环境变量DB_INIT控制
+    enabled: ${DB_INIT:true}
 tomcat:
   max-http-form-post-size: -1
-
-

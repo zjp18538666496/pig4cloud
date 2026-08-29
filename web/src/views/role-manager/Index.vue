@@ -124,7 +124,6 @@ const handleEdit = (index, row) => {
  */
 const saveRole = () => {
     role.value.roleInfo.menu_codes = Array.from(new Set([...role.value.roleInfo.menu_codes, ...roleRef.value.HalfCheckedKeys]))
-    role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes?.join(',')
 
     const handleResponse = (res) => {
         if (res?.code === 200) {
@@ -176,7 +175,7 @@ onUnmounted(() => {
             <el-input v-model="roleTable.query.roleName" class="w240px" placeholder="角色名称" />
             <el-button class="ml-10px" @click="getRoleList">查询</el-button>
             <el-button type="primary" @click="roleTable.query.roleName = ''">重置</el-button>
-            <el-button type="primary" @click="createRole1">新增</el-button>
+            <el-button v-permission="['role:write']" type="primary" @click="createRole1">新增</el-button>
         </div>
         <el-table :data="roleTable.rows" border class="w-100% overflow-auto mb-10px" :max-height="roleTable.height">
             <el-table-column prop="date" label="序号" align="center" width="60">
@@ -201,8 +200,8 @@ onUnmounted(() => {
             <el-table-column prop="address" label="创建时间" align="center" />
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
-                    <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
+                    <el-button v-permission="['role:write']" size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
+                    <el-button v-permission="['role:remove']" size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
                 </template>
             </el-table-column>
         </el-table>

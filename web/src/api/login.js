@@ -7,7 +7,7 @@ import service from '@/utils/request.js'
  */
 export function login(data) {
     return service({
-        url: '/api/user/login',
+        url: '/auth/login',
         method: 'post',
         data,
     })

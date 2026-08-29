@@ -13,7 +13,20 @@ export function getUser(id) {
 }
 
 /**
- * 创建用户
+ * 注册账号（无需登录）
+ * @param data
+ * @return {*}
+ */
+export function register(data) {
+    return service({
+        url: '/user/register',
+        method: 'POST',
+        data,
+    })
+}
+
+/**
+ * 创建用户（用户管理，需要user:write权限）
  * @param data
  * @return {*}
  */
@@ -32,7 +45,7 @@ export function createUser(data) {
  */
 export function updateUser(data) {
     return service({
-        url: '/user/updateUser1',
+        url: '/user/updateUser',
         method: 'POST',
         data,
     })

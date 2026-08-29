@@ -1,51 +1,55 @@
-//动态添加路由的函数
+// 动态路由：菜单接口 + import.meta.glob白名单
 import router from '@/router/index.js'
 import { selectMenuLists } from '@/api/menu.js'
 
-class DynamicRouter {
-    constructor() {}
-    async addDynamicRoutes() {
-        await selectMenuLists({ menuType: 'flatMenu' })
-            .then((res) => {
-                if (res?.code === 200) {
-                    return res.data
-                }
-            })
-            .then((list) => {
-                list?.forEach((item) => {
-                    if(item.type === '1') {
-                        const realPath = item.component_path?.replace(/^@\//, '/src/') // 替换 @/ 为实际路径
-                        router.addRoute('Layout', {
-                            path: item.route,
-                            name: item.component_name,
-                            component: () => import(realPath),
-                        }) // 添加路由
-                    }
-                })
-                //用于没有菜单时显示默认菜单
-                // let routeList = [
-                //     {
-                //         path: '/role-manager',
-                //         name: 'role-manager',
-                //         component: () => import('@/views/role-manager/Index.vue')
-                //     },
-                //     {
-                //         path: '/user-manager',
-                //         name: 'user-manager',
-                //         component: () => import('@/views/user-manager/Index.vue')
-                //     },
-                //     {
-                //         path: '/menu-manager',
-                //         name: 'menu-manager',
-                //         component: () => import('@/views/menu-manager/Index.vue')
-                //     }
-                // ]
-                // routeList.forEach((item) => {
-                //     router.addRoute('Layout', item) // 添加路由
-                // })
-                return Promise.resolve(list)
-            })
-    }
+// 路由组件白名单：仅/views目录下真实存在的组件允许注册为动态路由，
+// 防止数据库component_path被注入任意模块路径
+const viewModules = import.meta.glob('/src/views/**/*.vue')
+
+const resolveComponent = (componentPath) => {
+    const path = componentPath?.replace(/^@\//, '/src/')
+    return path ? viewModules[path] : undefined
 }
 
-export default DynamicRouter
+// 注册状态：记录注册时使用的token，token变化(重新登录/切换账号)时重建路由
+let registeredToken = null
+let registeredRouteNames = []
+
+function clearRegisteredRoutes() {
+    registeredRouteNames.forEach((name) => {
+        if (router.hasRoute(name)) router.removeRoute(name)
+    })
+    registeredRouteNames = []
+    registeredToken = null
+}
+
+/**
+ * 确保动态路由已按当前登录用户注册：
+ * 由路由守卫在每次导航时调用；首次导航、刷新页面、重新登录后都会(重新)注册
+ * @returns {Promise<boolean>} 注册是否成功
+ */
+export async function ensureDynamicRoutes() {
+    const token = localStorage.getItem('authorization')
+    if (token && registeredToken === token) return true
+
+    const res = await selectMenuLists({ menuType: 'flatMenu' })
+    if (res?.code !== 200 || !Array.isArray(res.data)) return false
+
+    clearRegisteredRoutes()
+    res.data.forEach((item) => {
+        if (item.type !== '1') return
+        const component = resolveComponent(item.component_path)
+        if (!component) {
+            console.warn(`菜单[${item.menu_name}]的组件不存在，已跳过: ${item.component_path}`)
+            return
+        }
+        router.addRoute('Layout', {
+            path: item.route,
+            name: item.component_name,
+            component,
+        })
+        registeredRouteNames.push(item.component_name)
+    })
+    registeredToken = token
+    return true
+}
