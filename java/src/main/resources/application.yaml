@@ -10,6 +10,10 @@ spring:
     multipart:
       max-file-size: -1
       max-request-size: -1
+  jackson:
+    deserialization:
+      # DTO字段按需声明，未声明的请求字段忽略而不是报错
+      fail-on-unknown-properties: false
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:

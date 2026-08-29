@@ -1,7 +1,7 @@
 package com.pig4cloud.user.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.pig4cloud.entity.UserEntity;
+import com.pig4cloud.user.entity.UserEntity;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,10 +1,10 @@
 package com.pig4cloud.service.impl;
 
-import com.pig4cloud.dao.AuthorityMapper;
-import com.pig4cloud.dao.UserMapper;
-import com.pig4cloud.entity.AuthorityEntity;
+import com.pig4cloud.auth.entity.AuthorityEntity;
+import com.pig4cloud.auth.mapper.AuthorityMapper;
+import com.pig4cloud.user.mapper.UserMapper;
 import com.pig4cloud.entity.UserDetailsEntity;
-import com.pig4cloud.entity.UserEntity;
+import com.pig4cloud.user.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.AuthorityUtils;
