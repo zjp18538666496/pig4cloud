@@ -26,5 +26,9 @@ jwt:
 cors:
   # 允许的来源，多个用逗号分隔；生产环境用环境变量CORS_ORIGINS收紧
   allowed-origins: ${CORS_ORIGINS:*}
+app:
+  db-init:
+    # 首次启动自动建表+灌入演示数据，生产环境置为false或用环境变量DB_INIT控制
+    enabled: ${DB_INIT:true}
 tomcat:
   max-http-form-post-size: -1

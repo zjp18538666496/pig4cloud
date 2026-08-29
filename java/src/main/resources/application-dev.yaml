@@ -3,5 +3,6 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/pigx_admin
+    # createDatabaseIfNotExist=true：库不存在时自动创建；首次启动时表结构和演示数据由DatabaseInitializer自动初始化
+    url: jdbc:mysql://127.0.0.1:3306/pigx_admin?createDatabaseIfNotExist=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     # 账号密码放在application-local.yaml（不入库），参考application-local.yaml.example

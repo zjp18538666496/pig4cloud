@@ -12,6 +12,10 @@
 
 ### 1. 数据库
 
+首次启动会**自动创建数据库、建表并灌入演示数据**（JDBC URL 带 `createDatabaseIfNotExist=true`，表不存在时自动执行 `sql/pigx_admin_init.sql`），无需手动导入。
+
+手动导入方式（可选）：
+
 ```sql
 source sql/pigx_admin.sql
 ```
