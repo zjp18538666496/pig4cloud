@@ -110,8 +110,6 @@ const saveRole = () => {
     roleRef.value.ruleFormRef.validate((valid) => {
         if (!valid) return
 
-        user.value.roleInfo.role_codes = user.value.roleInfo.role_codes?.join(',')
-
         const handleResponse = (res) => {
             if (res?.code === 200) {
                 user.value.dialogVisible = false

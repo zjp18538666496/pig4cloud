@@ -18,6 +18,15 @@ export default defineConfig({
     build: {
         target: 'esnext', // 使用 esnext 以支持最新特性
     },
+    server: {
+        proxy: {
+            // 后端所有接口统一挂/api前缀，开发环境代理到9000端口
+            '/api': {
+                target: 'http://127.0.0.1:9000',
+                changeOrigin: true,
+            },
+        },
+    },
     // 打包后文件目录
     base: './',
 })

@@ -122,18 +122,20 @@ public class UserServiceImpl implements UserService {
             throw new BizException("更新用户信息失败");
         }
 
-        List<String> roleCodes = dto.getRoleCodes() == null
-                ? Collections.emptyList()
-                : dto.getRoleCodes().stream().filter(code -> code != null && !code.isBlank()).toList();
-
-        userMapper.deleteUserRoles(dto.getId());
-        if (!roleCodes.isEmpty()) {
-            List<Map<String, Object>> roles = userMapper.selectRoleIdsByCodes(roleCodes);
-            roles.forEach(role -> {
-                role.put("user_id", dto.getId());
-                role.put("role_id", ((Number) role.get("id")).longValue());
-            });
-            userMapper.insertUserRoles(roles);
+        // 只在显式传入role_codes时重建角色关联；null表示本次不修改角色（如个人中心改资料）
+        if (dto.getRoleCodes() != null) {
+            List<String> roleCodes = dto.getRoleCodes().stream()
+                    .filter(code -> code != null && !code.isBlank())
+                    .toList();
+            userMapper.deleteUserRoles(dto.getId());
+            if (!roleCodes.isEmpty()) {
+                List<Map<String, Object>> roles = userMapper.selectRoleIdsByCodes(roleCodes);
+                roles.forEach(role -> {
+                    role.put("user_id", dto.getId());
+                    role.put("role_id", ((Number) role.get("id")).longValue());
+                });
+                userMapper.insertUserRoles(roles);
+            }
         }
         return R.ok("更新成功", null);
     }

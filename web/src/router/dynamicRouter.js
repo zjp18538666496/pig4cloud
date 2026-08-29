@@ -1,50 +1,34 @@
-//动态添加路由的函数
+// 动态添加路由的函数
 import router from '@/router/index.js'
 import { selectMenuLists } from '@/api/menu.js'
 
+// 路由组件白名单：仅/views目录下真实存在的组件允许注册为动态路由，
+// 防止数据库component_path被注入任意模块路径
+const viewModules = import.meta.glob('/src/views/**/*.vue')
+
+const resolveComponent = (componentPath) => {
+    const path = componentPath?.replace(/^@\//, '/src/')
+    return path ? viewModules[path] : undefined
+}
+
 class DynamicRouter {
-    constructor() {}
     async addDynamicRoutes() {
-        await selectMenuLists({ menuType: 'flatMenu' })
-            .then((res) => {
-                if (res?.code === 200) {
-                    return res.data
-                }
+        const res = await selectMenuLists({ menuType: 'flatMenu' })
+        if (res?.code !== 200 || !Array.isArray(res.data)) return
+
+        res.data.forEach((item) => {
+            if (item.type !== '1') return
+            const component = resolveComponent(item.component_path)
+            if (!component) {
+                console.warn(`菜单[${item.menu_name}]的组件不存在，已跳过: ${item.component_path}`)
+                return
+            }
+            router.addRoute('Layout', {
+                path: item.route,
+                name: item.component_name,
+                component,
             })
-            .then((list) => {
-                list?.forEach((item) => {
-                    if(item.type === '1') {
-                        const realPath = item.component_path?.replace(/^@\//, '/src/') // 替换 @/ 为实际路径
-                        router.addRoute('Layout', {
-                            path: item.route,
-                            name: item.component_name,
-                            component: () => import(realPath),
-                        }) // 添加路由
-                    }
-                })
-                //用于没有菜单时显示默认菜单
-                // let routeList = [
-                //     {
-                //         path: '/role-manager',
-                //         name: 'role-manager',
-                //         component: () => import('@/views/role-manager/Index.vue')
-                //     },
-                //     {
-                //         path: '/user-manager',
-                //         name: 'user-manager',
-                //         component: () => import('@/views/user-manager/Index.vue')
-                //     },
-                //     {
-                //         path: '/menu-manager',
-                //         name: 'menu-manager',
-                //         component: () => import('@/views/menu-manager/Index.vue')
-                //     }
-                // ]
-                // routeList.forEach((item) => {
-                //     router.addRoute('Layout', item) // 添加路由
-                // })
-                return Promise.resolve(list)
-            })
+        })
     }
 }
 

@@ -124,7 +124,6 @@ const handleEdit = (index, row) => {
  */
 const saveRole = () => {
     role.value.roleInfo.menu_codes = Array.from(new Set([...role.value.roleInfo.menu_codes, ...roleRef.value.HalfCheckedKeys]))
-    role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes?.join(',')
 
     const handleResponse = (res) => {
         if (res?.code === 200) {

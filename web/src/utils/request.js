@@ -6,28 +6,22 @@ import { showLoginMessageBox } from '@/utils/loginMessage.js'
 const service = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
     headers: {
-        'Access-Control-Allow-Origin': '*', // 允许跨域
         'Content-Type': 'application/json', // 设置请求内容类型为 JSON
-    },
-    validateStatus: function (status) {
-        return status >= -200 && status <= 400
     },
 })
 
-// 刷新 Token 并重试请求
+// 刷新 Token 并重试原请求
 const retryRequest = async (config) => {
     const token = localStorage.getItem('refreshToken')
-    let result = await refreshTokenFn({ refreshToken: token })
-    if (result) {
-        const authorization = localStorage.getItem('authorization')
-        if (authorization) {
-            config.headers['authorization'] = authorization
-            return service(config)
-        }
-    }
+    if (!token) return null
+    await refreshTokenFn({ refreshToken: token })
+    const authorization = localStorage.getItem('authorization')
+    if (!authorization) return null
+    config.headers['authorization'] = authorization
+    return service(config)
 }
 
-// 请求拦截器
+// 请求拦截器：携带access token
 service.interceptors.request.use(
     (config) => {
         const authorization = localStorage.getItem('authorization')
@@ -41,7 +35,7 @@ service.interceptors.request.use(
     },
 )
 
-// 响应拦截器
+// 响应拦截器：从响应头保存新token；业务码401时刷新token并重试
 service.interceptors.response.use(
     async (response) => {
         const refreshToken = response.headers['refresh-token']
@@ -50,8 +44,8 @@ service.interceptors.response.use(
         if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
         switch (response.data.code) {
             case 401:
-            //case 403:
                 if (response.config.isRefreshToken) {
+                    // 刷新token本身失效，跳转登录
                     localStorage.clear()
                     const isLogin = await showLoginMessageBox()
                     if (isLogin) {
@@ -62,7 +56,7 @@ service.interceptors.response.use(
                 }
                 return
             case 200:
-                return response.data;
+                return response.data
             default:
                 return Promise.reject(response.data)
         }
