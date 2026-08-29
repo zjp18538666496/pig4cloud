@@ -32,7 +32,7 @@ export function createUser(data) {
  */
 export function updateUser(data) {
     return service({
-        url: '/user/updateUser1',
+        url: '/user/updateUser',
         method: 'POST',
         data,
     })
