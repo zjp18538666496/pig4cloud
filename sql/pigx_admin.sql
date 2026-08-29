@@ -87,7 +87,7 @@ CREATE TABLE `role_menu`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `fk_role_role_sys_menu_1`(`role_id`) USING BTREE,
   INDEX `fk_role_role_sys_menu_2`(`menu_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 48 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 50 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for role_permission
@@ -144,6 +144,8 @@ INSERT INTO `sys_menu` VALUES (2010201, 20102, '用户编辑', NULL, '1', '2', '
 INSERT INTO `sys_menu` VALUES (2010202, 20102, '用户删除', NULL, '1', '2', '4', NULL, NULL, 'user:remove');
 INSERT INTO `sys_menu` VALUES (2010301, 20103, '菜单编辑', NULL, '1', '2', '4', NULL, NULL, 'menu:write');
 INSERT INTO `sys_menu` VALUES (2010302, 20103, '菜单删除', NULL, '1', '2', '4', NULL, NULL, 'menu:remove');
+INSERT INTO `sys_menu` VALUES (202, 2, '日志管理', '/log-manager', '1', '1', '2', '@/views/log-manager/Index.vue', 'log-manager', NULL);
+INSERT INTO `sys_menu` VALUES (20201, 202, '日志查询', NULL, '1', '2', '3', NULL, NULL, 'log:read');
 
 -- ----------------------------
 -- Insert records of sys_role
@@ -169,6 +171,8 @@ INSERT INTO `role_menu` VALUES (44, 2010201, 102);
 INSERT INTO `role_menu` VALUES (45, 2010202, 102);
 INSERT INTO `role_menu` VALUES (46, 2010301, 102);
 INSERT INTO `role_menu` VALUES (47, 2010302, 102);
+INSERT INTO `role_menu` VALUES (48, 202, 102);
+INSERT INTO `role_menu` VALUES (49, 20201, 102);
 
 -- ----------------------------
 -- Insert records of user_role

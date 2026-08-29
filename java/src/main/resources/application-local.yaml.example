@@ -3,6 +3,10 @@ spring:
   datasource:
     username: root
     password: your-db-password
+  data:
+    mongodb:
+      # 操作日志库；账号建在admin库时必须指定authSource=admin
+      uri: mongodb://root:your-mongo-password@127.0.0.1:27017/pigx_log?authSource=admin
 ftp:
   server: 127.0.0.1
   port: 21

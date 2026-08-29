@@ -14,6 +14,10 @@ spring:
     deserialization:
       # DTO字段按需声明，未声明的请求字段忽略而不是报错
       fail-on-unknown-properties: false
+  data:
+    mongodb:
+      # 按@CompoundIndex/@Indexed注解自动建索引
+      auto-index-creation: true
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:

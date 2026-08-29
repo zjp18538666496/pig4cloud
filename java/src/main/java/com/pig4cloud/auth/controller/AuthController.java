@@ -6,6 +6,7 @@ import com.pig4cloud.auth.dto.RefreshTokenRequest;
 import com.pig4cloud.auth.service.AuthService;
 import com.pig4cloud.auth.JwtUtils;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.user.vo.UserVO;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,6 +31,7 @@ public class AuthController {
      * 账号密码登录，token通过响应头Authorization/Refresh-Token下发
      */
     @PostMapping("/login")
+    @LogRecord(module = "认证", operation = "用户登录")
     public R<UserVO> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResult result = authService.login(request);
         response.setHeader("Authorization", "Bearer " + result.accessToken());
@@ -41,6 +43,7 @@ public class AuthController {
      * 用长期refresh token换取新的access token
      */
     @PostMapping("/refresh-token")
+    @LogRecord(module = "认证", operation = "刷新令牌")
     public R<Void> refreshToken(@Valid @RequestBody RefreshTokenRequest request, HttpServletResponse response) {
         try {
             String newAccessToken = jwtUtils.refreshToken(request.getRefreshToken());

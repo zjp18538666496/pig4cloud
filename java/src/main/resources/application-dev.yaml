@@ -6,3 +6,6 @@ spring:
     # createDatabaseIfNotExist=true：库不存在时自动创建；首次启动时表结构和演示数据由DatabaseInitializer自动初始化
     url: jdbc:mysql://10.126.126.3:3306/pigx_admin_test?createDatabaseIfNotExist=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     # 账号密码放在application-local.yaml（不入库），参考application-local.yaml.example
+log:
+  # 操作日志开关（MongoDB）
+  enabled: ${LOG_ENABLED:true}
