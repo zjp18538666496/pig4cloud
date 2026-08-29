@@ -8,20 +8,23 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/**
+ * 查询用户权限。权限点=角色编码(role_code)，与@PreAuthorize中的hasAnyAuthority对应
+ */
 @Repository
 @Mapper
 public interface AuthorityMapper extends BaseMapper<AuthorityEntity> {
 
     @Select("""
             SELECT
-                E.*
-            FROM sys_user A
-            INNER JOIN USER_ROLE B ON A.id = B.user_id
-            INNER JOIN sys_role C ON B.role_id = C.id
-            INNER JOIN role_permission D ON C.id = D.role_id
-            INNER JOIN sys_permission E ON D.permission_id = E.id
-            WHERE A.username = #{username}
-            GROUP BY E.id
+                r.id,
+                r.role_code AS name,
+                r.role_name AS description
+            FROM sys_user u
+            INNER JOIN user_role ur ON u.id = ur.user_id
+            INNER JOIN sys_role r ON ur.role_id = r.id
+            WHERE u.username = #{username}
+            GROUP BY r.id, r.role_code, r.role_name
             """)
     List<AuthorityEntity> selectAuthorityByUsername(String username);
 }

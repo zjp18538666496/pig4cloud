@@ -1,4 +1,4 @@
-package com.pig4cloud.util.auth;
+package com.pig4cloud.auth;
 
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;

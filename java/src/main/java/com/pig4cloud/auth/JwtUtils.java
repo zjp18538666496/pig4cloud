@@ -1,4 +1,4 @@
-package com.pig4cloud.util.auth;
+package com.pig4cloud.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

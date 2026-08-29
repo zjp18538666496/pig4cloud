@@ -23,5 +23,8 @@ jwt:
   secret: ${JWT_SECRET:}
   expire: 3600000          # 访问令牌1小时
   refresh-expire: 2592000000  # 刷新令牌30天
+cors:
+  # 允许的来源，多个用逗号分隔；生产环境用环境变量CORS_ORIGINS收紧
+  allowed-origins: ${CORS_ORIGINS:*}
 tomcat:
   max-http-form-post-size: -1
