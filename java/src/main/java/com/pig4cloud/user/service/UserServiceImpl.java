@@ -110,6 +110,16 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public R<Void> updateUser(UserUpdateDto dto) {
+        boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(authority -> "user:write".equals(authority.getAuthority()));
+        if (!isAdmin) {
+            // 非管理员只允许修改本人资料，且不能变更角色
+            UserEntity self = userMapper.selectUserByUsername(currentUsername());
+            if (self == null || self.getId() != dto.getId().intValue()) {
+                throw new BizException("只能修改本人信息");
+            }
+        }
+
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", dto.getId())
                 .set("username", dto.getUsername())
@@ -123,7 +133,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 只在显式传入role_codes时重建角色关联；null表示本次不修改角色（如个人中心改资料）
-        if (dto.getRoleCodes() != null) {
+        if (isAdmin && dto.getRoleCodes() != null) {
             List<String> roleCodes = dto.getRoleCodes().stream()
                     .filter(code -> code != null && !code.isBlank())
                     .toList();

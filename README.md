@@ -55,7 +55,8 @@ com.pig4cloud
 约定：
 
 - 所有接口统一挂 `/api` 前缀；响应体为 `{code, message, data}`，`code=200` 成功、`-200` 业务失败、`401` 触发前端刷新token。
-- 认证：access token（1小时）+ refresh token（30天），通过响应头 `Authorization` / `Refresh-Token` 下发；权限点=角色编码（`sys_role.role_code`），接口用 `@PreAuthorize("hasAnyAuthority('root','admin')")` 控制。
+- 认证：access token（1小时）+ refresh token（30天），通过响应头 `Authorization` / `Refresh-Token` 下发；动态路由由路由守卫按需注册（首次导航/刷新/重新登录后自动重建）。
+- 权限点=角色编码（如`root`）+ 按钮菜单的权限标识（`sys_menu.perms`，如`user:remove`），登录时随用户信息下发：后端接口用 `@PreAuthorize("hasAuthority('user:remove')")` 控制，前端按钮用 `v-permission="['user:remove']"` 控制；注册接口 `/api/user/register` 无需登录。
 - 前端动态路由只接受 `sys_menu.component_path` 指向 `/views` 下真实存在的组件（白名单）。
 
 ## 接口文档

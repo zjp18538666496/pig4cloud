@@ -2,7 +2,7 @@
 import { Lock, User } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
-import { createUser } from '@/api/user.js'
+import { register } from '@/api/user.js'
 import { VerifyUser } from '@/utils/vali.js'
 
 const verifyUser = new VerifyUser()
@@ -13,7 +13,7 @@ let loading = ref(false)
  * 注册账号
  */
 const createUser1 = () => {
-    createUser({
+    register({
         username: ruleForm.username,
         password: ruleForm.password,
     })

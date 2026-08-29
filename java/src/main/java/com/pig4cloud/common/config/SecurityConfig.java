@@ -71,9 +71,10 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authz -> authz
                 // 允许所有OPTIONS预检请求
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // 登录/刷新token
+                // 登录/刷新token/注册（注册与用户管理分开，无需登录）
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh-token").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/user/register").permitAll()
                 // 允许访问上传文件夹
                 .requestMatchers(HttpMethod.GET, "/api/file/**").permitAll()
                 // 接口文档

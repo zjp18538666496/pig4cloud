@@ -4,7 +4,6 @@ import { reactive, ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { login } from '@/api/login.js'
 import { useRouter } from 'vue-router'
-import DynamicRouter from '@/router/dynamicRouter.js'
 import { VerifyUser } from '@/utils/vali.js'
 
 const router = useRouter()
@@ -22,7 +21,7 @@ const login1 = () => {
             if (res?.code === 200) {
                 ElMessage({ message: '登录成功', type: 'success' })
                 localStorage.setItem('userinfo', JSON.stringify(res.data))
-                await new DynamicRouter().addDynamicRoutes()
+                // 动态路由由路由守卫在导航时注册，这里直接跳转即可
                 await router.push('/')
             } else {
                 ElMessage.error(`登录失败！${res.message}`)

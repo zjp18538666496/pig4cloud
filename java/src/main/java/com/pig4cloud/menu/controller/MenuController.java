@@ -6,6 +6,7 @@ import com.pig4cloud.menu.dto.MenuSelectDto;
 import com.pig4cloud.menu.entity.MenuEntity;
 import com.pig4cloud.menu.service.MenuService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,16 +22,19 @@ public class MenuController {
     private final MenuService menuService;
 
     @PostMapping("/createMenu")
+    @PreAuthorize("hasAuthority('menu:write')")
     public R<Void> createMenu(@RequestBody MenuEntity menuEntity) {
         return menuService.createMenu(menuEntity);
     }
 
     @PostMapping("/delMenu")
+    @PreAuthorize("hasAuthority('menu:remove')")
     public R<Void> deleteMenu(@RequestBody MenuEntity menuEntity) {
         return menuService.deleteMenu(menuEntity);
     }
 
     @PostMapping("/updateMenu")
+    @PreAuthorize("hasAuthority('menu:write')")
     public R<Void> updateMenu(@RequestBody MenuEntity menuEntity) {
         return menuService.updateMenu(menuEntity);
     }

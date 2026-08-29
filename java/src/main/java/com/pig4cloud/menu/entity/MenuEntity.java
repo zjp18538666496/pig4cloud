@@ -53,6 +53,11 @@ public class MenuEntity {
     private String component_name;
 
     /**
+     * 权限标识（按钮类型菜单使用，如user:remove）
+     */
+    private String perms;
+
+    /**
      * 层级
      */
     private String level;

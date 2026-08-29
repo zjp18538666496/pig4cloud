@@ -41,18 +41,26 @@ public class UserController {
         return userService.getUser(username);
     }
 
+    @PostMapping("/register")
+    public R<Void> register(@Valid @RequestBody UserCreateDto dto) {
+        // 注册与用户管理分开：注册无需登录（SecurityConfig放行），用户管理接口走权限点
+        return userService.createUser(dto);
+    }
+
     @PostMapping("/createUser")
+    @PreAuthorize("hasAuthority('user:write')")
     public R<Void> createUser(@Valid @RequestBody UserCreateDto dto) {
         return userService.createUser(dto);
     }
 
     @PostMapping("/updateUser")
+    @PreAuthorize("hasAuthority('user:write')")
     public R<Void> updateUser(@Valid @RequestBody UserUpdateDto dto) {
         return userService.updateUser(dto);
     }
 
     @PostMapping("/delUser")
-    @PreAuthorize("hasAnyAuthority('root', 'admin')")
+    @PreAuthorize("hasAuthority('user:remove')")
     public R<Void> delUser(@Valid @RequestBody UserDeleteDto dto) {
         return userService.deleteUser(dto);
     }
@@ -68,6 +76,7 @@ public class UserController {
     }
 
     @PostMapping("/resetPassword")
+    @PreAuthorize("hasAuthority('user:write')")
     public R<Void> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {
         return userService.resetPassword(dto);
     }

@@ -14,8 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,18 +31,21 @@ public class AuthServiceImpl implements AuthService {
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 多个角色编码以逗号合并存入token，解析端再拆开
-        String authorityString = authentication.getAuthorities().stream()
+        // 角色编码+按钮权限点合并存入token，解析端再拆开
+        List<String> authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+                .toList();
+        String authorityString = String.join(",", authorities);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", authentication.getName());
         claims.put("authorityString", authorityString);
 
-        return new LoginResult(
-                jwtUtils.getJwt(claims),
-                jwtUtils.getRefreshToken(claims),
-                UserVO.from(userMapper.selectUserByUsername(request.getUsername())));
+        UserVO user = UserVO.from(userMapper.selectUserByUsername(request.getUsername()));
+        if (user != null) {
+            // 权限点随登录响应下发，前端v-permission据此控制按钮
+            user.setPermissions(authorities);
+        }
+        return new LoginResult(jwtUtils.getJwt(claims), jwtUtils.getRefreshToken(claims), user);
     }
 }

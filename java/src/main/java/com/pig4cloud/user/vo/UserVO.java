@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 /**
  * 用户视图对象：对外暴露的用户信息，不包含密码等敏感字段
@@ -20,6 +21,11 @@ public class UserVO {
     private String mobile;
     private String email;
     private String avatar;
+
+    /**
+     * 权限点集合（角色编码+按钮操作权限），登录时填充，供前端v-permission使用
+     */
+    private List<String> permissions;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Timestamp create_time;

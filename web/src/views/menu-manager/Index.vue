@@ -168,7 +168,7 @@ onUnmounted(() => {
             <el-input v-model="menuTable.query.menu_name" class="w240px" placeholder="菜单名称" />
             <el-button class="ml-10px" @click="getUserLise">查询</el-button>
             <el-button type="primary" @click="menuTable.query.menu_name = ''">重置</el-button>
-            <el-button type="primary" @click="createMenu1">新增</el-button>
+            <el-button v-permission="['menu:write']" type="primary" @click="createMenu1">新增</el-button>
         </div>
         <el-table :data="menuTable.rows" border style="width: 100%; overflow: auto" :max-height="menuTable.height" row-key="id">
             <el-table-column prop="menu_name" label="菜单名称" align="center" />
@@ -205,8 +205,8 @@ onUnmounted(() => {
             <el-table-column prop="level" label="层级" align="center" />
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
-                    <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
+                    <el-button v-permission="['menu:write']" size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
+                    <el-button v-permission="['menu:remove']" size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
                 </template>
             </el-table-column>
         </el-table>

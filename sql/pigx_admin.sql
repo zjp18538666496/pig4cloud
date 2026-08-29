@@ -31,8 +31,9 @@ CREATE TABLE `sys_menu`  (
   `level` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'level',
   `component_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '路由组件地址',
   `component_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '路由组件名称',
+  `perms` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '权限标识(按钮类型菜单使用,如user:remove)',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 20105 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2010203 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_role
@@ -86,7 +87,7 @@ CREATE TABLE `role_menu`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `fk_role_role_sys_menu_1`(`role_id`) USING BTREE,
   INDEX `fk_role_role_sys_menu_2`(`menu_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 43 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 48 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for role_permission
@@ -130,11 +131,19 @@ ALTER TABLE `user_role`
 -- ----------------------------
 -- Insert records of sys_menu
 -- ----------------------------
-INSERT INTO `sys_menu` VALUES (2, 0, '系统管理', '/system', '1', '0', '1', NULL, NULL);
-INSERT INTO `sys_menu` VALUES (201, 2, '权限管理', '/permissions-manager', '1', '0', '2', NULL, NULL);
-INSERT INTO `sys_menu` VALUES (20101, 201, '角色管理', '/role-manager', '1', '1', '3', '@/views/role-manager/Index.vue', 'role-manager');
-INSERT INTO `sys_menu` VALUES (20102, 201, '用户管理', '/user-manager', '1', '1', '3', '@/views/user-manager/Index.vue', 'user-manager');
-INSERT INTO `sys_menu` VALUES (20103, 201, '菜单管理', '/menu-manager', '1', '1', '3', '@/views/menu-manager/Index.vue', 'menu-manager');
+INSERT INTO `sys_menu` VALUES (2, 0, '系统管理', '/system', '1', '0', '1', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (201, 2, '权限管理', '/permissions-manager', '1', '0', '2', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (20101, 201, '角色管理', '/role-manager', '1', '1', '3', '@/views/role-manager/Index.vue', 'role-manager', NULL);
+INSERT INTO `sys_menu` VALUES (20102, 201, '用户管理', '/user-manager', '1', '1', '3', '@/views/user-manager/Index.vue', 'user-manager', NULL);
+INSERT INTO `sys_menu` VALUES (20103, 201, '菜单管理', '/menu-manager', '1', '1', '3', '@/views/menu-manager/Index.vue', 'menu-manager', NULL);
+
+-- 按钮(权限点)：前端v-permission与后端@PreAuthorize使用
+INSERT INTO `sys_menu` VALUES (2010101, 20101, '角色编辑', NULL, '1', '2', '4', NULL, NULL, 'role:write');
+INSERT INTO `sys_menu` VALUES (2010102, 20101, '角色删除', NULL, '1', '2', '4', NULL, NULL, 'role:remove');
+INSERT INTO `sys_menu` VALUES (2010201, 20102, '用户编辑', NULL, '1', '2', '4', NULL, NULL, 'user:write');
+INSERT INTO `sys_menu` VALUES (2010202, 20102, '用户删除', NULL, '1', '2', '4', NULL, NULL, 'user:remove');
+INSERT INTO `sys_menu` VALUES (2010301, 20103, '菜单编辑', NULL, '1', '2', '4', NULL, NULL, 'menu:write');
+INSERT INTO `sys_menu` VALUES (2010302, 20103, '菜单删除', NULL, '1', '2', '4', NULL, NULL, 'menu:remove');
 
 -- ----------------------------
 -- Insert records of sys_role
@@ -154,6 +163,12 @@ INSERT INTO `role_menu` VALUES (38, 201, 102);
 INSERT INTO `role_menu` VALUES (39, 20101, 102);
 INSERT INTO `role_menu` VALUES (40, 20102, 102);
 INSERT INTO `role_menu` VALUES (41, 20103, 102);
+INSERT INTO `role_menu` VALUES (42, 2010101, 102);
+INSERT INTO `role_menu` VALUES (43, 2010102, 102);
+INSERT INTO `role_menu` VALUES (44, 2010201, 102);
+INSERT INTO `role_menu` VALUES (45, 2010202, 102);
+INSERT INTO `role_menu` VALUES (46, 2010301, 102);
+INSERT INTO `role_menu` VALUES (47, 2010302, 102);
 
 -- ----------------------------
 -- Insert records of user_role

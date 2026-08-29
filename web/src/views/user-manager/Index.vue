@@ -158,7 +158,7 @@ onUnmounted(() => {
             <el-input v-model="userTable.query.roleName" class="w-240px" placeholder="用户名称" />
             <el-button class="ml-10px" @click="getUserLise">查询</el-button>
             <el-button type="primary" @click="userTable.query.roleName = ''">重置</el-button>
-            <el-button type="primary" @click="createRole1">新增</el-button>
+            <el-button v-permission="['user:write']" type="primary" @click="createRole1">新增</el-button>
         </div>
         <el-table :data="userTable.rows" border class="w-100% overflow-auto mb-10px" :max-height="userTable.height">
             <el-table-column prop="date" label="序号" align="center" width="60">
@@ -184,8 +184,8 @@ onUnmounted(() => {
             <el-table-column prop="last_login_time" label="最后登录时间" align="center" />
             <el-table-column prop="address" label="操作" align="center">
                 <template #default="scope">
-                    <el-button size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
-                    <el-button size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
+                    <el-button v-permission="['user:write']" size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
+                    <el-button v-permission="['user:remove']" size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
                 </template>
             </el-table-column>
         </el-table>
