@@ -1,5 +1,6 @@
 package com.pig4cloud.auth;
 
+import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.common.util.ResponseWriter;
 import io.jsonwebtoken.Claims;
@@ -23,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 /**
- * token校验过滤器：只负责解析token并填充SecurityContext，鉴权交给授权层
+ * token校验过滤器：解析token、填充SecurityContext与租户上下文；鉴权交给授权层
  */
 @Slf4j
 @Component
@@ -56,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             Claims claims = jwtUtils.parseJwt(jwtToken.substring(BEARER_PREFIX.length()));
             String username = claims.get("username", String.class);
-            // 登录时多个角色以逗号合并存入authorityString，这里拆回多个权限
+            // 登录时多个角色/权限点以逗号合并存入authorityString，这里拆回多个权限
             String authorityString = claims.get("authorityString", String.class);
             var authorities = authorityString == null || authorityString.isBlank()
                     ? Collections.<SimpleGrantedAuthority>emptyList()
@@ -68,6 +69,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(username, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // 租户上下文：供MyBatis-Plus租户拦截器使用；super角色跨租户
+            Integer tenantId = claims.get("tenantId", Integer.class);
+            boolean isSuper = authorities.stream().anyMatch(a -> "super".equals(a.getAuthority()));
+            UserContext.set(tenantId, isSuper);
+
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException ex) {
             // 认证失败的响应保持HTTP 200+响应体code=401，前端据此走刷新token流程
@@ -77,6 +84,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception ex) {
             log.error("token认证处理异常", ex);
             responseWriter.write(response, R.fail(403, "认证处理异常"));
+        } finally {
+            UserContext.clear();
         }
     }
 }

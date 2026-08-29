@@ -3,6 +3,7 @@ package com.pig4cloud.auth.service;
 import com.pig4cloud.auth.JwtUtils;
 import com.pig4cloud.auth.dto.LoginRequest;
 import com.pig4cloud.auth.dto.LoginResult;
+import com.pig4cloud.user.entity.UserEntity;
 import com.pig4cloud.user.mapper.UserMapper;
 import com.pig4cloud.user.vo.UserVO;
 import lombok.RequiredArgsConstructor;
@@ -37,15 +38,18 @@ public class AuthServiceImpl implements AuthService {
                 .toList();
         String authorityString = String.join(",", authorities);
 
+        UserEntity user = userMapper.selectUserByUsername(request.getUsername());
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", authentication.getName());
         claims.put("authorityString", authorityString);
+        claims.put("tenantId", user == null ? 0 : user.getTenant_id());
 
-        UserVO user = UserVO.from(userMapper.selectUserByUsername(request.getUsername()));
-        if (user != null) {
+        UserVO userVO = UserVO.from(user);
+        if (userVO != null) {
             // 权限点随登录响应下发，前端v-permission据此控制按钮
-            user.setPermissions(authorities);
+            userVO.setPermissions(authorities);
         }
-        return new LoginResult(jwtUtils.getJwt(claims), jwtUtils.getRefreshToken(claims), user);
+        return new LoginResult(jwtUtils.getJwt(claims), jwtUtils.getRefreshToken(claims), userVO);
     }
 }

@@ -26,4 +26,9 @@ public class RoleEntity {
      * 角色描述
      */
     private String description;
+
+    /**
+     * 租户id（0为平台层角色）
+     */
+    private Integer tenant_id;
 }

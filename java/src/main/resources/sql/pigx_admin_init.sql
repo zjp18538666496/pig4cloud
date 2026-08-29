@@ -18,6 +18,21 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
+-- Table structure for sys_tenant
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_tenant`;
+CREATE TABLE `sys_tenant`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '租户id(0为平台层)',
+  `tenant_code` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '租户编码',
+  `tenant_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '租户名称',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '状态(0禁用1启用)',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_tenant_code`(`tenant_code`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '租户表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for sys_menu
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_menu`;
@@ -44,6 +59,7 @@ CREATE TABLE `sys_role`  (
   `role_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '角色编码',
   `role_name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '角色名称',
   `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '角色描述',
+  `tenant_id` int(11) NOT NULL DEFAULT 1 COMMENT '租户id(0为平台)',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 104 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '角色表' ROW_FORMAT = Dynamic;
 
@@ -73,7 +89,9 @@ CREATE TABLE `sys_user`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '修改时间',
   `last_login_time` datetime NULL DEFAULT NULL COMMENT '最后登录时间',
   `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '用户头像地址',
-  PRIMARY KEY (`id`) USING BTREE
+  `tenant_id` int(11) NOT NULL DEFAULT 1 COMMENT '租户id(0为平台)',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_username`(`username`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -87,7 +105,7 @@ CREATE TABLE `role_menu`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `fk_role_role_sys_menu_1`(`role_id`) USING BTREE,
   INDEX `fk_role_role_sys_menu_2`(`menu_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 50 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 65 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for role_permission
@@ -113,7 +131,7 @@ CREATE TABLE `user_role`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `fk_user_role_sys_role_1`(`role_id`) USING BTREE,
   INDEX `fk_user_role_sys_user_1`(`user_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户角色表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户角色表' ROW_FORMAT = Dynamic;
 
 -- Now, set the foreign key constraints
 ALTER TABLE `role_menu`
@@ -146,16 +164,21 @@ INSERT INTO `sys_menu` VALUES (2010301, 20103, '菜单编辑', NULL, '1', '2', '
 INSERT INTO `sys_menu` VALUES (2010302, 20103, '菜单删除', NULL, '1', '2', '4', NULL, NULL, 'menu:remove');
 INSERT INTO `sys_menu` VALUES (202, 2, '日志管理', '/log-manager', '1', '1', '2', '@/views/log-manager/Index.vue', 'log-manager', NULL);
 INSERT INTO `sys_menu` VALUES (20201, 202, '日志查询', NULL, '1', '2', '3', NULL, NULL, 'log:read');
+INSERT INTO `sys_menu` VALUES (3, 0, '平台管理', '/tenant-manager', '1', '1', '1', '@/views/tenant-manager/Index.vue', 'tenant-manager', NULL);
+INSERT INTO `sys_menu` VALUES (301, 3, '租户管理', NULL, '1', '2', '2', NULL, NULL, 'tenant:manage');
 
 -- ----------------------------
 -- Insert records of sys_role
 -- ----------------------------
-INSERT INTO `sys_role` VALUES (102, 'root', '管理员', '管理员');
+INSERT INTO `sys_tenant` VALUES (1, 'default', '默认租户', '1', '2026-08-29 00:00:00', NULL);
+INSERT INTO `sys_role` VALUES (100, 'super', '平台超级管理员', '平台层，跨租户', 0);
+INSERT INTO `sys_role` VALUES (102, 'root', '管理员', '管理员', 1);
 
 -- ----------------------------
 -- Insert records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (2, '超级管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'root', '185****6496', '1975922551@qq.com', '2025-02-13 18:12:42', '2025-02-14 11:28:14', '2025-02-13 18:12:54', NULL);
+INSERT INTO `sys_user` VALUES (1, '平台管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'admin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 0);
+INSERT INTO `sys_user` VALUES (2, '超级管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'root', '185****6496', '1975922551@qq.com', '2025-02-13 18:12:42', '2025-02-14 11:28:14', '2025-02-13 18:12:54', NULL, 1);
 
 -- ----------------------------
 -- Insert records of role_menu
@@ -173,10 +196,26 @@ INSERT INTO `role_menu` VALUES (46, 2010301, 102);
 INSERT INTO `role_menu` VALUES (47, 2010302, 102);
 INSERT INTO `role_menu` VALUES (48, 202, 102);
 INSERT INTO `role_menu` VALUES (49, 20201, 102);
+INSERT INTO `role_menu` VALUES (50, 2, 100);
+INSERT INTO `role_menu` VALUES (51, 201, 100);
+INSERT INTO `role_menu` VALUES (52, 20101, 100);
+INSERT INTO `role_menu` VALUES (53, 20102, 100);
+INSERT INTO `role_menu` VALUES (54, 20103, 100);
+INSERT INTO `role_menu` VALUES (55, 2010101, 100);
+INSERT INTO `role_menu` VALUES (56, 2010102, 100);
+INSERT INTO `role_menu` VALUES (57, 2010201, 100);
+INSERT INTO `role_menu` VALUES (58, 2010202, 100);
+INSERT INTO `role_menu` VALUES (59, 2010301, 100);
+INSERT INTO `role_menu` VALUES (60, 2010302, 100);
+INSERT INTO `role_menu` VALUES (61, 202, 100);
+INSERT INTO `role_menu` VALUES (62, 20201, 100);
+INSERT INTO `role_menu` VALUES (63, 3, 100);
+INSERT INTO `role_menu` VALUES (64, 301, 100);
 
 -- ----------------------------
 -- Insert records of user_role
 -- ----------------------------
 INSERT INTO `user_role` VALUES (5, 2, 102);
+INSERT INTO `user_role` VALUES (6, 1, 100);
 
 SET FOREIGN_KEY_CHECKS = 1;

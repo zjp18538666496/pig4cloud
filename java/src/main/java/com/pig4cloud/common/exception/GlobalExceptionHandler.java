@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,6 +38,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
     public R<Void> handleBadCredentials(Exception e) {
         return R.fail("用户名或密码不正确");
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public R<Void> handleDisabled(DisabledException e) {
+        return R.fail(e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

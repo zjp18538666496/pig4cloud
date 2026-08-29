@@ -45,6 +45,11 @@ public class UserEntity {
      */
     private String avatar;
 
+    /**
+     * 租户id（0为平台层账号）
+     */
+    private Integer tenant_id;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Timestamp create_time;
 

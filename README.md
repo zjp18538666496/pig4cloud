@@ -59,6 +59,15 @@ com.pig4cloud
 - 权限点=角色编码（如`root`）+ 按钮菜单的权限标识（`sys_menu.perms`，如`user:remove`），登录时随用户信息下发：后端接口用 `@PreAuthorize("hasAuthority('user:remove')")` 控制，前端按钮用 `v-permission="['user:remove']"` 控制；注册接口 `/api/user/register` 无需登录。
 - 前端动态路由只接受 `sys_menu.component_path` 指向 `/views` 下真实存在的组件（白名单）。
 
+## 多租户
+
+共享表方案（`tenant_id` 列 + MyBatis-Plus 租户拦截器自动拼条件）：
+
+- 租户模型：**账号全库唯一，登录不填租户**，账号归属哪个租户由 `sys_user.tenant_id` 决定；菜单为平台级共享，用户/角色按租户隔离
+- 平台超级管理员：账号 `admin/12345678`（`tenant_id=0`，角色 `super`），可跨租户管理，专属"平台管理"菜单
+- 开通租户：超管在"平台管理 → 租户管理"开通，自动创建 `{租户编码}_admin` 管理员账号（初始密码 `12345678`）+ 租户管理员角色并绑定全部菜单
+- 租户被禁用后其下账号无法登录；业务代码无需关心租户过滤（拦截器自动处理）
+
 ## 接口文档
 
 后端启动后访问 http://localhost:9000/swagger-ui/index.html

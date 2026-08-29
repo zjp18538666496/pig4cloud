@@ -13,7 +13,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
         "com.pig4cloud.auth.mapper",
         "com.pig4cloud.user.mapper",
         "com.pig4cloud.role.mapper",
-        "com.pig4cloud.menu.mapper"
+        "com.pig4cloud.menu.mapper",
+        "com.pig4cloud.tenant.mapper"
 }) // 扫描各业务模块Mapper接口
 public class Application {
     public static void main(String[] args) {
