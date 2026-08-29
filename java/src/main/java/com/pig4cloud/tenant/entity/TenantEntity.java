@@ -1,5 +1,7 @@
 package com.pig4cloud.tenant.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
@@ -13,6 +15,7 @@ public class TenantEntity {
     /**
      * 租户id（0为平台层）
      */
+    @TableId(type = IdType.AUTO)
     private Integer id;
 
     /**

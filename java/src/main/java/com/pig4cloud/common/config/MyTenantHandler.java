@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
 import com.pig4cloud.common.context.UserContext;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
+import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
@@ -11,6 +12,7 @@ import java.util.Set;
  * 共享表多租户策略：用户/角色按tenant_id隔离，菜单与平台表全局共享。
  * 平台超管(角色编码super)和未认证上下文(登录/后台任务)不追加租户条件。
  */
+@Component
 public class MyTenantHandler implements TenantLineHandler {
 
     /**

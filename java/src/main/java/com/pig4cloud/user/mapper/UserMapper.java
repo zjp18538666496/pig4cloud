@@ -21,33 +21,33 @@ public interface UserMapper extends BaseMapper<UserEntity> {
 
     @Select("""
             SELECT
-                sys_user.id,
-                sys_user.name,
-                sys_user.username,
-                sys_user.mobile,
-                sys_user.email,
-                DATE_FORMAT(sys_user.create_time, '%Y-%m-%d %H:%i:%s') AS create_time,
-                DATE_FORMAT(sys_user.update_time, '%Y-%m-%d %H:%i:%s') AS update_time,
-                DATE_FORMAT(sys_user.last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,
-                IFNULL(GROUP_CONCAT(DISTINCT sys_role.role_code ORDER BY sys_role.role_code SEPARATOR ','), '') AS role_codes,
-                IFNULL(GROUP_CONCAT(DISTINCT sys_role.role_name ORDER BY sys_role.role_name SEPARATOR ','), '') AS role_names
+                u.id,
+                u.name,
+                u.username,
+                u.mobile,
+                u.email,
+                DATE_FORMAT(u.create_time, '%Y-%m-%d %H:%i:%s') AS create_time,
+                DATE_FORMAT(u.update_time, '%Y-%m-%d %H:%i:%s') AS update_time,
+                DATE_FORMAT(u.last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,
+                IFNULL(GROUP_CONCAT(DISTINCT r.role_code ORDER BY r.role_code SEPARATOR ','), '') AS role_codes,
+                IFNULL(GROUP_CONCAT(DISTINCT r.role_name ORDER BY r.role_name SEPARATOR ','), '') AS role_names
             FROM
-                sys_user
-            LEFT JOIN user_role ON sys_user.id = user_role.user_id
-            LEFT JOIN sys_role ON user_role.role_id = sys_role.id
+                sys_user u
+            LEFT JOIN user_role ur ON u.id = ur.user_id
+            LEFT JOIN sys_role r ON ur.role_id = r.id
             GROUP BY
-                sys_user.id
+                u.id
             LIMIT #{pageSize} OFFSET #{page};
             """)
     List<Map<String, Object>> selectPage(@Param("pageSize") long pageSize, @Param("page") long page);
 
     @Select("""
             SELECT
-                 COUNT(DISTINCT sys_user.id)
+                 COUNT(DISTINCT u.id)
              FROM
-                 sys_user
-             LEFT JOIN user_role ON sys_user.id = user_role.user_id
-             LEFT JOIN sys_role ON user_role.role_id = sys_role.id
+                 sys_user u
+             LEFT JOIN user_role ur ON u.id = ur.user_id
+             LEFT JOIN sys_role r ON ur.role_id = r.id
             """)
     int selectUserList2Count();
 

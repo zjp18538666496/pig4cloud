@@ -3,6 +3,7 @@ package com.pig4cloud.role.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.pig4cloud.common.exception.BizException;
+import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.menu.mapper.MenuMapper;
@@ -34,6 +35,8 @@ public class RoleServiceImpl implements RoleService {
         roleEntity.setRole_name(dto.getRoleName());
         roleEntity.setRole_code(dto.getRoleCode());
         roleEntity.setDescription(dto.getDescription());
+        // 租户归属由服务端决定：取当前登录用户的租户，未认证上下文(平台操作)归平台层
+        roleEntity.setTenant_id(UserContext.getTenantId() == null ? 0 : UserContext.getTenantId());
         int rows = roleMapper.insert(roleEntity);
         if (rows <= 0) {
             return R.fail("创建失败");

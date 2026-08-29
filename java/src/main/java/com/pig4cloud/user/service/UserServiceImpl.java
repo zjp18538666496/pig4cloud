@@ -3,6 +3,7 @@ package com.pig4cloud.user.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.pig4cloud.common.exception.BizException;
+import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.file.service.FtpService;
@@ -55,6 +56,8 @@ public class UserServiceImpl implements UserService {
         userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
         userEntity.setName(dto.getUsername());
         userEntity.setCreate_time(new Timestamp(System.currentTimeMillis()));
+        // 租户归属由服务端决定：未认证上下文(注册)归默认租户1，其余取当前登录用户租户
+        userEntity.setTenant_id(UserContext.getTenantId() == null ? 1 : UserContext.getTenantId());
         int rows = userMapper.insert(userEntity);
         return R.ok(rows > 0 ? "注册成功" : "注册失败", null);
     }
