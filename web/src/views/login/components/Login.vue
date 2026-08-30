@@ -4,12 +4,23 @@ import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/login.js'
 import { getCaptcha, resetPasswordByEmail, sendResetCode } from '@/api/auth.js'
+import { getPolicy } from '@/api/config.js'
 import { useRouter } from 'vue-router'
 import { VerifyUser } from '@/utils/vali.js'
 
 const router = useRouter()
 let loading = ref(false)
 const verifyUser = new VerifyUser()
+
+/**
+ * 密码策略/验证码开关（sys_config可配）
+ */
+const policy = reactive({ captchaEnabled: true, minLength: 8 })
+getPolicy().then((res) => {
+    if (res?.code === 200) {
+        Object.assign(policy, res.data)
+    }
+})
 
 /**
  * 图形验证码
@@ -203,7 +214,7 @@ const resetForgotForm = () => {
         <el-form-item prop="password">
             <el-input :prefix-icon="Lock" v-model="ruleForm.password" placeholder="请输入用密码" size="large" type="password" autocomplete="off" show-password />
         </el-form-item>
-        <el-form-item prop="captchaCode">
+        <el-form-item v-if="policy.captchaEnabled" prop="captchaCode">
             <div class="flex gap-10px w-100%">
                 <el-input v-model="ruleForm.captchaCode" placeholder="请输入验证码" size="large" type="text" autocomplete="off" @keyup.enter="submitForm(ruleFormRef)" />
                 <img v-if="captcha.image" :src="captcha.image" title="看不清？点击刷新" class="captcha-img" alt="验证码" @click="loadCaptcha" />

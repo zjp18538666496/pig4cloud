@@ -3,7 +3,8 @@
         <el-tab-pane label="基本信息" name="basic">
             <el-form :model="form" label-width="auto" style="max-width: 600px">
                 <el-form-item label="  ">
-                    <el-avatar :size="150" shape="circle" :src="baseUrl + form.avatar" />
+                    <!-- 头像走公开接口（仅返回登记为头像的FTP路径） -->
+                    <el-avatar :size="150" shape="circle" :src="baseUrl + 'file/avatar/' + (form.id || '')" />
                 </el-form-item>
                 <el-form-item label="昵称">
                     <el-input v-model="form.name" />

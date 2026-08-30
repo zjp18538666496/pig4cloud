@@ -89,3 +89,45 @@ export function updatePassword(data) {
         data,
     })
 }
+
+/**
+ * 导出用户（当前筛选，xlsx blob）
+ * @param data 查询条件
+ * @returns {*}
+ */
+export function exportUsers(data) {
+    return service({
+        url: '/user/export',
+        method: 'POST',
+        data,
+        responseType: 'blob',
+    })
+}
+
+/**
+ * 导入模板（xlsx blob）
+ * @returns {*}
+ */
+export function downloadImportTemplate() {
+    return service({
+        url: '/user/importTemplate',
+        method: 'GET',
+        responseType: 'blob',
+    })
+}
+
+/**
+ * 用户导入（multipart，返回{successCount, failures}）
+ * @param {File} file
+ * @returns {*}
+ */
+export function importUsers(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return service({
+        url: '/user/import',
+        method: 'POST',
+        data: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+    })
+}

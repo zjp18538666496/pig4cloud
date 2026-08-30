@@ -31,6 +31,16 @@
         <el-form-item v-if="props.menuInfo.type === '2'" prop="perms" label="权限标识">
             <el-input v-model="props.menuInfo.perms" placeholder="如user:remove" />
         </el-form-item>
+        <el-form-item v-if="props.menuInfo.type !== '2'" label="菜单图标">
+            <el-select v-model="props.menuInfo.icon" clearable filterable placeholder="不设置则使用默认图标" style="width: 100%">
+                <el-option v-for="icon in iconOptions" :key="icon" :label="icon" :value="icon">
+                    <span class="flex items-center gap-8px">
+                        <el-icon><component :is="iconMap[icon]" /></el-icon>
+                        {{ icon }}
+                    </span>
+                </el-option>
+            </el-select>
+        </el-form-item>
         <el-form-item prop="level" label="层级">
             <el-input v-model="props.menuInfo.level" disabled />
         </el-form-item>
@@ -76,6 +86,18 @@ getMenuLists({}).then((res) => {
 const currentChange = (node) => {
     props.menuInfo.parent_id = node.id
 }
+
+/**
+ * 菜单图标候选（element-plus图标名，侧栏按名动态渲染）
+ */
+import * as ElementPlusIcons from '@element-plus/icons-vue'
+const iconMap = ElementPlusIcons
+const iconOptions = [
+    'HomeFilled', 'User', 'UserFilled', 'Avatar', 'UserFilled', 'Key', 'Lock', 'Menu',
+    'SetUp', 'Operation', 'Tickets', 'Document', 'DataAnalysis', 'TrendCharts', 'Monitor',
+    'Bell', 'Message', 'ChatDotRound', 'Setting', 'Tools', 'Files', 'Folder', 'OfficeBuilding',
+    'Shop', 'Goods', 'List', 'Grid', 'Compass', 'Cloudy', 'Star', 'Flag', 'Link',
+]
 
 const changeState = (state) => {
     if (state !== '1') {

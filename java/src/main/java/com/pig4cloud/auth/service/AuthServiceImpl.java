@@ -11,6 +11,7 @@ import com.pig4cloud.auth.online.SessionRecord;
 import com.pig4cloud.auth.online.TokenBlacklist;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.config.service.ConfigService;
 import com.pig4cloud.log.entity.LoginLog;
 import com.pig4cloud.log.service.LoginLogService;
 import com.pig4cloud.user.entity.UserEntity;
@@ -52,12 +53,20 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlacklist tokenBlacklist;
     private final LoginLogService loginLogService;
     private final PasswordEncoder passwordEncoder;
+    private final ConfigService configService;
+    private final PasswordPolicyService passwordPolicyService;
 
     @Override
     public LoginResult login(LoginRequest request, String ip, String userAgent) {
         try {
-            // 验证码校验（一次性，校验即消费）
-            captchaService.verify(request.getCaptchaId(), request.getCaptchaCode());
+            // 图形验证码（sys_config可关；关闭时不校验，前端也隐藏输入框）
+            if (configService.getBool("captcha.enabled", true)) {
+                if (request.getCaptchaId() == null || request.getCaptchaId().isBlank()
+                        || request.getCaptchaCode() == null || request.getCaptchaCode().isBlank()) {
+                    throw new BizException("验证码不能为空");
+                }
+                captchaService.verify(request.getCaptchaId(), request.getCaptchaCode());
+            }
             // 失败锁定校验
             loginAttemptService.checkLocked(request.getUsername());
 
@@ -82,6 +91,8 @@ public class AuthServiceImpl implements AuthService {
             if (userVO != null) {
                 // 权限点随登录响应下发，前端v-permission据此控制按钮
                 userVO.setPermissions(authorities);
+                // 密码策略：初始密码未改或密码过期时强制修改
+                userVO.setForcePwdChange(isForcePwdChange(user));
             }
             String accessToken = jwtUtils.getJwt(claims);
             String refreshToken = jwtUtils.getRefreshToken(claims);
@@ -90,17 +101,43 @@ public class AuthServiceImpl implements AuthService {
             loginAttemptService.recordSuccess(request.getUsername());
             userMapper.updateLastLoginTime(request.getUsername());
             registerSession(accessToken, refreshToken, userVO, user, ip, userAgent);
-            saveLoginLog(request.getUsername(), ip, true, "登录成功");
+            saveLoginLog(request.getUsername(), ip, user == null ? null : user.getTenant_id(), true, "登录成功");
             return new LoginResult(accessToken, refreshToken, userVO);
         } catch (AuthenticationException ex) {
             loginAttemptService.recordFailure(request.getUsername());
             String message = ex instanceof BadCredentialsException ? "用户名或密码不正确" : ex.getMessage();
-            saveLoginLog(request.getUsername(), ip, false, message);
+            saveLoginLog(request.getUsername(), ip, resolveTenantId(request.getUsername()), false, message);
             throw ex;
         } catch (BizException ex) {
-            saveLoginLog(request.getUsername(), ip, false, ex.getMessage());
+            saveLoginLog(request.getUsername(), ip, resolveTenantId(request.getUsername()), false, ex.getMessage());
             throw ex;
         }
+    }
+
+    /**
+     * 密码是否需要强制修改：初始/重置密码未改，或超出有效期（pwd.expire-days>0时启用）
+     */
+    private boolean isForcePwdChange(UserEntity user) {
+        if (user == null) {
+            return false;
+        }
+        if (user.getForce_pwd_change() != null && user.getForce_pwd_change() == 1) {
+            return true;
+        }
+        int expireDays = configService.getInt("pwd.expire-days", 0);
+        return expireDays > 0 && user.getPwd_update_time() != null
+                && user.getPwd_update_time().before(new Timestamp(System.currentTimeMillis() - expireDays * 24L * 3600 * 1000));
+    }
+
+    /**
+     * 登录失败场景尽力解析租户（用户名不存在等场景为null）
+     */
+    private Integer resolveTenantId(String username) {
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+        UserEntity user = userMapper.selectUserByUsername(username);
+        return user == null ? null : user.getTenant_id();
     }
 
     /**
@@ -189,9 +226,13 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             throw new BizException("该邮箱未绑定任何账号");
         }
+        // 新密码走密码策略校验
+        passwordPolicyService.validate(dto.getNewPassword());
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("username", user.getUsername())
                 .set("password", passwordEncoder.encode(dto.getNewPassword()))
+                .set("pwd_update_time", new Timestamp(System.currentTimeMillis()))
+                .set("force_pwd_change", 0)
                 .set("update_time", new Timestamp(System.currentTimeMillis()));
         if (userMapper.update(null, updateWrapper) <= 0) {
             throw new BizException("重置失败，请稍后重试");
@@ -201,14 +242,15 @@ public class AuthServiceImpl implements AuthService {
             tokenBlacklist.revoke(session.getTokenJti(), session.getAccessExpireAt());
             tokenBlacklist.revoke(session.getRefreshJti(), session.getRefreshExpireAt());
         });
-        saveLoginLog(user.getUsername(), null, true, "通过邮箱验证码重置密码");
+        saveLoginLog(user.getUsername(), null, user.getTenant_id(), true, "通过邮箱验证码重置密码");
         return R.ok("密码重置成功，请使用新密码登录", null);
     }
 
-    private void saveLoginLog(String username, String ip, boolean success, String message) {
+    private void saveLoginLog(String username, String ip, Integer tenantId, boolean success, String message) {
         LoginLog loginLog = new LoginLog();
         loginLog.setUsername(username);
         loginLog.setIp(ip);
+        loginLog.setTenantId(tenantId);
         loginLog.setSuccess(success);
         loginLog.setMessage(message);
         loginLog.setCreateTime(new Date());

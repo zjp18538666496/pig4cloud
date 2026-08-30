@@ -197,7 +197,6 @@ const handleEdit = (index, row) => {
     role.value.roleInfo.menu_codes = role.value.roleInfo.menu_codes === '' ? [] : role.value.roleInfo.menu_codes.split(',').map((item) => Number(item.trim()))
     role.value.dialogVisible = true
 }
-
 /**
  * 保存角色
  */

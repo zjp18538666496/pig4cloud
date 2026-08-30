@@ -29,4 +29,10 @@ public class NoticeDto {
      * 状态(0草稿1发布)
      */
     private String status = "0";
+
+    /**
+     * 发布时是否同时发站内信给可见范围用户
+     */
+    @JsonProperty("send_message")
+    private Boolean sendMessage;
 }

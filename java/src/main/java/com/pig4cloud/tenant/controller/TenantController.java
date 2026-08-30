@@ -42,4 +42,10 @@ public class TenantController {
     public R<Void> updateTenant(@Valid @RequestBody TenantUpdateDto dto) {
         return tenantService.updateTenant(dto);
     }
+
+    @PostMapping("/delTenant")
+    @PreAuthorize("hasAuthority('tenant:manage')")
+    public R<Void> delTenant(@RequestBody TenantUpdateDto dto) {
+        return tenantService.deleteTenant(dto.getId());
+    }
 }

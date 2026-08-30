@@ -19,6 +19,11 @@ public class LoginLog {
     @Id
     private String id;
 
+    /**
+     * 租户id（用户名不存在等场景为null，仅超管可见）
+     */
+    private Integer tenantId;
+
     private String username;
 
     private String ip;

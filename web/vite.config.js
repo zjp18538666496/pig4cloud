@@ -20,6 +20,11 @@ export default defineConfig({
     },
     server: {
         proxy: {
+            // 站内信WebSocket实时推送（/ws/{token}）
+            '/ws': {
+                target: 'http://127.0.0.1:9000',
+                ws: true,
+            },
             // 后端所有接口统一挂/api前缀，开发环境代理到9000端口
             '/api': {
                 target: 'http://127.0.0.1:9000',

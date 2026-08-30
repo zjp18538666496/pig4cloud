@@ -3,7 +3,7 @@ import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EditUser from '@/views/user-manager/components/EditUser.vue'
 import { debounce } from '@/utils/utils.js'
-import { createUser, delUser, getUserLists, updateUser } from '@/api/user.js'
+import { createUser, delUser, downloadImportTemplate, exportUsers, getUserLists, importUsers, updateUser } from '@/api/user.js'
 import { getDeptTree } from '@/api/dept.js'
 import { getTenantLists } from '@/api/tenant.js'
 import BaseTable from '@/utils/table.js'
@@ -98,6 +98,66 @@ const handleTenantChange = () => {
 }
 
 /**
+ * blob下载工具
+ */
+const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+}
+
+const handleExport = () => {
+    exportUsers(userTable.value.query).then((res) => {
+        if (res instanceof Blob) {
+            downloadBlob(res, '用户列表.xlsx')
+        } else {
+            ElMessage.error('导出失败，请重试')
+        }
+    })
+}
+
+const handleTemplate = () => {
+    downloadImportTemplate().then((res) => {
+        if (res instanceof Blob) {
+            downloadBlob(res, '用户导入模板.xlsx')
+        } else {
+            ElMessage.error('模板下载失败，请重试')
+        }
+    })
+}
+
+const importInputRef = ref()
+const handleImportClick = () => {
+    importInputRef.value.click()
+}
+const handleImportFile = (event) => {
+    const file = event.target.files[0]
+    event.target.value = ''
+    if (!file) return
+    importUsers(file).then((res) => {
+        if (res?.code === 200) {
+            const { successCount, failures } = res.data
+            if (!failures.length) {
+                ElMessage.success(`导入成功：${successCount}名用户`)
+            } else {
+                ElMessageBox.alert(
+                    `成功 ${successCount} 人，失败 ${failures.length} 人：` +
+                        failures.map((f) => `第${f.row}行(${f.username})：${f.reason}`).join('；'),
+                    '导入结果',
+                    { type: 'warning' },
+                )
+            }
+            getUserLise()
+        } else {
+            ElMessage.error(`导入失败！${res?.message}`)
+        }
+    })
+}
+
+/**
  * 更新表格高度
  */
 const updateTableHeight = () => {
@@ -153,6 +213,7 @@ const handleEdit = (index, row) => {
     type = 'edit'
     user.value.roleInfo = { ...row }
     user.value.roleInfo.role_codes = row.role_codes?.split(',').filter((item) => item !== '')
+    user.value.roleInfo.post_ids = row.post_ids ? row.post_ids.split(',').filter((item) => item !== '').map(Number) : []
     user.value.dialogVisible = true
 }
 
@@ -228,6 +289,10 @@ onUnmounted(() => {
             <el-button class="ml-10px" type="primary" @click="handleSearch">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
             <el-button v-permission="['user:write']" type="primary" @click="createRole1">新增</el-button>
+            <el-button v-permission="['user:write']" @click="handleExport">导出</el-button>
+            <el-button v-permission="['user:write']" @click="handleTemplate">导入模板</el-button>
+            <el-button v-permission="['user:write']" @click="handleImportClick">导入</el-button>
+            <input ref="importInputRef" type="file" accept=".xlsx,.xls" style="display: none" @change="handleImportFile" />
         </div>
         <el-table :data="userTable.rows" border class="w-100% overflow-auto mb-10px" :max-height="userTable.height">
             <el-table-column prop="date" label="序号" align="center" width="60">
@@ -245,6 +310,16 @@ onUnmounted(() => {
             <el-table-column prop="dept_name" label="所属部门" align="center">
                 <template #default="scope">
                     {{ scope.row.dept_name || '-' }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="post_names" label="岗位" align="center">
+                <template #default="scope">
+                    <div class="flex flex-wrap gap-6px justify-center">
+                        <el-tag v-for="(item, key) in (scope.row.post_names || '').split(',').filter((item) => item !== '')" :key="key" type="warning" size="small">
+                            {{ item }}
+                        </el-tag>
+                        <span v-if="!scope.row.post_names">-</span>
+                    </div>
                 </template>
             </el-table-column>
             <el-table-column prop="mobile" label="手机号" align="center" />

@@ -7,6 +7,11 @@ spring:
     mongodb:
       # 操作日志库；账号建在admin库时必须指定authSource=admin
       uri: mongodb://root:your-mongo-password@127.0.0.1:27017/pigx_log?authSource=admin
+    redis:
+      # app.store.type=redis时启用（REDIS_HOST/REDIS_PORT/REDIS_PASSWORD环境变量优先）
+      host: 10.126.126.3
+      port: 6379
+      # password: your-redis-password
   # 找回密码邮件（可选）：配置后需同时设置 app.mail.enabled=true（或环境变量MAIL_ENABLED=true）
   # mail:
   #   host: smtp.qq.com

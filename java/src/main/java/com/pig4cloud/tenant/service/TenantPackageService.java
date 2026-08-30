@@ -2,11 +2,15 @@ package com.pig4cloud.tenant.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.pig4cloud.auth.online.SessionKickService;
 import com.pig4cloud.common.dto.BasePageQuery;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.log.annotation.LogRecord;
+import com.pig4cloud.menu.mapper.MenuMapper;
+import com.pig4cloud.role.entity.RoleEntity;
+import com.pig4cloud.role.mapper.RoleMapper;
 import com.pig4cloud.tenant.dto.TenantPackageDto;
 import com.pig4cloud.tenant.entity.TenantEntity;
 import com.pig4cloud.tenant.entity.TenantPackageEntity;
@@ -16,14 +20,18 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 租户套餐管理（平台级，仅超管）：决定开通租户时租户管理员角色的菜单范围
+ * 租户套餐管理（平台级，仅超管）：决定开通租户时租户管理员角色的菜单范围。
+ * 套餐菜单变更时同步重绑使用该套餐租户的管理员角色并踢会话，保证菜单范围即时生效
  */
 @Service
 @RequiredArgsConstructor
@@ -31,6 +39,9 @@ public class TenantPackageService {
 
     private final TenantPackageMapper packageMapper;
     private final TenantMapper tenantMapper;
+    private final RoleMapper roleMapper;
+    private final MenuMapper menuMapper;
+    private final SessionKickService sessionKickService;
 
     @Getter
     @Setter
@@ -63,12 +74,29 @@ public class TenantPackageService {
     }
 
     @LogRecord(module = "租户套餐", operation = "编辑套餐")
+    @Transactional
     public R<Void> updatePackage(TenantPackageDto dto) {
         TenantPackageEntity exists = packageMapper.selectById(dto.getId());
         if (exists == null) {
             throw new BizException("套餐不存在");
         }
         packageMapper.updateById(buildEntity(dto, exists));
+        // 套餐菜单变化：重绑使用该套餐租户的管理员角色菜单并踢会话，菜单范围即时生效
+        if (dto.getMenuCodes() != null) {
+            List<String> menuIds = dto.getMenuCodes();
+            List<TenantEntity> tenants = tenantMapper.selectList(
+                    new QueryWrapper<TenantEntity>().eq("package_id", dto.getId()));
+            for (TenantEntity tenant : tenants) {
+                RoleEntity adminRole = roleMapper.selectOne(new QueryWrapper<RoleEntity>()
+                        .eq("role_code", "tenant_admin")
+                        .eq("tenant_id", tenant.getId()));
+                if (adminRole != null) {
+                    menuMapper.deleteMenus(adminRole.getId());
+                    saveRoleMenus(adminRole.getId(), menuIds);
+                }
+                sessionKickService.kickTenant(tenant.getId());
+            }
+        }
         return R.ok("更新成功", null);
     }
 
@@ -96,6 +124,21 @@ public class TenantPackageService {
         return StringUtils.hasText(pkg.getMenu_ids())
                 ? List.of(pkg.getMenu_ids().split(","))
                 : List.of();
+    }
+
+    private void saveRoleMenus(Integer roleId, List<String> menuIds) {
+        if (menuIds == null || menuIds.isEmpty()) {
+            return;
+        }
+        List<Map<String, Object>> roleMenus = menuIds.stream()
+                .map(menuId -> {
+                    Map<String, Object> roleMenu = new HashMap<>();
+                    roleMenu.put("menu_id", Integer.parseInt(menuId.trim()));
+                    roleMenu.put("role_id", roleId);
+                    return roleMenu;
+                })
+                .toList();
+        menuMapper.insertUserRoles(roleMenus);
     }
 
     private TenantPackageEntity buildEntity(TenantPackageDto dto, TenantPackageEntity entity) {

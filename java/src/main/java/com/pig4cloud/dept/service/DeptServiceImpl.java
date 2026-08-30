@@ -130,6 +130,11 @@ public class DeptServiceImpl implements DeptService {
         return result;
     }
 
+    @Override
+    public void deleteByTenantId(Integer tenantId) {
+        deptMapper.delete(new QueryWrapper<DeptEntity>().eq("tenant_id", tenantId));
+    }
+
     private void checkParent(Integer parentId, Integer selfId, Integer tenantId) {
         if (parentId == null || parentId == 0) {
             return;

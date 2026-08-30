@@ -23,6 +23,11 @@ public class UserVO {
     private String avatar;
 
     /**
+     * 是否强制修改密码（初始密码未改/密码过期），登录响应下发，前端弹不可关闭的改密弹窗
+     */
+    private Boolean forcePwdChange;
+
+    /**
      * 权限点集合（角色编码+按钮操作权限），登录时填充，供前端v-permission使用
      */
     private List<String> permissions;

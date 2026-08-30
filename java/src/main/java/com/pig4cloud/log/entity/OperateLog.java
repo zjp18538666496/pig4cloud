@@ -22,6 +22,11 @@ public class OperateLog {
     private String id;
 
     /**
+     * 租户id（登录/注册等未认证操作为null，仅超管可见）
+     */
+    private Integer tenantId;
+
+    /**
      * 操作人（未认证接口如登录/注册取请求参数中的username）
      */
     private String username;

@@ -3,11 +3,16 @@ package com.pig4cloud.tenant.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.pig4cloud.auth.online.SessionKickService;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.config.service.ConfigService;
+import com.pig4cloud.dept.service.DeptService;
 import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.menu.mapper.MenuMapper;
+import com.pig4cloud.notice.entity.NoticeEntity;
+import com.pig4cloud.notice.mapper.NoticeMapper;
 import com.pig4cloud.role.entity.RoleEntity;
 import com.pig4cloud.role.mapper.RoleMapper;
 import com.pig4cloud.tenant.dto.TenantCreateDto;
@@ -44,7 +49,11 @@ public class TenantServiceImpl implements TenantService {
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
+    private final NoticeMapper noticeMapper;
     private final TenantPackageService packageService;
+    private final SessionKickService sessionKickService;
+    private final ConfigService configService;
+    private final DeptService deptService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -90,6 +99,9 @@ public class TenantServiceImpl implements TenantService {
         admin.setName(dto.getTenantName() + "管理员");
         admin.setPassword(passwordEncoder.encode(INITIAL_ADMIN_PASSWORD));
         admin.setTenant_id(tenant.getId());
+        // 初始密码按配置强制首登修改
+        admin.setForce_pwd_change(configService.getBool("pwd.force-change-initial", true) ? 1 : 0);
+        admin.setPwd_update_time(new Timestamp(System.currentTimeMillis()));
         admin.setCreate_time(new Timestamp(System.currentTimeMillis()));
         userMapper.insert(admin);
 
@@ -122,8 +134,9 @@ public class TenantServiceImpl implements TenantService {
         if (exists == null) {
             throw new BizException("租户不存在");
         }
+        boolean packageChanged = dto.getPackageId() != null && !dto.getPackageId().equals(exists.getPackage_id());
         // 换套餐时同步重绑该租户tenant_admin角色的菜单
-        if (dto.getPackageId() != null && !dto.getPackageId().equals(exists.getPackage_id())) {
+        if (packageChanged) {
             List<String> packageMenuIds = packageService.resolvePackageMenuIds(dto.getPackageId());
             RoleEntity adminRole = roleMapper.selectOne(new QueryWrapper<RoleEntity>()
                     .eq("role_code", TENANT_ADMIN_ROLE_CODE)
@@ -142,7 +155,37 @@ public class TenantServiceImpl implements TenantService {
                 .set("user_limit", dto.getUserLimit())
                 .set("update_time", new Date());
         tenantMapper.update(null, updateWrapper);
+        // 禁用或换套餐（菜单范围变了）时踢掉该租户全部在线会话，权限/可见菜单立即生效
+        if ("0".equals(dto.getStatus()) || packageChanged) {
+            sessionKickService.kickTenant(dto.getId());
+        }
         return R.ok("更新成功", null);
+    }
+
+    @Override
+    @LogRecord(module = "租户管理", operation = "删除租户")
+    @Transactional
+    public R<Void> deleteTenant(Integer id) {
+        TenantEntity exists = tenantMapper.selectById(id);
+        if (exists == null) {
+            throw new BizException("租户不存在");
+        }
+        if (id == 0 || id == 1) {
+            throw new BizException("平台层与默认租户不允许删除");
+        }
+        // 租户下仍有用户时拒绝删除（防误删活跃租户）
+        if (userMapper.selectCount(new QueryWrapper<UserEntity>().eq("tenant_id", id)) > 0) {
+            throw new BizException("该租户下仍存在用户，请先移出或删除用户后再删除租户");
+        }
+        // 踢掉该租户残留会话（已无用户，通常为空）
+        sessionKickService.kickTenant(id);
+        // 级联清理：角色（角色删除级联清role_menu/user_role）、部门、本租户公告、套餐绑定
+        roleMapper.delete(new QueryWrapper<RoleEntity>().eq("tenant_id", id));
+        deptService.deleteByTenantId(id);
+        noticeMapper.delete(new QueryWrapper<NoticeEntity>().eq("tenant_id", id));
+        tenantMapper.deleteById(id);
+        log.info("租户[{}]已删除", exists.getTenant_name());
+        return R.ok("删除成功", null);
     }
 
     private void saveRoleMenus(Integer roleId, List<String> menuIds) {

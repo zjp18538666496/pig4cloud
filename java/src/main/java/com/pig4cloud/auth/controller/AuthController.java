@@ -8,7 +8,9 @@ import com.pig4cloud.auth.dto.ResetPasswordByEmailDto;
 import com.pig4cloud.auth.dto.SendResetCodeDto;
 import com.pig4cloud.auth.service.AuthService;
 import com.pig4cloud.auth.service.CaptchaService;
+import com.pig4cloud.auth.service.IpRateLimiter;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.config.service.ConfigService;
 import com.pig4cloud.common.util.ServletUtils;
 import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.user.vo.UserVO;
@@ -33,24 +35,31 @@ public class AuthController {
 
     private final AuthService authService;
     private final CaptchaService captchaService;
+    private final IpRateLimiter ipRateLimiter;
+    private final ConfigService configService;
 
     /**
-     * 图形验证码，登录前获取；返回captchaId与base64图片
+     * 图形验证码，登录前获取；返回captchaId与base64图片。按IP限频防刷
      */
     @GetMapping("/captcha")
-    public R<Map<String, String>> captcha() {
+    public R<Map<String, String>> captcha(HttpServletRequest request) {
+        ipRateLimiter.checkLimit("captcha:ip", ServletUtils.getClientIp(request), 30, 60 * 1000L,
+                "验证码获取过于频繁，请稍后再试");
         return R.ok("请求成功", captchaService.generate());
     }
 
     /**
-     * 账号密码登录，token通过响应头Authorization/Refresh-Token下发
+     * 账号密码登录，token通过响应头Authorization/Refresh-Token下发。按IP限尝试次数防爆破
      */
     @PostMapping("/login")
     @LogRecord(module = "认证", operation = "用户登录")
     public R<UserVO> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response,
                            HttpServletRequest servletRequest) {
-        LoginResult result = authService.login(request,
-                ServletUtils.getClientIp(servletRequest), servletRequest.getHeader("User-Agent"));
+        String clientIp = ServletUtils.getClientIp(servletRequest);
+        ipRateLimiter.checkLimit("login:ip", clientIp,
+                configService.getInt("login.ip-window-max", 30), 10 * 60 * 1000L,
+                "登录尝试过于频繁，请10分钟后再试");
+        LoginResult result = authService.login(request, clientIp, servletRequest.getHeader("User-Agent"));
         response.setHeader("Authorization", "Bearer " + result.accessToken());
         response.setHeader("Refresh-Token", result.refreshToken());
         return R.ok("请求成功", result.user());

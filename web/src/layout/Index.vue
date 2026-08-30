@@ -8,6 +8,7 @@
                 <el-header>
                     <Header />
                 </el-header>
+                <TabsBar />
                 <el-main class="app_main">
                     <AppMain />
                 </el-main>
@@ -20,6 +21,7 @@
 import Sidebar from '@/layout/components/sidebar/Index.vue'
 import AppMain from '@/layout/components/AppMain.vue'
 import Header from '@/layout/components/header/Index.vue'
+import TabsBar from '@/layout/components/tabs/Index.vue'
 import { storeToRefs } from 'pinia'
 import { useSidebarStore } from '@/stores/sidebar.js'
 
@@ -40,7 +42,7 @@ let { width } = storeToRefs(store)
 .app_main {
     padding: 15px;
     width: 100%;
-    height: calc(100vh - 50px);
+    height: calc(100vh - 84px);
     background-color: rgb(248, 248, 248);
     overflow: hidden;
 }

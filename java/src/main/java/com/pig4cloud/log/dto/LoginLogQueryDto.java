@@ -17,4 +17,9 @@ public class LoginLogQueryDto extends BasePageQuery {
      * 是否成功；null=全部
      */
     private Boolean success;
+
+    /**
+     * 租户筛选：仅超管可传（普通用户由Controller强制为本租户）；空=本租户(超管为全部)
+     */
+    private Integer tenantId;
 }

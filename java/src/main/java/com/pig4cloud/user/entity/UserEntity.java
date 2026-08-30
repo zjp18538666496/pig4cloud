@@ -58,6 +58,17 @@ public class UserEntity {
      */
     private Integer dept_id;
 
+    /**
+     * 强制修改密码标记（租户管理员初始密码/管理员重置后置1，改密后清除）
+     */
+    private Integer force_pwd_change;
+
+    /**
+     * 密码最后修改时间（配合pwd.expire-days做密码过期）
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Timestamp pwd_update_time;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Timestamp create_time;
 

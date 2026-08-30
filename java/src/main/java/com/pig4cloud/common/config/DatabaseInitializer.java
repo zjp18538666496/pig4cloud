@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -50,6 +51,11 @@ public class DatabaseInitializer implements InitializingBean {
      */
     private static final String DEMO_MARKER_SQL = "SELECT COUNT(*) FROM sys_tenant WHERE tenant_code = 'tech'";
     private static final String DEMO_SCRIPT = "sql/upgrade_20260830_02_demo.sql";
+
+    /**
+     * 版本化迁移登记表（V4起的新脚本统一走此机制）
+     */
+    private static final String VERSION_TABLE = "sys_schema_version";
 
     @Value("${app.db-init.enabled:true}")
     private boolean enabled;
@@ -95,6 +101,52 @@ public class DatabaseInitializer implements InitializingBean {
                         true, false, "--", ";", "/*", "*/");
                 log.info("演示数据初始化完成（新增科技/贸易/试用/过期四个演示租户）");
             }
+            // 版本化脚本：classpath sql/upgrade/V*.sql 按版本号顺序执行未登记的（V4起统一走此机制）
+            runVersionedScripts(connection);
+        }
+    }
+
+    /**
+     * 版本化迁移：确保版本表存在，按文件名顺序执行未登记的V*脚本并登记版本
+     */
+    private void runVersionedScripts(Connection connection) throws Exception {
+        if (!tableExists(connection, VERSION_TABLE)) {
+            ScriptUtils.executeSqlScript(connection, new EncodedResource(
+                    new ClassPathResource("sql/upgrade/schema_version.sql"), StandardCharsets.UTF_8));
+        }
+        var resolver = new org.springframework.core.io.support.PathMatchingResourcePatternResolver();
+        var resources = resolver.getResources("classpath:sql/upgrade/V*.sql");
+        List<org.springframework.core.io.Resource> sorted = new java.util.ArrayList<>(List.of(resources));
+        sorted.sort(java.util.Comparator.comparing(r -> {
+            String name = r.getFilename() == null ? "" : r.getFilename();
+            // 按版本号数字排序：V4 < V10
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("V(\\d+)").matcher(name);
+            return matcher.find() ? Long.parseLong(matcher.group(1)) : Long.MAX_VALUE;
+        }));
+        for (var resource : sorted) {
+            String filename = resource.getFilename();
+            if (filename == null) {
+                continue;
+            }
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("V(\\d+)").matcher(filename);
+            if (!matcher.find()) {
+                continue;
+            }
+            String version = matcher.group(1);
+            if (existsByQuery(connection,
+                    "SELECT COUNT(*) FROM " + VERSION_TABLE + " WHERE version = '" + version + "'")) {
+                continue;
+            }
+            log.info("执行版本化脚本 {}（V{}）", filename, version);
+            ScriptUtils.executeSqlScript(connection, new EncodedResource(resource, StandardCharsets.UTF_8),
+                    true, false, "--", ";", "/*", "*/");
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO " + VERSION_TABLE + " (version, script_name, applied_at) VALUES (?, ?, NOW())")) {
+                statement.setString(1, version);
+                statement.setString(2, filename);
+                statement.executeUpdate();
+            }
+            log.info("版本化脚本 {} 执行完成（V{}）", filename, version);
         }
     }
 

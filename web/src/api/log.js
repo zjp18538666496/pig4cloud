@@ -25,3 +25,17 @@ export function getLoginLogs(data) {
         data,
     })
 }
+
+/**
+ * 导出操作日志（当前筛选，xlsx blob，上限1万行）
+ */
+export function exportOperateLogs(data) {
+    return service({ url: '/log/exportOperateLogs', method: 'post', data, responseType: 'blob' })
+}
+
+/**
+ * 导出登录日志（当前筛选，xlsx blob，上限1万行）
+ */
+export function exportLoginLogs(data) {
+    return service({ url: '/log/exportLoginLogs', method: 'post', data, responseType: 'blob' })
+}

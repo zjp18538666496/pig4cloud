@@ -29,6 +29,12 @@ public class UserUpdateDto {
     private Integer deptId;
 
     /**
+     * 岗位id列表（仅管理员可改；null表示不修改）
+     */
+    @JsonProperty("post_ids")
+    private List<Integer> postIds;
+
+    /**
      * 角色编码列表，为空表示清空用户角色
      */
     @JsonProperty("role_codes")

@@ -35,14 +35,45 @@ public class FileController {
 
     private final FtpService ftpService;
     private final FileUtils fileUtils;
+    private final com.pig4cloud.user.mapper.UserMapper userMapper;
+
+    /**
+     * 头像公开访问（唯一免登录的文件接口）：仅返回登记在sys_user.avatar中的FTP路径，
+     * 其它路径一律拒绝，防止未登录遍历下载FTP文件
+     */
+    @GetMapping("/avatar/{userId}")
+    public ResponseEntity<InputStreamResource> avatar(@org.springframework.web.bind.annotation.PathVariable Long userId) {
+        com.pig4cloud.user.entity.UserEntity user = userMapper.selectById(userId);
+        if (user == null || user.getAvatar() == null || user.getAvatar().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
+        // 双保险：只允许返回登记为头像的路径
+        String registeredPath = user.getAvatar();
+        try {
+            InputStream inputStream = ftpService.downloadFile(registeredPath);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"avatar\"");
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.IMAGE_PNG)
+                    .body(new InputStreamResource(inputStream));
+        } catch (IOException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     /**
      * 上传文件到本地uploadFile目录
      */
     @PostMapping("/upload")
     public String upload(@RequestParam("imgFile") MultipartFile file, @RequestParam("imgName") String name) throws Exception {
+        // 文件名清洗：只保留字母数字下划线中划线，防止name携带../造成写入穿越
+        String safeName = name == null ? "" : name.replaceAll("[^a-zA-Z0-9_-]", "");
+        if (safeName.isBlank()) {
+            safeName = "file";
+        }
         File dir = new File("uploadFile/imgFile");
-        file.transferTo(new File(dir.getAbsolutePath() + File.separator + name + ".png"));
+        file.transferTo(new File(dir.getAbsolutePath() + File.separator + safeName + ".png"));
         return "上传完成！文件名：" + name;
     }
 

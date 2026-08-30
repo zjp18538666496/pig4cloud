@@ -27,4 +27,9 @@ public interface DeptService {
      * 指定部门及其全部子孙部门id集合（含自身；部门不存在或为空返回空集），供数据权限过滤
      */
     Set<Integer> selfAndDescendantIds(Integer deptId);
+
+    /**
+     * 删除租户时清理其全部部门（仅租户删除流程使用）
+     */
+    void deleteByTenantId(Integer tenantId);
 }

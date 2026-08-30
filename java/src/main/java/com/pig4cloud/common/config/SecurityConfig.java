@@ -79,8 +79,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/auth/captcha").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/sendResetCode").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/resetPasswordByEmail").permitAll()
-                // 允许访问上传文件夹
-                .requestMatchers(HttpMethod.GET, "/api/file/**").permitAll()
+                // 密码策略（公开，登录/注册表单提示用，不含敏感信息）
+                .requestMatchers(HttpMethod.GET, "/api/config/policy").permitAll()
+                // 头像公开访问（仅返回登记在sys_user.avatar中的FTP路径）；其余文件接口需登录
+                .requestMatchers(HttpMethod.GET, "/api/file/avatar/**").permitAll()
+                // WebSocket握手（/ws/{token}自带JWT校验）
+                .requestMatchers("/ws/**").permitAll()
                 // 接口文档
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // 其余接口要求已登录，接口级权限用@PreAuthorize控制

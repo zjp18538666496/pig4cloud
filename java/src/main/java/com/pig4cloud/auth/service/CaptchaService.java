@@ -1,6 +1,7 @@
 package com.pig4cloud.auth.service;
 
 import com.pig4cloud.common.exception.BizException;
+import com.pig4cloud.common.store.StateStore;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
@@ -15,11 +16,10 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 图形验证码（内存实现，单机有效）：Java2D绘制PNG返回base64，答案存内存，
- * 2分钟有效且一次性（校验即删除）。
+ * 图形验证码：Java2D绘制PNG返回base64，答案存StateStore（TTL自动过期），
+ * 有效期内一次性使用（校验即删除）
  */
 @Component
 public class CaptchaService {
@@ -30,10 +30,15 @@ public class CaptchaService {
      */
     private static final String CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
     private static final int CODE_LENGTH = 4;
+    private static final String KEY_PREFIX = "auth:captcha:";
     private static final String IMAGE_PREFIX = "data:image/png;base64,";
 
     private final SecureRandom random = new SecureRandom();
-    private final Map<String, CaptchaEntry> store = new ConcurrentHashMap<>();
+    private final StateStore stateStore;
+
+    public CaptchaService(StateStore stateStore) {
+        this.stateStore = stateStore;
+    }
 
     /**
      * 生成验证码：返回captchaId与dataURL图片
@@ -44,25 +49,24 @@ public class CaptchaService {
             code.append(CODE_CHARS.charAt(random.nextInt(CODE_CHARS.length())));
         }
         String captchaId = UUID.randomUUID().toString();
-        store.put(captchaId, new CaptchaEntry(code.toString(), System.currentTimeMillis() + EXPIRE_MILLIS));
+        stateStore.put(KEY_PREFIX + captchaId, code.toString(), EXPIRE_MILLIS);
         return Map.of(
                 "captchaId", captchaId,
                 "image", IMAGE_PREFIX + Base64.getEncoder().encodeToString(drawImage(code.toString())));
     }
 
     public void verify(String captchaId, String code) {
-        CaptchaEntry entry = captchaId == null ? null : store.remove(captchaId);
-        if (entry == null || entry.expireAt() <= System.currentTimeMillis()) {
+        String saved = captchaId == null ? null : stateStore.get(KEY_PREFIX + captchaId);
+        // 取出即删除，保证一次性
+        if (captchaId != null) {
+            stateStore.delete(KEY_PREFIX + captchaId);
+        }
+        if (saved == null) {
             throw new BizException("验证码已过期，请刷新后重试");
         }
-        if (!entry.code().equalsIgnoreCase(code == null ? "" : code.trim())) {
+        if (!saved.equalsIgnoreCase(code == null ? "" : code.trim())) {
             throw new BizException("验证码不正确");
         }
-    }
-
-    public void cleanExpired() {
-        long now = System.currentTimeMillis();
-        store.entrySet().removeIf(entry -> entry.getValue().expireAt() <= now);
     }
 
     private byte[] drawImage(String code) {

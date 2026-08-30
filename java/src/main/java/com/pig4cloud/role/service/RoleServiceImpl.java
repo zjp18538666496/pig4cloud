@@ -6,6 +6,7 @@ import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.auth.online.SessionKickService;
 import com.pig4cloud.menu.mapper.MenuMapper;
 import com.pig4cloud.role.dto.RoleCreateDto;
 import com.pig4cloud.role.dto.RoleDeleteDto;
@@ -13,6 +14,7 @@ import com.pig4cloud.role.dto.RoleDto;
 import com.pig4cloud.role.dto.RoleUpdateDto;
 import com.pig4cloud.role.entity.RoleEntity;
 import com.pig4cloud.role.mapper.RoleMapper;
+import com.pig4cloud.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,8 @@ public class RoleServiceImpl implements RoleService {
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
     private final RoleHierarchyService roleHierarchyService;
+    private final SessionKickService sessionKickService;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
@@ -80,19 +84,33 @@ public class RoleServiceImpl implements RoleService {
         }
         menuMapper.deleteMenus(dto.getId());
         saveRoleMenus(dto.getId(), dto.getMenuCodes());
+        // 菜单/权限变更后踢掉持有该角色的在线用户，权限立即生效（token里权限是登录时烤入的）
+        sessionKickService.kickUsernames(userMapper.selectUsernamesByRoleId(dto.getId()));
         return R.ok("更新成功", null);
     }
 
     @Override
     public R<Void> deleteRole(RoleDeleteDto dto) {
-        RoleEntity exists = roleMapper.selectOne(new QueryWrapper<RoleEntity>()
-                .eq("role_code", dto.getRoleCode()).last("LIMIT 1"));
-        if (exists != null && !roleHierarchyService.descendantIds(exists.getId()).isEmpty()) {
-            throw new BizException("该角色存在下级角色，请先删除或调整其下级角色");
+        List<Integer> roleIds = roleMapper.selectList(new QueryWrapper<RoleEntity>()
+                        .eq("role_code", dto.getRoleCode()))
+                .stream().map(RoleEntity::getId).toList();
+        if (roleIds.isEmpty()) {
+            return R.ok("删除失败", null);
         }
+        for (Integer roleId : roleIds) {
+            if (!roleHierarchyService.descendantIds(roleId).isEmpty()) {
+                throw new BizException("该角色存在下级角色，请先删除或调整其下级角色");
+            }
+        }
+        // 删除前收集持有者，删除后踢会话（user_role随角色级联删除，之后查不到人）
+        List<String> holders = roleIds.stream()
+                .flatMap(roleId -> userMapper.selectUsernamesByRoleId(roleId).stream())
+                .distinct()
+                .toList();
         QueryWrapper<RoleEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role_code", dto.getRoleCode());
         int rows = roleMapper.delete(queryWrapper);
+        sessionKickService.kickUsernames(holders);
         return R.ok(rows > 0 ? "删除成功" : "删除失败", null);
     }
 

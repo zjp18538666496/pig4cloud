@@ -2,16 +2,19 @@
     <div>
         <el-tabs v-model="activeTab">
             <el-tab-pane label="操作日志" name="operate">
-                <div class="mb-20px">
-                    操作人
-                    <el-input
-                        v-model="operateTable.query.username"
-                        class="w240px"
-                        placeholder="操作人(模糊)"
-                        @keyup.enter="handleOperateSearch"
-                    />
-                    <el-button class="ml-10px" @click="handleOperateSearch">查询</el-button>
-                    <el-button type="primary" @click="handleOperateReset">重置</el-button>
+                <div class="mb-20px flex justify-between items-center">
+                    <div>
+                        操作人
+                        <el-input
+                            v-model="operateTable.query.username"
+                            class="w240px"
+                            placeholder="操作人(模糊)"
+                            @keyup.enter="handleOperateSearch"
+                        />
+                        <el-button class="ml-10px" @click="handleOperateSearch">查询</el-button>
+                        <el-button type="primary" @click="handleOperateReset">重置</el-button>
+                    </div>
+                    <el-button type="success" plain @click="handleExport">导出</el-button>
                 </div>
                 <el-table :data="operateTable.rows" border style="width: 100%" :max-height="logTableHeight">
                     <el-table-column prop="createTime" label="时间" width="170" align="center" />
@@ -44,20 +47,23 @@
                 />
             </el-tab-pane>
             <el-tab-pane label="登录日志" name="login">
-                <div class="mb-20px">
-                    操作人
-                    <el-input
-                        v-model="loginTable.query.username"
-                        class="w240px"
-                        placeholder="操作人(模糊)"
-                        @keyup.enter="handleLoginSearch"
-                    />
-                    <el-select v-model="loginTable.query.success" class="ml-10px w120px" placeholder="结果" clearable>
-                        <el-option label="成功" :value="true" />
-                        <el-option label="失败" :value="false" />
-                    </el-select>
-                    <el-button class="ml-10px" @click="handleLoginSearch">查询</el-button>
-                    <el-button type="primary" @click="handleLoginReset">重置</el-button>
+                <div class="mb-20px flex justify-between items-center">
+                    <div>
+                        操作人
+                        <el-input
+                            v-model="loginTable.query.username"
+                            class="w240px"
+                            placeholder="操作人(模糊)"
+                            @keyup.enter="handleLoginSearch"
+                        />
+                        <el-select v-model="loginTable.query.success" class="ml-10px w120px" placeholder="结果" clearable>
+                            <el-option label="成功" :value="true" />
+                            <el-option label="失败" :value="false" />
+                        </el-select>
+                        <el-button class="ml-10px" @click="handleLoginSearch">查询</el-button>
+                        <el-button type="primary" @click="handleLoginReset">重置</el-button>
+                    </div>
+                    <el-button type="success" plain @click="handleExport">导出</el-button>
                 </div>
                 <el-table :data="loginTable.rows" border style="width: 100%" :max-height="logTableHeight">
                     <el-table-column prop="createTime" label="时间" width="170" align="center" />
@@ -89,10 +95,32 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { getLoginLogs, getOperateLogs } from '@/api/log.js'
+import { ElMessage } from 'element-plus'
+import { exportLoginLogs, exportOperateLogs, getLoginLogs, getOperateLogs } from '@/api/log.js'
 
 const activeTab = ref('operate')
 const logTableHeight = window.innerHeight - 50 - 30 - 40 - 90
+
+const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+}
+
+const handleExport = () => {
+    const isOperate = activeTab.value === 'operate'
+    const request = isOperate ? exportOperateLogs(operateTable.query) : exportLoginLogs(loginTable.query)
+    request.then((res) => {
+        if (res instanceof Blob) {
+            downloadBlob(res, isOperate ? '操作日志.xlsx' : '登录日志.xlsx')
+        } else {
+            ElMessage.error('导出失败，请重试')
+        }
+    })
+}
 
 const operateTable = reactive({
     query: { username: '', page: 1, pageSize: 10 },

@@ -39,12 +39,16 @@ public interface UserMapper extends BaseMapper<UserEntity> {
             "  DATE_FORMAT(u.update_time, '%Y-%m-%d %H:%i:%s') AS update_time,",
             "  DATE_FORMAT(u.last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,",
             "  IFNULL(GROUP_CONCAT(DISTINCT r.role_code ORDER BY r.role_code SEPARATOR ','), '') AS role_codes,",
-            "  IFNULL(GROUP_CONCAT(DISTINCT r.role_name ORDER BY r.role_name SEPARATOR ','), '') AS role_names",
+            "  IFNULL(GROUP_CONCAT(DISTINCT r.role_name ORDER BY r.role_name SEPARATOR ','), '') AS role_names,",
+            "  IFNULL(GROUP_CONCAT(DISTINCT p2.post_name ORDER BY p2.post_name SEPARATOR ','), '') AS post_names,",
+            "  IFNULL(GROUP_CONCAT(DISTINCT up.post_id), '') AS post_ids",
             "FROM sys_user u",
             "LEFT JOIN user_role ur ON u.id = ur.user_id",
             "LEFT JOIN sys_role r ON ur.role_id = r.id",
             "LEFT JOIN sys_dept d ON u.dept_id = d.id",
             "LEFT JOIN sys_tenant t ON u.tenant_id = t.id",
+            "LEFT JOIN user_post up ON u.id = up.user_id",
+            "LEFT JOIN sys_post p2 ON up.post_id = p2.id",
             "<where>",
             "  <if test='deptIds != null and deptIds.size() > 0'>",
             "    <choose>",
@@ -138,4 +142,25 @@ public interface UserMapper extends BaseMapper<UserEntity> {
             DELETE FROM user_role WHERE user_id = #{userId}
             """)
     int deleteUserRoles(Long userId);
+
+    @Select("""
+            SELECT DISTINCT u.username
+            FROM sys_user u
+            JOIN user_role ur ON u.id = ur.user_id
+            WHERE ur.role_id = #{roleId}
+            """)
+    List<String> selectUsernamesByRoleId(Integer roleId);
+
+    @Delete("DELETE FROM user_post WHERE user_id = #{userId}")
+    int deleteUserPosts(Long userId);
+
+    @Insert({
+            "<script>",
+            "INSERT INTO user_post (user_id, post_id) VALUES ",
+            "<foreach collection='posts' item='post' separator=','>",
+            "(#{post.user_id}, #{post.post_id})",
+            "</foreach>",
+            "</script>"
+    })
+    int insertUserPosts(@Param("posts") List<Map<String, Object>> posts);
 }

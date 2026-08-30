@@ -15,12 +15,17 @@ public interface TenantService {
     R<PageResult<TenantEntity>> getTenantLists(TenantDto tenantDto);
 
     /**
-     * 开通租户：创建租户+租户管理员账号+管理员角色并绑定全部菜单
+     * 开通租户：绑定套餐菜单并自动创建租户管理员账号（初始密码按配置强制首登修改）
      */
     R<Void> createTenant(TenantCreateDto dto);
 
     /**
-     * 修改租户名称/状态
+     * 编辑租户（名称/状态/套餐/有效期/配额）；套餐变更重绑管理员角色菜单，禁用/换套餐踢会话
      */
     R<Void> updateTenant(TenantUpdateDto dto);
+
+    /**
+     * 删除租户：租户下存在用户时拒绝；级联清理角色/部门/公告/套餐绑定并踢会话
+     */
+    R<Void> deleteTenant(Integer id);
 }

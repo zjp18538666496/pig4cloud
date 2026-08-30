@@ -18,7 +18,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.pig4cloud.menu.mapper",
         "com.pig4cloud.tenant.mapper",
         "com.pig4cloud.dept.mapper",
-        "com.pig4cloud.notice.mapper"
+        "com.pig4cloud.notice.mapper",
+        "com.pig4cloud.config.mapper",
+        "com.pig4cloud.dict.mapper",
+        "com.pig4cloud.post.mapper",
+        "com.pig4cloud.message.mapper",
+        "com.pig4cloud.job.mapper"
 }) // 扫描各业务模块Mapper接口
 public class Application {
     public static void main(String[] args) {

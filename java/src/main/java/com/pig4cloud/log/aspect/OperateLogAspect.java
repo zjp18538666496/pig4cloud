@@ -67,6 +67,10 @@ public class OperateLogAspect {
             operateLog.setModule(logRecord.module());
             operateLog.setOperation(logRecord.operation());
             operateLog.setUsername(resolveUsername(paramsNode));
+            // 租户上下文：公开接口(登录/注册)为null，仅超管可见
+            if (com.pig4cloud.common.context.UserContext.get() != null) {
+                operateLog.setTenantId(com.pig4cloud.common.context.UserContext.getTenantId());
+            }
             fillRequestInfo(operateLog);
             operateLog.setParams(truncate(writeJson(paramsNode)));
             if (ex != null) {

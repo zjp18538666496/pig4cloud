@@ -2,7 +2,7 @@ package com.pig4cloud.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,6 +21,6 @@ public class ResetPasswordByEmailDto {
     private String code;
 
     @NotBlank(message = "新密码不能为空")
-    @Pattern(regexp = "^[a-zA-Z0-9!@#$%^&*(),.?\":{}|<>~`\\\\/\\[\\]\\-_+=;']{4,18}$", message = "请输入4到18位的密码，支持字母、数字和特殊字符")
+    @Size(max = 64, message = "密码最长64位")
     private String newPassword;
 }

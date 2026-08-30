@@ -18,6 +18,11 @@ spring:
     mongodb:
       # 按@CompoundIndex/@Indexed注解自动建索引
       auto-index-creation: true
+    redis:
+      # app.store.type=redis时启用；默认本地，生产用环境变量REDIS_HOST/REDIS_PORT/REDIS_PASSWORD
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:
@@ -31,6 +36,9 @@ cors:
   # 允许的来源，多个用逗号分隔；生产环境用环境变量CORS_ORIGINS收紧
   allowed-origins: ${CORS_ORIGINS:*}
 app:
+  store:
+    # 状态存储类型：memory(默认,单机内存) | redis(多实例共享，验证码/在线会话/黑名单等走Redis)
+    type: ${STORE_TYPE:memory}
   db-init:
     # 首次启动自动建表+灌入演示数据，生产环境置为false或用环境变量DB_INIT控制
     enabled: ${DB_INIT:true}

@@ -3,6 +3,7 @@ package com.pig4cloud.user.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +16,7 @@ public class UserCreateDto {
     private String username;
 
     @NotBlank(message = "密码不能为空")
-    @Pattern(regexp = "^[a-zA-Z0-9!@#$%^&*(),.?\":{}|<>~`\\\\/\\[\\]\\-_+=;']{4,18}$", message = "请输入4到18位的密码，支持字母、数字和特殊字符")
+    @Size(max = 64, message = "密码最长64位")
     private String password;
 
     /**
@@ -23,6 +24,28 @@ public class UserCreateDto {
      */
     @JsonProperty("dept_id")
     private Integer deptId;
+
+    /**
+     * 岗位id列表（可选）
+     */
+    @JsonProperty("post_ids")
+    private java.util.List<Integer> postIds;
+
+    /**
+     * 昵称（可选，默认同账号；导入用）
+     */
+    private String name;
+
+    /**
+     * 手机号（可选，导入用）
+     */
+    private String mobile;
+
+    /**
+     * 邮箱（可选，导入用）
+     */
+    @jakarta.validation.constraints.Email(message = "邮箱格式不正确")
+    private String email;
 
     /**
      * 所属租户（仅平台超管可指定；不传时注册归默认租户1，其他管理员建在本租户）

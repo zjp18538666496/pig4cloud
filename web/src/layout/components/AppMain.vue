@@ -2,7 +2,12 @@
 
 <template>
     <div class="main-container">
-        <router-view />
+        <!-- keep-alive按完整路径缓存组件实例，配合多标签页保留页面状态（LRU上限10个） -->
+        <router-view v-slot="{ Component, route }">
+            <keep-alive :max="10">
+                <component :is="Component" :key="route.fullPath" />
+            </keep-alive>
+        </router-view>
     </div>
 </template>
 

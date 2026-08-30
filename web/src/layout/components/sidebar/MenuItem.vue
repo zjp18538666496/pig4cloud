@@ -1,14 +1,14 @@
 <template>
     <el-menu-item v-if="hasChildren" :index="menu.route">
         <el-icon>
-            <icon-menu />
+            <component :is="iconComponent" />
         </el-icon>
         <span>{{ menu.menu_name }}</span>
     </el-menu-item>
     <el-sub-menu v-else :index="menu.route">
         <template #title>
             <el-icon>
-                <icon-menu />
+                <component :is="iconComponent" />
             </el-icon>
             {{ menu.menu_name }}
         </template>
@@ -17,7 +17,8 @@
 </template>
 
 <script setup>
-import { Menu as IconMenu } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import * as ElementPlusIcons from '@element-plus/icons-vue'
 
 const props = defineProps({
     menu: {
@@ -26,4 +27,6 @@ const props = defineProps({
     },
 })
 const hasChildren = props.menu.type === '1'
+// 按sys_menu.icon名称解析element-plus图标，未配置/不存在时缺省Menu
+const iconComponent = computed(() => ElementPlusIcons[props.menu.icon] || ElementPlusIcons.Menu)
 </script>

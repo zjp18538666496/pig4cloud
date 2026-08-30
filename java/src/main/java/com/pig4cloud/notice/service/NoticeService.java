@@ -8,6 +8,7 @@ import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.log.annotation.LogRecord;
+import com.pig4cloud.message.service.MessageService;
 import com.pig4cloud.notice.dto.NoticeDto;
 import com.pig4cloud.notice.entity.NoticeEntity;
 import com.pig4cloud.notice.mapper.NoticeMapper;
@@ -23,13 +24,18 @@ import java.util.List;
 
 /**
  * 通知公告：平台超管发平台公告(tenant_id=0全员可见)，租户管理员发本租户公告。
- * sys_notice不走租户拦截器，可见性在这里手动控制。
+ * sys_notice不走租户拦截器，可见性在这里手动控制
  */
 @Service
-@RequiredArgsConstructor
 public class NoticeService {
 
     private final NoticeMapper noticeMapper;
+    private final MessageService messageService;
+
+    public NoticeService(NoticeMapper noticeMapper, MessageService messageService) {
+        this.noticeMapper = noticeMapper;
+        this.messageService = messageService;
+    }
 
     @Getter
     @Setter
@@ -86,6 +92,7 @@ public class NoticeService {
                 ? SecurityContextHolder.getContext().getAuthentication().getName() : null);
         notice.setCreate_time(new Date());
         noticeMapper.insert(notice);
+        fanoutIfRequested(dto, notice);
         return R.ok("创建成功", null);
     }
 
@@ -101,7 +108,18 @@ public class NoticeService {
         applyDto(dto, notice);
         notice.setUpdate_time(new Date());
         noticeMapper.updateById(notice);
+        exists.setStatus(notice.getStatus());
+        fanoutIfRequested(dto, exists);
         return R.ok("更新成功", null);
+    }
+
+    /**
+     * 发布状态下勾选"同时发站内信"时，向可见范围用户扇出消息
+     */
+    private void fanoutIfRequested(NoticeDto dto, NoticeEntity notice) {
+        if (Boolean.TRUE.equals(dto.getSendMessage()) && "1".equals(notice.getStatus())) {
+            messageService.fanoutNotice(notice.getTenant_id(), notice.getTitle(), notice.getContent(), notice.getCreate_by());
+        }
     }
 
     @LogRecord(module = "通知公告", operation = "删除公告")

@@ -30,6 +30,11 @@
                 <el-option v-for="item in tenantList" :key="item.id" :label="`${item.tenant_name}(${item.id})`" :value="item.id" />
             </el-select>
         </el-form-item>
+        <el-form-item label="岗位">
+            <el-select v-model="props.roleInfo.post_ids" multiple collapse-tags placeholder="请选择岗位（可选）" clearable style="width: 100%">
+                <el-option v-for="item in postList" :key="item.id" :label="item.post_name" :value="item.id" />
+            </el-select>
+        </el-form-item>
         <el-form-item label="手机号">
             <el-input v-model="props.roleInfo.mobile" />
         </el-form-item>
@@ -55,9 +60,11 @@ import { ref, watch } from 'vue'
 import { getRoleLists } from '@/api/role.js'
 import { getDeptTree } from '@/api/dept.js'
 import { getTenantLists } from '@/api/tenant.js'
+import { getEnabledPosts } from '@/api/post.js'
 
 const roleLists = ref([])
 const deptTree = ref([])
+const postList = ref([])
 const treeProps = {
     children: 'children',
     label: 'dept_name',
@@ -77,6 +84,11 @@ const props = defineProps({
 getRoleLists({}).then((res) => {
     if (res.code === 200) {
         roleLists.value = res.data
+    }
+})
+getEnabledPosts().then((res) => {
+    if (res?.code === 200) {
+        postList.value = res.data
     }
 })
 

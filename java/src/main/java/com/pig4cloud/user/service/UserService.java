@@ -12,6 +12,7 @@ import com.pig4cloud.user.vo.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public interface UserService {
@@ -35,6 +36,16 @@ public interface UserService {
      * 分页获取用户列表
      */
     R<PageResult<Map<String, Object>>> getUserLists(UserDto userDto);
+
+    /**
+     * 导出用全量行（按当前筛选+数据权限，上限1万行）
+     */
+    List<Map<String, Object>> exportRows(UserDto userDto);
+
+    /**
+     * 批量导入用户（逐行按密码策略校验），返回{成功数, 失败明细}
+     */
+    Map<String, Object> importUsers(List<UserCreateDto> rows);
 
     /**
      * 修改密码

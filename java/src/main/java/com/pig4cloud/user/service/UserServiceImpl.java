@@ -9,6 +9,8 @@ import com.pig4cloud.common.result.R;
 import com.pig4cloud.dept.service.DataScopeFilter;
 import com.pig4cloud.dept.service.DataScopeService;
 import com.pig4cloud.dept.service.DeptService;
+import com.pig4cloud.auth.online.SessionKickService;
+import com.pig4cloud.auth.service.PasswordPolicyService;
 import com.pig4cloud.file.service.FtpService;
 import com.pig4cloud.file.util.FileUtils;
 import com.pig4cloud.role.mapper.RoleMapper;
@@ -34,8 +36,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +53,8 @@ public class UserServiceImpl implements UserService {
     private final TenantMapper tenantMapper;
     private final DataScopeService dataScopeService;
     private final DeptService deptService;
+    private final SessionKickService sessionKickService;
+    private final PasswordPolicyService passwordPolicyService;
     private final PasswordEncoder passwordEncoder;
     private final FtpService ftpService;
     private final FileUtils fileUtils;
@@ -60,6 +66,8 @@ public class UserServiceImpl implements UserService {
         if (userMapper.selectOne(queryWrapper) != null) {
             throw new BizException("用户已存在");
         }
+        // 密码策略校验（最小长度/复杂度走sys_config）
+        passwordPolicyService.validate(dto.getPassword());
         // 租户归属由服务端决定：超管可指定目标租户；未认证上下文(注册)归默认租户1，其余取当前登录用户租户
         Integer tenantId;
         if (dto.getTenantId() != null) {
@@ -84,16 +92,37 @@ public class UserServiceImpl implements UserService {
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername(dto.getUsername());
         userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
-        userEntity.setName(dto.getUsername());
+        userEntity.setName(dto.getName() == null || dto.getName().isBlank() ? dto.getUsername() : dto.getName());
+        userEntity.setMobile(dto.getMobile());
+        userEntity.setEmail(dto.getEmail());
         userEntity.setDept_id(dto.getDeptId());
         userEntity.setCreate_time(new Timestamp(System.currentTimeMillis()));
         userEntity.setTenant_id(tenantId);
         int rows = userMapper.insert(userEntity);
+        if (rows > 0 && dto.getPostIds() != null && !dto.getPostIds().isEmpty()) {
+            bindPosts(userEntity.getId().longValue(), dto.getPostIds());
+        }
         return R.ok(rows > 0 ? "注册成功" : "注册失败", null);
+    }
+
+    /**
+     * 重建用户岗位关联
+     */
+    private void bindPosts(Long userId, List<Integer> postIds) {
+        userMapper.deleteUserPosts(userId);
+        List<Map<String, Object>> posts = postIds.stream().map(postId -> {
+            Map<String, Object> post = new HashMap<>();
+            post.put("user_id", userId);
+            post.put("post_id", postId);
+            return post;
+        }).toList();
+        userMapper.insertUserPosts(posts);
     }
 
     @Override
     public R<Void> deleteUser(UserDeleteDto dto) {
+        // 删除前踢掉该用户全部在线会话
+        sessionKickService.kickUser(dto.getUsername());
         QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", dto.getUsername());
         int rows = userMapper.delete(queryWrapper);
@@ -118,6 +147,54 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<Map<String, Object>> exportRows(UserDto userDto) {
+        // 与列表同口径（筛选+数据权限），分页拉全量，上限1万行
+        DataScopeFilter filter = dataScopeService.resolveCurrentUser();
+        Collection<Integer> filterDeptIds = userDto.getDeptId() == null
+                ? null : deptService.selfAndDescendantIds(userDto.getDeptId());
+        Integer tenantId = UserContext.isSuperTenant() ? userDto.getTenantId() : null;
+        List<Map<String, Object>> all = new ArrayList<>();
+        long page = 0;
+        while (all.size() < 10000) {
+            List<Map<String, Object>> list = userMapper.selectPage(1000, page,
+                    filter.deptIds(), filter.selfId(), userDto.getUsername(), filterDeptIds, tenantId);
+            if (list.isEmpty()) {
+                break;
+            }
+            all.addAll(list);
+            if (list.size() < 1000) {
+                break;
+            }
+            page++;
+        }
+        return all;
+    }
+
+    @Override
+    public Map<String, Object> importUsers(List<UserCreateDto> rows) {
+        int success = 0;
+        List<Map<String, Object>> failures = new ArrayList<>();
+        int index = 1;
+        for (UserCreateDto row : rows == null ? List.<UserCreateDto>of() : rows) {
+            try {
+                createUser(row);
+                success++;
+            } catch (Exception ex) {
+                Map<String, Object> failure = new HashMap<>();
+                failure.put("row", index);
+                failure.put("username", row == null ? "" : row.getUsername());
+                failure.put("reason", ex instanceof BizException ? ex.getMessage() : "系统异常");
+                failures.add(failure);
+            }
+            index++;
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("successCount", success);
+        result.put("failures", failures);
+        return result;
+    }
+
+    @Override
     public R<Void> updatePassword(PasswordUpdateDto dto) {
         String username = currentUsername();
         UserEntity user = userMapper.selectUserByUsername(username);
@@ -130,9 +207,13 @@ public class UserServiceImpl implements UserService {
         if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
             throw new BizException("密码不能和之前一样");
         }
+        // 新密码走密码策略校验
+        passwordPolicyService.validate(dto.getNewPassword());
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("username", username);
         updateWrapper.set("password", passwordEncoder.encode(dto.getNewPassword()));
+        updateWrapper.set("pwd_update_time", new Timestamp(System.currentTimeMillis()));
+        updateWrapper.set("force_pwd_change", 0);
         updateWrapper.set("update_time", new Timestamp(System.currentTimeMillis()));
         int rows = userMapper.update(null, updateWrapper);
         return R.ok(rows > 0 ? "更新成功" : "更新失败", null);
@@ -140,11 +221,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public R<Void> resetPassword(ResetPasswordDto dto) {
+        // 管理员重置：走密码策略校验；标记首登强制改密（可配置）并踢掉该用户在线会话
+        passwordPolicyService.validate(dto.getPassword());
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("username", dto.getUsername());
         updateWrapper.set("password", passwordEncoder.encode(dto.getPassword()));
+        updateWrapper.set("pwd_update_time", new Timestamp(System.currentTimeMillis()));
+        updateWrapper.set("force_pwd_change", passwordPolicyService.forceChangeOnReset() ? 1 : 0);
         updateWrapper.set("update_time", new Timestamp(System.currentTimeMillis()));
         int rows = userMapper.update(null, updateWrapper);
+        sessionKickService.kickUser(dto.getUsername());
         return R.ok(rows > 0 ? "重置成功" : "重置失败", null);
     }
 
@@ -177,6 +263,10 @@ public class UserServiceImpl implements UserService {
             throw new BizException("更新用户信息失败");
         }
 
+        // 管理员可调整岗位（post_ids非null即重建，空数组清空）；非管理员不允许改动
+        if (isAdmin && dto.getPostIds() != null) {
+            bindPosts(dto.getId(), dto.getPostIds());
+        }
         // 只在显式传入role_codes时重建角色关联；null表示本次不修改角色（如个人中心改资料）
         if (isAdmin && dto.getRoleCodes() != null) {
             List<String> roleCodes = dto.getRoleCodes().stream()
@@ -191,13 +281,16 @@ public class UserServiceImpl implements UserService {
                 });
                 userMapper.insertUserRoles(roles);
             }
+            // 角色变更后踢掉该用户在线会话，权限立即生效
+            sessionKickService.kickUser(dto.getUsername());
         }
         return R.ok("更新成功", null);
     }
 
     @Override
     public R<Void> updateAvatar(Long userId, MultipartFile avatar) throws IOException {
-        String remotePath = "/test/" + fileUtils.generateFilePath(avatar);
+        // 存完整FTP文件路径（目录+原文件名）：头像公开接口按此路径直接流式返回
+        String remotePath = "/test/" + fileUtils.generateFilePath(avatar) + avatar.getOriginalFilename();
         ftpService.uploadFile(remotePath, avatar);
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", userId)
