@@ -1,18 +1,23 @@
 package com.pig4cloud.auth.online;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
 
 /**
- * 在线会话记录：一次登录对应一条，key为access token的jti
+ * 在线会话记录：一次登录对应一条，key为access token的jti。
+ * redis模式经JSON序列化存储，需保留无参构造器
  */
 @Getter
 @Setter
 @Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class SessionRecord {
 
     /**
