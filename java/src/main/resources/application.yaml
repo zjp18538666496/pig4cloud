@@ -38,7 +38,7 @@ cors:
 app:
   store:
     # 状态存储类型：memory(默认,单机内存) | redis(多实例共享，验证码/在线会话/黑名单等走Redis)
-    type: ${STORE_TYPE:memory}
+    type: ${STORE_TYPE:redis}
   db-init:
     # 首次启动自动建表+灌入演示数据，生产环境置为false或用环境变量DB_INIT控制
     enabled: ${DB_INIT:true}
