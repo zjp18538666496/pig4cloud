@@ -3,7 +3,10 @@ package com.pig4cloud.log.controller;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.log.dto.LogQueryDto;
+import com.pig4cloud.log.dto.LoginLogQueryDto;
+import com.pig4cloud.log.entity.LoginLog;
 import com.pig4cloud.log.entity.OperateLog;
+import com.pig4cloud.log.service.LoginLogService;
 import com.pig4cloud.log.service.OperateLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,10 +21,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class LogController {
 
     private final OperateLogService operateLogService;
+    private final LoginLogService loginLogService;
 
     @PostMapping("/getOperateLogs")
     @PreAuthorize("hasAuthority('log:read')")
     public R<PageResult<OperateLog>> getOperateLogs(@RequestBody LogQueryDto dto) {
         return R.ok("获取数据成功", operateLogService.pageQuery(dto.getUsername(), dto.getPage(), dto.getPageSize()));
+    }
+
+    @PostMapping("/getLoginLogs")
+    @PreAuthorize("hasAuthority('log:read')")
+    public R<PageResult<LoginLog>> getLoginLogs(@RequestBody LoginLogQueryDto dto) {
+        return R.ok("获取数据成功", loginLogService.pageQuery(dto.getUsername(), dto.getSuccess(), dto.getPage(), dto.getPageSize()));
     }
 }

@@ -16,7 +16,7 @@ import java.util.Map;
 @Mapper
 public interface RoleMapper extends BaseMapper<RoleEntity> {
 
-    @Insert("INSERT INTO sys_role (role_code, role_name, description, tenant_id) VALUES (#{role_code}, #{role_name}, #{description}, #{tenant_id})")
+    @Insert("INSERT INTO sys_role (role_code, role_name, description, tenant_id, data_scope, parent_id) VALUES (#{role_code}, #{role_name}, #{description}, #{tenant_id}, #{data_scope}, #{parent_id})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(RoleEntity roleEntity);
 
@@ -44,4 +44,28 @@ public interface RoleMapper extends BaseMapper<RoleEntity> {
             LEFT JOIN sys_menu m ON m.id = rm.menu_id
             """)
     long selectUserList2Count();
+
+    @Select("""
+            SELECT r.*,
+                IFNULL(GROUP_CONCAT(DISTINCT m.id ORDER BY m.id SEPARATOR ','), '') AS menu_codes,
+                IFNULL(GROUP_CONCAT(DISTINCT m.menu_name ORDER BY m.id SEPARATOR ','), '') AS menu_names
+            FROM
+                sys_role r
+            LEFT JOIN role_menu rm ON r.id = rm.role_id
+            LEFT JOIN sys_menu m ON m.id = rm.menu_id AND m.type != '0'
+            GROUP BY
+                r.id
+            ORDER BY
+                r.id
+            """)
+    List<Map<String, Object>> selectListWithMenus();
+
+    @Select("""
+            SELECT r.*
+            FROM sys_role r
+            JOIN user_role ur ON r.id = ur.role_id
+            JOIN sys_user u ON u.id = ur.user_id
+            WHERE u.username = #{username}
+            """)
+    List<RoleEntity> selectRolesByUsername(String username);
 }

@@ -6,6 +6,30 @@
         <el-form-item label="用户名">
             <el-input disabled v-model="props.roleInfo.username" />
         </el-form-item>
+        <el-form-item label="所属部门">
+            <el-tree-select
+                v-model="props.roleInfo.dept_id"
+                :data="deptTree"
+                :props="treeProps"
+                check-strictly
+                :render-after-expand="false"
+                clearable
+                placeholder="请选择部门（可选）"
+                style="width: 100%"
+            />
+        </el-form-item>
+        <el-form-item v-if="isSuper" label="所属租户">
+            <el-select
+                v-model="props.roleInfo.tenant_id"
+                :disabled="props.roleInfo.id != null"
+                clearable
+                placeholder="不选则建到平台层(0)"
+                style="width: 100%"
+            >
+                <el-option label="平台层(0)" :value="0" />
+                <el-option v-for="item in tenantList" :key="item.id" :label="`${item.tenant_name}(${item.id})`" :value="item.id" />
+            </el-select>
+        </el-form-item>
         <el-form-item label="手机号">
             <el-input v-model="props.roleInfo.mobile" />
         </el-form-item>
@@ -27,10 +51,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { getRoleLists } from '@/api/role.js'
+import { getDeptTree } from '@/api/dept.js'
+import { getTenantLists } from '@/api/tenant.js'
 
 const roleLists = ref([])
+const deptTree = ref([])
+const treeProps = {
+    children: 'children',
+    label: 'dept_name',
+    value: 'id',
+}
 const ruleFormRef = ref()
 const props = defineProps({
     roleInfo: {
@@ -47,6 +79,40 @@ getRoleLists({}).then((res) => {
         roleLists.value = res.data
     }
 })
+
+// 部门树跟随所选租户：超管新增用户选定租户后，部门选项切换为该租户的部门
+const loadDeptTree = () => {
+    getDeptTree({ tenant_id: props.roleInfo.tenant_id ?? null }).then((res) => {
+        if (res?.code === 200) {
+            deptTree.value = res.data
+        }
+    })
+}
+loadDeptTree()
+watch(
+    () => props.roleInfo.tenant_id,
+    () => {
+        props.roleInfo.dept_id = null
+        loadDeptTree()
+    },
+)
+
+// 所属租户仅平台超管可见/可指定（新增时）；租户归属建后不可改
+const isSuper = (() => {
+    try {
+        return (JSON.parse(localStorage.getItem('userinfo'))?.permissions || []).includes('super')
+    } catch {
+        return false
+    }
+})()
+const tenantList = ref([])
+if (isSuper) {
+    getTenantLists({ page: 1, pageSize: 100 }).then((res) => {
+        if (res?.code === 200) {
+            tenantList.value = res.data.rows
+        }
+    })
+}
 defineExpose({
     ruleFormRef,
 })

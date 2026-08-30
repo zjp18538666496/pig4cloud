@@ -21,6 +21,20 @@ const retryRequest = async (config) => {
     return service(config)
 }
 
+// 登录跳转单飞：清理后跳转登录前，在途请求的响应不再写回token、不再重复弹框
+let redirectingToLogin = false
+const clearAndGoLogin = async () => {
+    if (redirectingToLogin) return
+    redirectingToLogin = true
+    localStorage.removeItem('authorization')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('userinfo')
+    const isLogin = await showLoginMessageBox()
+    if (isLogin) {
+        window.location = '/login'
+    }
+}
+
 // 请求拦截器：携带access token
 service.interceptors.request.use(
     (config) => {
@@ -46,11 +60,7 @@ service.interceptors.response.use(
             case 401:
                 if (response.config.isRefreshToken) {
                     // 刷新token本身失效，跳转登录
-                    localStorage.clear()
-                    const isLogin = await showLoginMessageBox()
-                    if (isLogin) {
-                        window.location = '/login'
-                    }
+                    await clearAndGoLogin()
                 } else {
                     await retryRequest(response.config)
                 }
@@ -63,10 +73,7 @@ service.interceptors.response.use(
     },
     async (error) => {
         if (error?.response?.status === 401) {
-            localStorage.clear()
-            await showLoginMessageBox().then(() => {
-                window.location = '/login'
-            })
+            await clearAndGoLogin()
         } else {
             ElMessage({ message: error.message || error, type: 'error' })
         }

@@ -16,10 +16,12 @@ import java.util.Set;
 public class MyTenantHandler implements TenantLineHandler {
 
     /**
-     * 不参与租户隔离的表：平台级数据 + 无tenant_id列的关联表
+     * 不参与租户隔离的表：平台级数据 + 无tenant_id列的关联表。
+     * sys_notice可见性特殊（平台公告0全员可见+本租户公告），查询里手动控制；
+     * sys_tenant_package为平台级套餐配置。
      */
     private static final Set<String> IGNORE_TABLES = Set.of(
-            "sys_tenant", "sys_menu", "sys_permission",
+            "sys_tenant", "sys_menu", "sys_permission", "sys_notice", "sys_tenant_package",
             "user_role", "role_menu", "role_permission");
 
     @Override

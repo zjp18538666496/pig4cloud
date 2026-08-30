@@ -5,16 +5,20 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableAsync
+@EnableScheduling
 @ConfigurationPropertiesScan
 @MapperScan({
         "com.pig4cloud.auth.mapper",
         "com.pig4cloud.user.mapper",
         "com.pig4cloud.role.mapper",
         "com.pig4cloud.menu.mapper",
-        "com.pig4cloud.tenant.mapper"
+        "com.pig4cloud.tenant.mapper",
+        "com.pig4cloud.dept.mapper",
+        "com.pig4cloud.notice.mapper"
 }) // 扫描各业务模块Mapper接口
 public class Application {
     public static void main(String[] args) {

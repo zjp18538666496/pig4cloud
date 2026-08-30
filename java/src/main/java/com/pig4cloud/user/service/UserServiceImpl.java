@@ -6,9 +6,14 @@ import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.dept.service.DataScopeFilter;
+import com.pig4cloud.dept.service.DataScopeService;
+import com.pig4cloud.dept.service.DeptService;
 import com.pig4cloud.file.service.FtpService;
 import com.pig4cloud.file.util.FileUtils;
 import com.pig4cloud.role.mapper.RoleMapper;
+import com.pig4cloud.tenant.entity.TenantEntity;
+import com.pig4cloud.tenant.mapper.TenantMapper;
 import com.pig4cloud.user.dto.PasswordUpdateDto;
 import com.pig4cloud.user.dto.ResetPasswordDto;
 import com.pig4cloud.user.dto.UserCreateDto;
@@ -29,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +46,9 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
+    private final TenantMapper tenantMapper;
+    private final DataScopeService dataScopeService;
+    private final DeptService deptService;
     private final PasswordEncoder passwordEncoder;
     private final FtpService ftpService;
     private final FileUtils fileUtils;
@@ -51,13 +60,34 @@ public class UserServiceImpl implements UserService {
         if (userMapper.selectOne(queryWrapper) != null) {
             throw new BizException("用户已存在");
         }
+        // 租户归属由服务端决定：超管可指定目标租户；未认证上下文(注册)归默认租户1，其余取当前登录用户租户
+        Integer tenantId;
+        if (dto.getTenantId() != null) {
+            if (!UserContext.isSuperTenant()) {
+                throw new BizException("仅平台管理员可指定用户所属租户");
+            }
+            if (tenantMapper.selectById(dto.getTenantId()) == null) {
+                throw new BizException("目标租户不存在");
+            }
+            tenantId = dto.getTenantId();
+        } else {
+            tenantId = UserContext.getTenantId() == null ? 1 : UserContext.getTenantId();
+        }
+        // 租户用户数配额校验
+        TenantEntity tenant = tenantMapper.selectById(tenantId);
+        if (tenant != null && tenant.getUser_limit() != null) {
+            Long count = userMapper.selectCount(new QueryWrapper<UserEntity>().eq("tenant_id", tenantId));
+            if (count >= tenant.getUser_limit()) {
+                throw new BizException("租户用户数已达配额上限(" + tenant.getUser_limit() + ")，无法新增用户");
+            }
+        }
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername(dto.getUsername());
         userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
         userEntity.setName(dto.getUsername());
+        userEntity.setDept_id(dto.getDeptId());
         userEntity.setCreate_time(new Timestamp(System.currentTimeMillis()));
-        // 租户归属由服务端决定：未认证上下文(注册)归默认租户1，其余取当前登录用户租户
-        userEntity.setTenant_id(UserContext.getTenantId() == null ? 1 : UserContext.getTenantId());
+        userEntity.setTenant_id(tenantId);
         int rows = userMapper.insert(userEntity);
         return R.ok(rows > 0 ? "注册成功" : "注册失败", null);
     }
@@ -74,8 +104,16 @@ public class UserServiceImpl implements UserService {
     public R<PageResult<Map<String, Object>>> getUserLists(UserDto userDto) {
         long page = userDto.getPage();
         long pageSize = userDto.getPageSize();
-        List<Map<String, Object>> list = userMapper.selectPage(pageSize, page - 1);
-        long total = userMapper.selectUserList2Count();
+        // 数据权限：按当前用户角色的data_scope过滤可见范围
+        DataScopeFilter filter = dataScopeService.resolveCurrentUser();
+        // 部门筛选：展开为含子部门的id集合；租户筛选仅超管生效（普通用户被租户拦截器限制在本租户）
+        Collection<Integer> filterDeptIds = userDto.getDeptId() == null
+                ? null : deptService.selfAndDescendantIds(userDto.getDeptId());
+        Integer tenantId = UserContext.isSuperTenant() ? userDto.getTenantId() : null;
+        List<Map<String, Object>> list = userMapper.selectPage(pageSize, page - 1,
+                filter.deptIds(), filter.selfId(), userDto.getUsername(), filterDeptIds, tenantId);
+        long total = userMapper.selectUserList2Count(
+                filter.deptIds(), filter.selfId(), userDto.getUsername(), filterDeptIds, tenantId);
         return R.ok("获取数据成功", PageResult.of(list, total, pageSize, page));
     }
 
@@ -130,6 +168,10 @@ public class UserServiceImpl implements UserService {
                 .set("email", dto.getEmail())
                 .set("mobile", dto.getMobile())
                 .set("update_time", new Timestamp(System.currentTimeMillis()));
+        // 管理员可调整部门归属（null表示清空）；非管理员不允许改动
+        if (isAdmin) {
+            updateWrapper.set("dept_id", dto.getDeptId());
+        }
         int updateResult = userMapper.update(null, updateWrapper);
         if (updateResult <= 0) {
             throw new BizException("更新用户信息失败");

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -47,13 +48,15 @@ public class JwtUtils {
     }
 
     /**
-     * 用刷新令牌换取新的访问令牌
+     * 用刷新令牌换取新的访问令牌。
+     * 注意必须完整复制业务claims（含tenantId），否则刷新后租户上下文丢失、租户拦截器失效
      */
     public String refreshToken(String token) {
         Claims claims = parseRefreshToken(token);
         Map<String, Object> newClaims = new HashMap<>();
         newClaims.put("username", claims.get("username"));
         newClaims.put("authorityString", claims.get("authorityString"));
+        newClaims.put("tenantId", claims.get("tenantId"));
         return getJwt(newClaims);
     }
 
@@ -62,6 +65,8 @@ public class JwtUtils {
         payload.put(TOKEN_TYPE, tokenType);
         return Jwts.builder()
                 .claims(payload)
+                // jti唯一标识：在线会话注册与登出/强退黑名单都靠它定位token
+                .id(UUID.randomUUID().toString())
                 .signWith(jwtProperties.getSigningKey(), Jwts.SIG.HS256)
                 .expiration(new Date(System.currentTimeMillis() + ttlMillis))
                 .compact();

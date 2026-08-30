@@ -7,13 +7,12 @@ import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.log.annotation.LogRecord;
-import com.pig4cloud.menu.entity.MenuEntity;
 import com.pig4cloud.menu.mapper.MenuMapper;
 import com.pig4cloud.role.entity.RoleEntity;
 import com.pig4cloud.role.mapper.RoleMapper;
 import com.pig4cloud.tenant.dto.TenantCreateDto;
-import com.pig4cloud.tenant.dto.TenantUpdateDto;
 import com.pig4cloud.tenant.dto.TenantDto;
+import com.pig4cloud.tenant.dto.TenantUpdateDto;
 import com.pig4cloud.tenant.entity.TenantEntity;
 import com.pig4cloud.tenant.mapper.TenantMapper;
 import com.pig4cloud.user.entity.UserEntity;
@@ -45,6 +44,7 @@ public class TenantServiceImpl implements TenantService {
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
+    private final TenantPackageService packageService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -65,11 +65,17 @@ public class TenantServiceImpl implements TenantService {
         if (tenantMapper.selectCount(new QueryWrapper<TenantEntity>().eq("tenant_code", dto.getTenantCode())) > 0) {
             throw new BizException("租户编码已存在");
         }
+        // 校验套餐并解析其菜单范围（开通时租户管理员只能用套餐内菜单）
+        List<String> packageMenuIds = packageService.resolvePackageMenuIds(dto.getPackageId());
+
         // 1. 创建租户
         TenantEntity tenant = new TenantEntity();
         tenant.setTenant_code(dto.getTenantCode());
         tenant.setTenant_name(dto.getTenantName());
         tenant.setStatus("1");
+        tenant.setPackage_id(dto.getPackageId());
+        tenant.setExpire_time(dto.getExpireTime());
+        tenant.setUser_limit(dto.getUserLimit());
         tenant.setCreate_time(new Timestamp(System.currentTimeMillis()));
         tenantMapper.insert(tenant);
 
@@ -95,17 +101,8 @@ public class TenantServiceImpl implements TenantService {
         role.setTenant_id(tenant.getId());
         roleMapper.insert(role);
 
-        // 4. 租户管理员角色绑定全部菜单（含按钮权限点）
-        List<MenuEntity> menus = menuMapper.selectList(null);
-        List<Map<String, Object>> roleMenus = menus.stream()
-                .map(menu -> {
-                    Map<String, Object> roleMenu = new HashMap<>();
-                    roleMenu.put("menu_id", menu.getId());
-                    roleMenu.put("role_id", role.getId());
-                    return roleMenu;
-                })
-                .toList();
-        menuMapper.insertUserRoles(roleMenus);
+        // 4. 租户管理员角色绑定套餐内菜单（含按钮权限点）
+        saveRoleMenus(role.getId(), packageMenuIds);
 
         // 5. 绑定管理员账号与角色
         Map<String, Object> userRole = new HashMap<>();
@@ -119,13 +116,47 @@ public class TenantServiceImpl implements TenantService {
 
     @Override
     @LogRecord(module = "租户管理", operation = "编辑租户")
+    @Transactional
     public R<Void> updateTenant(TenantUpdateDto dto) {
+        TenantEntity exists = tenantMapper.selectById(dto.getId());
+        if (exists == null) {
+            throw new BizException("租户不存在");
+        }
+        // 换套餐时同步重绑该租户tenant_admin角色的菜单
+        if (dto.getPackageId() != null && !dto.getPackageId().equals(exists.getPackage_id())) {
+            List<String> packageMenuIds = packageService.resolvePackageMenuIds(dto.getPackageId());
+            RoleEntity adminRole = roleMapper.selectOne(new QueryWrapper<RoleEntity>()
+                    .eq("role_code", TENANT_ADMIN_ROLE_CODE)
+                    .eq("tenant_id", dto.getId()));
+            if (adminRole != null) {
+                menuMapper.deleteMenus(adminRole.getId());
+                saveRoleMenus(adminRole.getId(), packageMenuIds);
+            }
+        }
         UpdateWrapper<TenantEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", dto.getId())
                 .set("tenant_name", dto.getTenantName())
                 .set("status", dto.getStatus())
+                .set("package_id", dto.getPackageId())
+                .set("expire_time", dto.getExpireTime())
+                .set("user_limit", dto.getUserLimit())
                 .set("update_time", new Date());
-        int rows = tenantMapper.update(null, updateWrapper);
-        return R.ok(rows > 0 ? "更新成功" : "更新失败", null);
+        tenantMapper.update(null, updateWrapper);
+        return R.ok("更新成功", null);
+    }
+
+    private void saveRoleMenus(Integer roleId, List<String> menuIds) {
+        if (menuIds == null || menuIds.isEmpty()) {
+            return;
+        }
+        List<Map<String, Object>> roleMenus = menuIds.stream()
+                .map(menuId -> {
+                    Map<String, Object> roleMenu = new HashMap<>();
+                    roleMenu.put("menu_id", Integer.parseInt(menuId.trim()));
+                    roleMenu.put("role_id", roleId);
+                    return roleMenu;
+                })
+                .toList();
+        menuMapper.insertUserRoles(roleMenus);
     }
 }

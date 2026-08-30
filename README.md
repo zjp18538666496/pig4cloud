@@ -1,12 +1,22 @@
 # pig4cloud admin
 
-前后端分离的RBAC权限管理系统：用户/角色/菜单管理、JWT双token认证、动态菜单路由、FTP文件上传。
+前后端分离的RBAC权限管理系统：用户/角色/部门/菜单管理、JWT双token认证、动态菜单路由、多租户（套餐/配额）、在线用户管理、通知公告、登录日志与操作日志。
 
-- 后端：Java 17 + Spring Boot 3.3 + Spring Security + MyBatis-Plus（`java/`）
-- 前端：Vue 3 + Vite + Element Plus + Pinia（`web/`）
+- 后端：Java 17 + Spring Boot 3.3 + Spring Security + MyBatis-Plus + MongoDB（日志）（`java/`）
+- 前端：Vue 3 + Vite + Element Plus + Pinia + ECharts（`web/`）
 - 数据库：MySQL（`sql/pigx_admin.sql`）
 
 演示账号：root / 12345678
+
+## 功能总览
+
+- **权限管理**：用户/角色/部门/菜单（含按钮权限点）管理，数据权限（本租户全部/本部门及以下/仅本人）
+- **角色层级**：角色可挂上级角色形成角色树，子角色沿父链继承菜单/按钮权限；角色编码与数据权限不继承（防止继承super越权），后端校验同租户/防成环
+- **认证安全**：图形验证码登录、登录失败锁定（5次锁10分钟）、JWT双token、登出/强退token拉黑、邮箱找回密码
+- **在线用户**：实时在线会话列表、强制下线（内存会话实现，单机有效，重启清空）
+- **多租户**：共享表+tenant_id自动隔离；平台管理支持租户套餐（决定可用菜单）、有效期、用户数配额
+- **通知公告**：平台公告全员可见，租户公告本租户可见；首页仪表盘展示统计卡片+登录趋势+最新公告
+- **日志审计**：操作日志与登录日志双tab（MongoDB存储）
 
 ## 快速启动
 
@@ -30,7 +40,11 @@ mvn spring-boot:run
 ```
 
 > JWT密钥必须至少32字节，可用 `openssl rand -base64 32` 生成。
-> 也可改用环境变量：`JWT_SECRET`、`CORS_ORIGINS`、数据库账号密码等。
+> 也可改用环境变量：`JWT_SECRET`、`CORS_ORIGINS`、`MAIL_ENABLED`、数据库账号密码等。
+
+### 找回密码邮件（可选）
+
+默认关闭。开启方式：在 `application-local.yaml` 中配置 `spring.mail.*`（模板见 `application-local.yaml.example`），并设置环境变量 `MAIL_ENABLED=true`。未配置时"忘记密码"接口会提示联系管理员。
 
 ### 3. 前端
 
@@ -45,10 +59,16 @@ npm run dev:development   # /api 代理到 http://127.0.0.1:9000
 ```
 com.pig4cloud
 ├── common        # 统一响应R<T>/PageResult、全局异常、公共配置、分页查询基类
-├── auth          # 登录/刷新token/JWT/权限过滤（/api/auth/**）
+├── auth          # 登录/刷新token/登出/JWT/验证码/失败锁定/找回密码（/api/auth/**）
+├── online        # 在线用户管理：会话列表/强制下线（/api/online/**）
 ├── user          # 用户管理（/api/user/**）
-├── role          # 角色管理（/api/role/**）
+├── role          # 角色管理（含数据权限data_scope）（/api/role/**）
+├── dept          # 部门管理+数据权限计算（/api/dept/**）
 ├── menu          # 菜单管理（/api/menu/**）
+├── tenant        # 租户管理与租户套餐（/api/tenant/**）
+├── notice        # 通知公告（/api/notice/**）
+├── stats         # 首页仪表盘统计（/api/stats/**）
+├── log           # 操作日志与登录日志（MongoDB存储）（/api/log/**）
 └── file          # 本地与FTP文件上传下载（/api/file/**）
 ```
 
@@ -58,15 +78,22 @@ com.pig4cloud
 - 认证：access token（1小时）+ refresh token（30天），通过响应头 `Authorization` / `Refresh-Token` 下发；动态路由由路由守卫按需注册（首次导航/刷新/重新登录后自动重建）。
 - 权限点=角色编码（如`root`）+ 按钮菜单的权限标识（`sys_menu.perms`，如`user:remove`），登录时随用户信息下发：后端接口用 `@PreAuthorize("hasAuthority('user:remove')")` 控制，前端按钮用 `v-permission="['user:remove']"` 控制；注册接口 `/api/user/register` 无需登录。
 - 前端动态路由只接受 `sys_menu.component_path` 指向 `/views` 下真实存在的组件（白名单）。
+- 在线会话/验证码/失败锁定/找回密码验证码均为**内存实现**（单机有效、重启清空），多实例部署需替换为Redis等共享存储（见`auth/online`与`auth/service`下的Store类边界）。
 
 ## 多租户
 
 共享表方案（`tenant_id` 列 + MyBatis-Plus 租户拦截器自动拼条件）：
 
-- 租户模型：**账号全库唯一，登录不填租户**，账号归属哪个租户由 `sys_user.tenant_id` 决定；菜单为平台级共享，用户/角色按租户隔离
+- 租户模型：**账号全库唯一，登录不填租户**，账号归属哪个租户由 `sys_user.tenant_id` 决定；菜单为平台级共享，用户/角色/部门按租户隔离
 - 平台超级管理员：账号 `admin/12345678`（`tenant_id=0`，角色 `super`），可跨租户管理，专属"平台管理"菜单
-- 开通租户：超管在"平台管理 → 租户管理"开通，自动创建 `{租户编码}_admin` 管理员账号（初始密码 `12345678`）+ 租户管理员角色并绑定全部菜单
-- 租户被禁用后其下账号无法登录；业务代码无需关心租户过滤（拦截器自动处理）
+- 开通租户：超管在"平台管理 → 租户管理"开通，**选择租户套餐**（决定租户管理员可用菜单），可设置有效期与用户数上限；自动创建 `{租户ID}admin` 管理员账号（初始密码 `12345678`）+ 租户管理员角色并绑定套餐内菜单
+- 租户被禁用或过期后其下账号无法登录；用户数达到配额后无法继续新增用户
+- 通知公告：超管发布平台公告（全员可见），租户管理员发布本租户公告
+
+## 数据库升级
+
+- 全新环境无需手动导入：首次启动自动建库建表灌数据。
+- **老库升级**：本版本新增部门/公告/套餐表与若干列。后端启动时自动检测（`sys_dept`表不存在）并执行 `java/src/main/resources/sql/upgrade_20260830.sql`，也可手动 source。存量租户的 tenant_admin 角色如需新菜单，请在角色管理里重新勾选保存。
 
 ## 接口文档
 

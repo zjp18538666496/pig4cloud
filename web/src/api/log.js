@@ -12,3 +12,16 @@ export function getOperateLogs(data) {
         data,
     })
 }
+
+/**
+ * 分页查询登录日志
+ * @param data {username, success, page, pageSize}
+ * @return {*}
+ */
+export function getLoginLogs(data) {
+    return service({
+        url: '/log/getLoginLogs',
+        method: 'post',
+        data,
+    })
+}

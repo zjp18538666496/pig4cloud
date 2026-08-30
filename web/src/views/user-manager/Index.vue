@@ -4,15 +4,46 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import EditUser from '@/views/user-manager/components/EditUser.vue'
 import { debounce } from '@/utils/utils.js'
 import { createUser, delUser, getUserLists, updateUser } from '@/api/user.js'
+import { getDeptTree } from '@/api/dept.js'
+import { getTenantLists } from '@/api/tenant.js'
 import BaseTable from '@/utils/table.js'
 import { VerifyUser } from '@/utils/vali.js'
 
 const verifyUser = new VerifyUser()
 
 const baseTable = new BaseTable()
-baseTable.table.query.roleName = ''
+baseTable.table.query.username = ''
+baseTable.table.query.dept_id = null
+baseTable.table.query.tenant_id = null
 let userTable = ref(baseTable.table)
 let roleRef = ref()
+
+// 所属租户筛选/页签仅平台超管可见
+const isSuper = (() => {
+    try {
+        return (JSON.parse(localStorage.getItem('userinfo'))?.permissions || []).includes('super')
+    } catch {
+        return false
+    }
+})()
+const tenantList = ref([])
+if (isSuper) {
+    getTenantLists({ page: 1, pageSize: 100 }).then((res) => {
+        if (res?.code === 200) {
+            tenantList.value = res.data.rows
+        }
+    })
+}
+const deptTree = ref([])
+const loadDeptTree = () => {
+    // 部门树跟随租户筛选：超管切换租户后部门选项也切换
+    getDeptTree({ tenant_id: userTable.value.query.tenant_id }).then((res) => {
+        if (res?.code === 200) {
+            deptTree.value = res.data
+        }
+    })
+}
+loadDeptTree()
 
 let user = ref({
     roleInfo: null,
@@ -43,6 +74,28 @@ const getUserLise = () => {
 }
 
 getUserLise()
+
+/**
+ * 查询/重置/切换租户页签：均回到第一页
+ */
+const handleSearch = () => {
+    userTable.value.query.page = 1
+    getUserLise()
+}
+
+const handleReset = () => {
+    userTable.value.query.username = ''
+    userTable.value.query.dept_id = null
+    userTable.value.query.tenant_id = null
+    handleSearch()
+}
+
+const handleTenantChange = () => {
+    userTable.value.query.dept_id = null
+    loadDeptTree()
+    userTable.value.query.page = 1
+    getUserLise()
+}
 
 /**
  * 更新表格高度
@@ -154,10 +207,26 @@ onUnmounted(() => {
 <template>
     <div>
         <div class="mb-20px">
-            用户名称
-            <el-input v-model="userTable.query.roleName" class="w-240px" placeholder="用户名称" />
-            <el-button class="ml-10px" @click="getUserLise">查询</el-button>
-            <el-button type="primary" @click="userTable.query.roleName = ''">重置</el-button>
+            <template v-if="isSuper">
+                所属租户
+                <el-select v-model="userTable.query.tenant_id" class="w-200px" placeholder="全部租户" clearable @change="handleTenantChange">
+                    <el-option label="平台层(0)" :value="0" />
+                    <el-option v-for="item in tenantList" :key="item.id" :label="`${item.tenant_name}(${item.id})`" :value="item.id" />
+                </el-select>
+            </template>
+            <el-input v-model="userTable.query.username" class="w-200px ml-10px" placeholder="用户名/姓名" clearable @keyup.enter="handleSearch" />
+            <el-tree-select
+                v-model="userTable.query.dept_id"
+                :data="deptTree"
+                :props="{ children: 'children', label: 'dept_name', value: 'id' }"
+                check-strictly
+                clearable
+                placeholder="所属部门(含子部门)"
+                style="width: 200px"
+                class="ml-10px"
+            />
+            <el-button class="ml-10px" type="primary" @click="handleSearch">查询</el-button>
+            <el-button @click="handleReset">重置</el-button>
             <el-button v-permission="['user:write']" type="primary" @click="createRole1">新增</el-button>
         </div>
         <el-table :data="userTable.rows" border class="w-100% overflow-auto mb-10px" :max-height="userTable.height">
@@ -168,6 +237,16 @@ onUnmounted(() => {
             </el-table-column>
             <el-table-column prop="name" label="昵称" align="center" />
             <el-table-column prop="username" label="用户名称" align="center" />
+            <el-table-column prop="tenant_name" label="所属租户" align="center" width="120">
+                <template #default="scope">
+                    {{ scope.row.tenant_name || `平台(${scope.row.tenant_id})` }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="dept_name" label="所属部门" align="center">
+                <template #default="scope">
+                    {{ scope.row.dept_name || '-' }}
+                </template>
+            </el-table-column>
             <el-table-column prop="mobile" label="手机号" align="center" />
             <el-table-column prop="email" label="邮箱" align="center" />
             <el-table-column prop="role_names" label="角色" align="center">

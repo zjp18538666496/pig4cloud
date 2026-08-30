@@ -75,6 +75,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh-token").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/user/register").permitAll()
+                // 图形验证码与邮箱找回密码（公开）
+                .requestMatchers(HttpMethod.GET, "/api/auth/captcha").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/sendResetCode").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/resetPasswordByEmail").permitAll()
                 // 允许访问上传文件夹
                 .requestMatchers(HttpMethod.GET, "/api/file/**").permitAll()
                 // 接口文档

@@ -34,5 +34,8 @@ app:
   db-init:
     # 首次启动自动建表+灌入演示数据，生产环境置为false或用环境变量DB_INIT控制
     enabled: ${DB_INIT:true}
+  mail:
+    # 找回密码邮件开关：开启需同时在application-local.yaml配置spring.mail.*，否则接口提示未配置
+    enabled: ${MAIL_ENABLED:false}
 tomcat:
   max-http-form-post-size: -1

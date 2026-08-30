@@ -22,6 +22,18 @@ public class RoleCreateDto {
     private String description;
 
     /**
+     * 数据权限(1本租户全部2本部门及以下3仅本人)
+     */
+    @JsonProperty("data_scope")
+    private String dataScope;
+
+    /**
+     * 上级角色id(0为顶级)；子角色沿父链继承菜单权限
+     */
+    @JsonProperty("parent_id")
+    private Integer parentId;
+
+    /**
      * 关联菜单id列表，为空表示不关联菜单
      */
     @JsonProperty("menu_codes")

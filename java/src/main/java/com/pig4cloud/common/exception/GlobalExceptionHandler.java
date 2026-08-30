@@ -6,6 +6,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -42,6 +43,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DisabledException.class)
     public R<Void> handleDisabled(DisabledException e) {
+        return R.fail(e.getMessage());
+    }
+
+    /**
+     * UserDetailsService里抛出的业务类认证异常(如所属租户停用/过期)会被DaoAuthenticationProvider
+     * 包装成InternalAuthenticationServiceException，取原始message透出给前端
+     */
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    public R<Void> handleInternalAuthenticationService(InternalAuthenticationServiceException e) {
         return R.fail(e.getMessage());
     }
 

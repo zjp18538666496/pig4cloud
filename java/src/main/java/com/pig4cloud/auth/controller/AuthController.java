@@ -1,19 +1,26 @@
 package com.pig4cloud.auth.controller;
 
+import com.pig4cloud.auth.JwtUtils;
 import com.pig4cloud.auth.dto.LoginRequest;
 import com.pig4cloud.auth.dto.LoginResult;
 import com.pig4cloud.auth.dto.RefreshTokenRequest;
+import com.pig4cloud.auth.dto.ResetPasswordByEmailDto;
+import com.pig4cloud.auth.dto.SendResetCodeDto;
 import com.pig4cloud.auth.service.AuthService;
-import com.pig4cloud.auth.JwtUtils;
+import com.pig4cloud.auth.service.CaptchaService;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.common.util.ServletUtils;
 import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.user.vo.UserVO;
 import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,18 +32,38 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtUtils jwtUtils;
+    private final CaptchaService captchaService;
+
+    /**
+     * 图形验证码，登录前获取；返回captchaId与base64图片
+     */
+    @GetMapping("/captcha")
+    public R<Map<String, String>> captcha() {
+        return R.ok("请求成功", captchaService.generate());
+    }
 
     /**
      * 账号密码登录，token通过响应头Authorization/Refresh-Token下发
      */
     @PostMapping("/login")
     @LogRecord(module = "认证", operation = "用户登录")
-    public R<UserVO> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-        LoginResult result = authService.login(request);
+    public R<UserVO> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response,
+                           HttpServletRequest servletRequest) {
+        LoginResult result = authService.login(request,
+                ServletUtils.getClientIp(servletRequest), servletRequest.getHeader("User-Agent"));
         response.setHeader("Authorization", "Bearer " + result.accessToken());
         response.setHeader("Refresh-Token", result.refreshToken());
         return R.ok("请求成功", result.user());
+    }
+
+    /**
+     * 登出：当前token拉黑+销毁会话（前端随后清空本地缓存）
+     */
+    @PostMapping("/logout")
+    @LogRecord(module = "认证", operation = "用户登出")
+    public R<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        authService.logout(authHeader);
+        return R.ok("登出成功", null);
     }
 
     /**
@@ -46,12 +73,29 @@ public class AuthController {
     @LogRecord(module = "认证", operation = "刷新令牌")
     public R<Void> refreshToken(@Valid @RequestBody RefreshTokenRequest request, HttpServletResponse response) {
         try {
-            String newAccessToken = jwtUtils.refreshToken(request.getRefreshToken());
+            String newAccessToken = authService.refreshAccessToken(request.getRefreshToken());
             response.setHeader("Authorization", "Bearer " + newAccessToken);
             return R.ok("请求成功", null);
         } catch (JwtException | IllegalArgumentException e) {
             // 返回code=401，前端据此清理本地缓存并引导重新登录
             return R.fail(R.UNAUTHORIZED, "刷新token无效");
         }
+    }
+
+    /**
+     * 发送找回密码邮箱验证码（公开接口，需先配置邮件服务）
+     */
+    @PostMapping("/sendResetCode")
+    public R<Void> sendResetCode(@Valid @RequestBody SendResetCodeDto dto) {
+        return authService.sendResetCode(dto);
+    }
+
+    /**
+     * 邮箱验证码重置密码（公开接口，重置后该账号全部会话被踢下线）
+     */
+    @PostMapping("/resetPasswordByEmail")
+    @LogRecord(module = "认证", operation = "邮箱找回密码")
+    public R<Void> resetPasswordByEmail(@Valid @RequestBody ResetPasswordByEmailDto dto) {
+        return authService.resetPasswordByEmail(dto);
     }
 }

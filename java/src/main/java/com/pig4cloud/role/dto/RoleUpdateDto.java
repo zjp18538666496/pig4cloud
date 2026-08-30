@@ -22,6 +22,18 @@ public class RoleUpdateDto {
 
     private String description;
 
+    /**
+     * 数据权限(1本租户全部2本部门及以下3仅本人)
+     */
+    @JsonProperty("data_scope")
+    private String dataScope;
+
+    /**
+     * 上级角色id(0为顶级)
+     */
+    @JsonProperty("parent_id")
+    private Integer parentId;
+
     @JsonProperty("menu_codes")
     private List<String> menuCodes;
 }

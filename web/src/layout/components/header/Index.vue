@@ -29,12 +29,20 @@ import { ref } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { logout as logoutApi } from '@/api/auth.js'
 import presonalCenter from '@/views/personal-center/Index.vue'
 const baseUrl = import.meta.env.VITE_BASE_URL
 const drawer = ref(false)
 const router = useRouter()
-// 用户信息
-const userInfo = ref(JSON.parse(localStorage.getItem('userinfo')))
+// 用户信息：安全解析，存储缺失/损坏时兜底空对象，避免渲染崩溃
+const parseUserInfo = () => {
+    try {
+        return JSON.parse(localStorage.getItem('userinfo')) || {}
+    } catch {
+        return {}
+    }
+}
+const userInfo = ref(parseUserInfo())
 // 路由列表
 const routerList = [
     {
@@ -54,7 +62,7 @@ const routerList = [
     },
 ]
 
-// 退出登录
+// 退出登录：先通知服务端拉黑token销毁会话，再清空本地缓存
 const logout = (src) => {
     ElMessageBox.confirm('此操作将退出登录, 是否继续?', '提示', {
         confirmButtonText: '确定',
@@ -62,9 +70,11 @@ const logout = (src) => {
         type: 'warning',
     })
         .then(() => {
-            router.push(src)
-            ElMessage({ message: '注销成功', type: 'success' })
-            localStorage.clear()
+            logoutApi().finally(() => {
+                router.push(src)
+                ElMessage({ message: '注销成功', type: 'success' })
+                localStorage.clear()
+            })
         })
         .catch(() => {})
 }

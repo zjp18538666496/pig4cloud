@@ -7,6 +7,14 @@ spring:
     mongodb:
       # 操作日志库；账号建在admin库时必须指定authSource=admin
       uri: mongodb://root:your-mongo-password@127.0.0.1:27017/pigx_log?authSource=admin
+  # 找回密码邮件（可选）：配置后需同时设置 app.mail.enabled=true（或环境变量MAIL_ENABLED=true）
+  # mail:
+  #   host: smtp.qq.com
+  #   port: 465
+  #   username: your-email@qq.com
+  #   password: your-smtp-authorization-code
+  #   properties:
+  #     mail.smtp.ssl.enable: true
 ftp:
   server: 127.0.0.1
   port: 21

@@ -63,7 +63,14 @@ const router = useRouter()
 const activeName = ref('basic')
 const formEl = ref()
 let loading = ref(false)
-let form = ref(JSON.parse(localStorage.getItem('userinfo')))
+// 安全解析，存储缺失/损坏时兜底空对象
+const form = ref((() => {
+    try {
+        return JSON.parse(localStorage.getItem('userinfo')) || {}
+    } catch {
+        return {}
+    }
+})())
 const passwordForm = reactive({
     password: '',
     newPassword: '',

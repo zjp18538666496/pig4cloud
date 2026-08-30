@@ -38,4 +38,20 @@ public class TenantEntity {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date update_time;
+
+    /**
+     * 绑定套餐id（决定租户管理员可用菜单）
+     */
+    private Integer package_id;
+
+    /**
+     * 过期时间（空为永不过期）
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date expire_time;
+
+    /**
+     * 用户数上限（空为不限制）
+     */
+    private Integer user_limit;
 }

@@ -7,8 +7,10 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -19,37 +21,98 @@ public interface UserMapper extends BaseMapper<UserEntity> {
     @Select("SELECT * FROM sys_user WHERE username = #{username}")
     UserEntity selectUserByUsername(String username);
 
-    @Select("""
-            SELECT
-                u.id,
-                u.name,
-                u.username,
-                u.mobile,
-                u.email,
-                DATE_FORMAT(u.create_time, '%Y-%m-%d %H:%i:%s') AS create_time,
-                DATE_FORMAT(u.update_time, '%Y-%m-%d %H:%i:%s') AS update_time,
-                DATE_FORMAT(u.last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,
-                IFNULL(GROUP_CONCAT(DISTINCT r.role_code ORDER BY r.role_code SEPARATOR ','), '') AS role_codes,
-                IFNULL(GROUP_CONCAT(DISTINCT r.role_name ORDER BY r.role_name SEPARATOR ','), '') AS role_names
-            FROM
-                sys_user u
-            LEFT JOIN user_role ur ON u.id = ur.user_id
-            LEFT JOIN sys_role r ON ur.role_id = r.id
-            GROUP BY
-                u.id
-            LIMIT #{pageSize} OFFSET #{page};
-            """)
-    List<Map<String, Object>> selectPage(@Param("pageSize") long pageSize, @Param("page") long page);
+    @Select("SELECT * FROM sys_user WHERE email = #{email} LIMIT 1")
+    UserEntity selectUserByEmail(String email);
 
-    @Select("""
-            SELECT
-                 COUNT(DISTINCT u.id)
-             FROM
-                 sys_user u
-             LEFT JOIN user_role ur ON u.id = ur.user_id
-             LEFT JOIN sys_role r ON ur.role_id = r.id
-            """)
-    int selectUserList2Count();
+    @Update("UPDATE sys_user SET last_login_time = NOW() WHERE username = #{username}")
+    int updateLastLoginTime(@Param("username") String username);
+
+    /**
+     * 用户分页列表：联角色与部门；deptIds/selfId为数据权限过滤条件（均为空则不限制），
+     * keyword模糊匹配用户名/姓名，filterDeptIds部门筛选(含子部门)，tenantId租户筛选(仅超管场景传入)
+     */
+    @Select({
+            "<script>",
+            "SELECT",
+            "  u.id, u.name, u.username, u.mobile, u.email, u.dept_id, u.tenant_id, d.dept_name, t.tenant_name,",
+            "  DATE_FORMAT(u.create_time, '%Y-%m-%d %H:%i:%s') AS create_time,",
+            "  DATE_FORMAT(u.update_time, '%Y-%m-%d %H:%i:%s') AS update_time,",
+            "  DATE_FORMAT(u.last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,",
+            "  IFNULL(GROUP_CONCAT(DISTINCT r.role_code ORDER BY r.role_code SEPARATOR ','), '') AS role_codes,",
+            "  IFNULL(GROUP_CONCAT(DISTINCT r.role_name ORDER BY r.role_name SEPARATOR ','), '') AS role_names",
+            "FROM sys_user u",
+            "LEFT JOIN user_role ur ON u.id = ur.user_id",
+            "LEFT JOIN sys_role r ON ur.role_id = r.id",
+            "LEFT JOIN sys_dept d ON u.dept_id = d.id",
+            "LEFT JOIN sys_tenant t ON u.tenant_id = t.id",
+            "<where>",
+            "  <if test='deptIds != null and deptIds.size() > 0'>",
+            "    <choose>",
+            "      <when test='selfId != null'>",
+            "        AND (u.dept_id IN <foreach item='item' collection='deptIds' open='(' separator=',' close=')'>#{item}</foreach> OR u.id = #{selfId})",
+            "      </when>",
+            "      <otherwise>",
+            "        AND u.dept_id IN <foreach item='item' collection='deptIds' open='(' separator=',' close=')'>#{item}</foreach>",
+            "      </otherwise>",
+            "    </choose>",
+            "  </if>",
+            "  <if test='(deptIds == null or deptIds.size() == 0) and selfId != null'>",
+            "    AND u.id = #{selfId}",
+            "  </if>",
+            "  <if test='keyword != null and keyword != \"\"'>",
+            "    AND (u.username LIKE CONCAT('%', #{keyword}, '%') OR u.name LIKE CONCAT('%', #{keyword}, '%'))",
+            "  </if>",
+            "  <if test='filterDeptIds != null and filterDeptIds.size() > 0'>",
+            "    AND u.dept_id IN <foreach item='item' collection='filterDeptIds' open='(' separator=',' close=')'>#{item}</foreach>",
+            "  </if>",
+            "  <if test='tenantId != null'>",
+            "    AND u.tenant_id = #{tenantId}",
+            "  </if>",
+            "</where>",
+            "GROUP BY u.id",
+            "ORDER BY u.id",
+            "LIMIT #{pageSize} OFFSET #{page}",
+            "</script>"
+    })
+    List<Map<String, Object>> selectPage(@Param("pageSize") long pageSize, @Param("page") long page,
+                                         @Param("deptIds") Collection<Integer> deptIds, @Param("selfId") Long selfId,
+                                         @Param("keyword") String keyword,
+                                         @Param("filterDeptIds") Collection<Integer> filterDeptIds,
+                                         @Param("tenantId") Integer tenantId);
+
+    @Select({
+            "<script>",
+            "SELECT COUNT(*) FROM sys_user u",
+            "<where>",
+            "  <if test='deptIds != null and deptIds.size() > 0'>",
+            "    <choose>",
+            "      <when test='selfId != null'>",
+            "        AND (u.dept_id IN <foreach item='item' collection='deptIds' open='(' separator=',' close=')'>#{item}</foreach> OR u.id = #{selfId})",
+            "      </when>",
+            "      <otherwise>",
+            "        AND u.dept_id IN <foreach item='item' collection='deptIds' open='(' separator=',' close=')'>#{item}</foreach>",
+            "      </otherwise>",
+            "    </choose>",
+            "  </if>",
+            "  <if test='(deptIds == null or deptIds.size() == 0) and selfId != null'>",
+            "    AND u.id = #{selfId}",
+            "  </if>",
+            "  <if test='keyword != null and keyword != \"\"'>",
+            "    AND (u.username LIKE CONCAT('%', #{keyword}, '%') OR u.name LIKE CONCAT('%', #{keyword}, '%'))",
+            "  </if>",
+            "  <if test='filterDeptIds != null and filterDeptIds.size() > 0'>",
+            "    AND u.dept_id IN <foreach item='item' collection='filterDeptIds' open='(' separator=',' close=')'>#{item}</foreach>",
+            "  </if>",
+            "  <if test='tenantId != null'>",
+            "    AND u.tenant_id = #{tenantId}",
+            "  </if>",
+            "</where>",
+            "</script>"
+    })
+    int selectUserList2Count(@Param("deptIds") Collection<Integer> deptIds, @Param("selfId") Long selfId,
+                             @Param("keyword") String keyword,
+                             @Param("filterDeptIds") Collection<Integer> filterDeptIds,
+                             @Param("tenantId") Integer tenantId);
 
     @Select({
             "<script>",

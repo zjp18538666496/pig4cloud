@@ -53,6 +53,11 @@ public class UserEntity {
      */
     private Integer tenant_id;
 
+    /**
+     * 部门id（租户内组织架构）
+     */
+    private Integer dept_id;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Timestamp create_time;
 

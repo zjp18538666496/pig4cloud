@@ -7,6 +7,9 @@ import com.pig4cloud.menu.dto.MenuDto;
 import com.pig4cloud.menu.dto.MenuSelectDto;
 import com.pig4cloud.menu.entity.MenuEntity;
 import com.pig4cloud.menu.mapper.MenuMapper;
+import com.pig4cloud.role.entity.RoleEntity;
+import com.pig4cloud.role.mapper.RoleMapper;
+import com.pig4cloud.role.service.RoleHierarchyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +23,8 @@ import java.util.List;
 public class MenuServiceImpl implements MenuService {
 
     private final MenuMapper menuMapper;
+    private final RoleMapper roleMapper;
+    private final RoleHierarchyService roleHierarchyService;
 
     @Override
     public R<Void> createMenu(MenuEntity menuEntity) {
@@ -99,7 +104,11 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public R<?> selectMenuLists(MenuSelectDto dto) {
         String name = currentUsername();
-        List<MenuEntity> selectList = menuMapper.selectMenuLists(name);
+        // 当前用户的菜单 = 自身角色+祖先角色（沿父链继承）绑定的菜单
+        List<RoleEntity> userRoles = roleMapper.selectRolesByUsername(name);
+        List<Integer> effectiveRoleIds = roleHierarchyService.effectiveRoleIds(userRoles);
+        List<MenuEntity> selectList = effectiveRoleIds.isEmpty()
+                ? List.of() : menuMapper.selectMenusByRoleIds(effectiveRoleIds);
         if (dto != null && "flatMenu".equals(dto.getMenuType())) {
             return R.ok("获取数据成功", selectList);
         }

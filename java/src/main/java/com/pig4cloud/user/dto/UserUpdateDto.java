@@ -23,6 +23,12 @@ public class UserUpdateDto {
     private String email;
 
     /**
+     * 部门id（仅管理员可改，null表示清空部门归属）
+     */
+    @JsonProperty("dept_id")
+    private Integer deptId;
+
+    /**
      * 角色编码列表，为空表示清空用户角色
      */
     @JsonProperty("role_codes")

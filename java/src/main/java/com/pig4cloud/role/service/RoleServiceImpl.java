@@ -27,6 +27,7 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
+    private final RoleHierarchyService roleHierarchyService;
 
     @Override
     @Transactional
@@ -35,8 +36,14 @@ public class RoleServiceImpl implements RoleService {
         roleEntity.setRole_name(dto.getRoleName());
         roleEntity.setRole_code(dto.getRoleCode());
         roleEntity.setDescription(dto.getDescription());
+        // 数据权限默认本租户全部
+        roleEntity.setData_scope(dto.getDataScope() == null || dto.getDataScope().isBlank()
+                ? "1" : dto.getDataScope());
         // 租户归属由服务端决定：取当前登录用户的租户，未认证上下文(平台操作)归平台层
-        roleEntity.setTenant_id(UserContext.getTenantId() == null ? 0 : UserContext.getTenantId());
+        Integer tenantId = UserContext.getTenantId() == null ? 0 : UserContext.getTenantId();
+        validateParent(dto.getParentId(), null, tenantId);
+        roleEntity.setParent_id(dto.getParentId() == null || dto.getParentId() == 0 ? 0 : dto.getParentId());
+        roleEntity.setTenant_id(tenantId);
         int rows = roleMapper.insert(roleEntity);
         if (rows <= 0) {
             return R.fail("创建失败");
@@ -48,11 +55,25 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public R<Void> updateRole(RoleUpdateDto dto) {
+        RoleEntity exists = roleMapper.selectById(dto.getId());
+        if (exists == null) {
+            return R.fail("角色不存在");
+        }
+        if ("super".equals(exists.getRole_code())
+                && dto.getParentId() != null && dto.getParentId() != 0
+                && !dto.getParentId().equals(exists.getParent_id())) {
+            throw new BizException("超级管理员角色不支持调整上级角色");
+        }
+        validateParent(dto.getParentId(), exists, exists.getTenant_id());
         UpdateWrapper<RoleEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", dto.getId());
         updateWrapper.set("role_code", dto.getRoleCode());
         updateWrapper.set("role_name", dto.getRoleName());
         updateWrapper.set("description", dto.getDescription());
+        if (dto.getDataScope() != null && !dto.getDataScope().isBlank()) {
+            updateWrapper.set("data_scope", dto.getDataScope());
+        }
+        updateWrapper.set("parent_id", dto.getParentId() == null || dto.getParentId() == 0 ? 0 : dto.getParentId());
         int rows = roleMapper.update(null, updateWrapper);
         if (rows <= 0) {
             return R.fail("更新失败");
@@ -64,6 +85,11 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public R<Void> deleteRole(RoleDeleteDto dto) {
+        RoleEntity exists = roleMapper.selectOne(new QueryWrapper<RoleEntity>()
+                .eq("role_code", dto.getRoleCode()).last("LIMIT 1"));
+        if (exists != null && !roleHierarchyService.descendantIds(exists.getId()).isEmpty()) {
+            throw new BizException("该角色存在下级角色，请先删除或调整其下级角色");
+        }
         QueryWrapper<RoleEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role_code", dto.getRoleCode());
         int rows = roleMapper.delete(queryWrapper);
@@ -81,8 +107,45 @@ public class RoleServiceImpl implements RoleService {
             long total = roleMapper.selectUserList2Count();
             return R.ok("获取数据成功", PageResult.of(list, total, pageSize, page));
         }
-        List<RoleEntity> rows = roleMapper.selectList(new QueryWrapper<>());
+        // 全量（含菜单名/父角色），角色管理树形列表使用
+        List<Map<String, Object>> rows = roleMapper.selectListWithMenus();
         return R.ok("获取数据成功", rows);
+    }
+
+    /**
+     * 上级角色校验：存在、同租户、不能是自身或自身子孙（防成环）、祖先链上不允许出现super角色
+     * （super拥有跨租户权限且其菜单含租户管理，若被继承会导致子角色越权）
+     */
+    private void validateParent(Integer parentId, RoleEntity selfRole, Integer tenantId) {
+        if (parentId == null || parentId == 0) {
+            return;
+        }
+        if (selfRole != null && parentId.equals(selfRole.getId())) {
+            throw new BizException("上级角色不能是自身");
+        }
+        RoleEntity parent = roleMapper.selectById(parentId);
+        if (parent == null) {
+            throw new BizException("上级角色不存在");
+        }
+        if (!tenantId.equals(parent.getTenant_id())) {
+            throw new BizException("上级角色与角色不属于同一租户");
+        }
+        if (selfRole != null && roleHierarchyService.descendantIds(selfRole.getId()).contains(parentId)) {
+            throw new BizException("不能将上级角色设置为自己的下级角色");
+        }
+        Integer cursor = parent.getId();
+        int depth = 0;
+        while (cursor != null && depth++ < 20) {
+            RoleEntity current = roleMapper.selectById(cursor);
+            if (current == null) {
+                break;
+            }
+            if ("super".equals(current.getRole_code())) {
+                throw new BizException("不能挂在超级管理员角色及其下级角色之下");
+            }
+            Integer pid = current.getParent_id();
+            cursor = (pid == null || pid == 0) ? null : pid;
+        }
     }
 
     /**

@@ -34,4 +34,14 @@ public class RoleEntity {
      * 租户id（0为平台层角色）
      */
     private Integer tenant_id;
+
+    /**
+     * 数据权限(1本租户全部2本部门及以下3仅本人)；不随父链继承
+     */
+    private String data_scope;
+
+    /**
+     * 父角色id(0为顶级)；菜单/按钮权限沿父链继承，角色编码与数据权限不继承
+     */
+    private Integer parent_id;
 }
