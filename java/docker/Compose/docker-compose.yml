@@ -9,9 +9,21 @@ services:
       - "9000:9000"
     environment:
       - TZ=Asia/Shanghai
-      # 生产环境必须通过环境变量注入密钥与来源白名单
+      # 生产环境必须通过环境变量注入密钥与来源白名单（同级建.env文件填写）
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      # 状态存储：memory(默认) | redis（多实例部署必配redis）
+      - STORE_TYPE=${STORE_TYPE:-memory}
+      - REDIS_HOST=${REDIS_HOST:-127.0.0.1}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      # 找回密码邮件（可选，需同时配置spring.mail.*）
+      - MAIL_ENABLED=${MAIL_ENABLED:-false}
+      # 首次启动自动建库建表+演示数据，生产建议false
+      - DB_INIT=${DB_INIT:-true}
+      # MySQL/MongoDB等连接走application-local.yaml挂载或标准环境变量
+      # - SPRING_DATASOURCE_URL=jdbc:mysql://10.126.126.3:3306/pigx_admin?createDatabaseIfNotExist=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      - SPRING_DATA_MONGODB_URI=${SPRING_DATA_MONGODB_URI:-}
     networks:
       - network
 networks:

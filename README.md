@@ -113,20 +113,90 @@ com.pig4cloud
 
 后端启动后访问 http://localhost:9000/swagger-ui/index.html
 
-## 部署
+## 生产部署
+
+### 1. 后端打包（Spring Boot → 可执行jar）
 
 ```bash
 cd java
 mvn -DskipTests package
-cd docker/Compose
-JWT_SECRET=xxx docker compose up -d --build
+# 产物：target/pig4cloud-1.0-SNAPSHOT.jar（需JRE 17）
 ```
 
-Dockerfile基于eclipse-temurin:17-jre，按Spring Boot分层jar构建（依赖层缓存友好）。
+直接运行：
 
-## Docker环境变量
+```bash
+JWT_SECRET=$(openssl rand -base64 32) \
+STORE_TYPE=redis REDIS_HOST=10.126.126.3 REDIS_PASSWORD=123456 \
+java -jar target/pig4cloud-1.0-SNAPSHOT.jar
+```
 
-| 变量 | 说明 |
-|---|---|
-| `JWT_SECRET` | JWT签名密钥（必填，Base64编码≥32字节） |
-| `CORS_ORIGINS` | 允许的跨域来源，逗号分隔，默认`*` |
+**环境变量一览**（均有默认值，按需注入）：
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `JWT_SECRET` | 无（必填） | JWT签名密钥，Base64编码≥32字节 |
+| `CORS_ORIGINS` | `*` | 允许的跨域来源，逗号分隔；前后端同域部署可不配 |
+| `STORE_TYPE` | `memory` | 状态存储：`memory`单机 / `redis`多实例 |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | `127.0.0.1` / `6379` / 空 | Redis连接（STORE_TYPE=redis时使用） |
+| `DB_INIT` | `true` | 首次启动自动建库建表+演示数据；生产建议`false` |
+| `MAIL_ENABLED` | `false` | 找回密码邮件开关（需配置spring.mail.*） |
+
+数据库（MySQL）与MongoDB连接放在`application-local.yaml`（参考application-local.yaml.example），也可用`SPRING_DATASOURCE_URL`等标准环境变量覆盖。
+
+### 2. 前端打包（Vue3 → 纯静态dist）
+
+```bash
+cd web
+npm run build
+# 产物：web/dist/（相对路径base，可挂在任意静态目录）
+```
+
+前端生产环境请求走相对路径`/api`、WebSocket走`/ws`，**必须由Nginx反向代理到后端**。
+
+### 3. Nginx配置（前端静态 + 接口/WebSocket代理）
+
+完整示例见`docker/nginx.conf.example`，核心三段：
+
+```nginx
+server {
+    listen 80;
+    client_max_body_size 1024m;           # 文件上传不限大小
+
+    location / {                           # 前端静态页
+        root /opt/pigx-admin/dist;
+        try_files $uri $uri/ /index.html;  # history路由刷新必备，不能省
+    }
+
+    location /api/ {                       # 后端接口
+        proxy_pass http://127.0.0.1:9000;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /ws/ {                        # 站内信WebSocket
+        proxy_pass http://127.0.0.1:9000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300s;
+    }
+}
+```
+
+### 4. Docker部署
+
+```bash
+cd java && mvn -DskipTests package
+cd docker/Compose
+JWT_SECRET=$(openssl rand -base64 32) docker compose up -d --build
+```
+
+Dockerfile基于eclipse-temurin:17-jre，按Spring Boot分层jar构建（依赖层缓存友好）。Compose已透传全部环境变量（见docker/Compose/docker-compose.yml），在同级建`.env`文件填写`JWT_SECRET`、`STORE_TYPE`、`REDIS_HOST`等即可。
+
+### 5. 部署注意事项
+
+- **Nginx的`try_files ... /index.html`不能省**：前端是history路由，缺失会导致刷新业务页面404
+- **多实例部署**：`STORE_TYPE=redis`必配，且任务调度为单机内存版，多实例时任务会重复执行（需自行保证幂等或只开一个实例跑任务）
+- **数据库自动初始化**：全新库首启自动建表+演示数据；老库自动执行增量升级（sys_schema_version登记）
+- **文件存储依赖FTP**：头像/上传走FTP（application-local.yaml的ftp.*），生产需保证FTP可达
