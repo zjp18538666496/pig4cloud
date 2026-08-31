@@ -49,6 +49,7 @@ const login1 = () => {
         password: ruleForm.password,
         captchaId: captcha.id,
         captchaCode: ruleForm.captchaCode,
+        totpCode: ruleForm.totpCode,
     })
         .then(async (res) => {
             if (res?.code === 200 && res.data) {
@@ -62,6 +63,12 @@ const login1 = () => {
             }
         })
         .catch((error) => {
+            // 1001=需要两步认证动态码：展开输入框而非报错
+            if (error?.code === 1001) {
+                showTotp.value = true
+                ElMessage.warning(error.message)
+                return
+            }
             ElMessage.error(`登录失败！${error?.message} (${error?.code})`)
             loadCaptcha()
         })
@@ -88,12 +95,17 @@ const ruleForm = reactive({
     username: '',
     password: '',
     captchaCode: '',
+    totpCode: '',
 })
+
+// 两步认证：code=1001表示需要动态码
+const showTotp = ref(false)
 
 const rules = reactive({
     username: [{ validator: verifyUser.username, trigger: 'blur' }],
     password: [{ validator: verifyUser.password, trigger: 'blur' }],
     captchaCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
+    totpCode: [{ required: true, message: '请输入动态验证码', trigger: 'blur' }],
 })
 
 /**
@@ -219,6 +231,13 @@ const resetForgotForm = () => {
                 <el-input v-model="ruleForm.captchaCode" placeholder="请输入验证码" size="large" type="text" autocomplete="off" @keyup.enter="submitForm(ruleFormRef)" />
                 <img v-if="captcha.image" :src="captcha.image" title="看不清？点击刷新" class="captcha-img" alt="验证码" @click="loadCaptcha" />
             </div>
+        </el-form-item>
+        <el-form-item v-if="showTotp" prop="totpCode">
+            <el-input v-model="ruleForm.totpCode" placeholder="请输入验证器6位动态码（或备用恢复码）" size="large" autocomplete="off" @keyup.enter="submitForm(ruleFormRef)">
+                <template #prefix>
+                    <el-icon><lock /></el-icon>
+                </template>
+            </el-input>
         </el-form-item>
         <el-form-item class="pointer">
             <el-button :loading="loading" class="submitForm" size="large" type="primary" @click="submitForm(ruleFormRef)"> 登 录 </el-button>

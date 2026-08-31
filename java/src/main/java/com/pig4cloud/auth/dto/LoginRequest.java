@@ -20,4 +20,9 @@ public class LoginRequest {
     private String captchaId;
 
     private String captchaCode;
+
+    /**
+     * 两步认证动态码（已绑定TOTP的用户必填；也接受备用恢复码）
+     */
+    private String totpCode;
 }

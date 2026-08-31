@@ -107,4 +107,38 @@ public class AuthController {
     public R<Void> resetPasswordByEmail(@Valid @RequestBody ResetPasswordByEmailDto dto) {
         return authService.resetPasswordByEmail(dto);
     }
+
+    /**
+     * 2FA第一步：生成TOTP密钥与绑定二维码（未启用，首次动态码校验通过才正式启用）
+     */
+    @PostMapping("/2fa/setup")
+    public R<Map<String, String>> setup2fa() {
+        return R.ok("请求成功", authService.setup2fa());
+    }
+
+    /**
+     * 2FA第二步：输入验证器首次动态码确认绑定，返回一次性备用恢复码
+     */
+    @PostMapping("/2fa/enable")
+    public R<java.util.List<String>> enable2fa(@RequestBody Map<String, String> body) {
+        return R.ok("绑定成功", authService.enable2fa(body.get("code")));
+    }
+
+    /**
+     * 2FA解绑：需验证登录密码+当前动态码（或备用码）
+     */
+    @PostMapping("/2fa/disable")
+    @LogRecord(module = "认证", operation = "解绑两步认证")
+    public R<Void> disable2fa(@RequestBody Map<String, String> body) {
+        authService.disable2fa(body.get("password"), body.get("code"));
+        return R.ok("已解绑两步认证", null);
+    }
+
+    /**
+     * 当前用户2FA开启状态
+     */
+    @GetMapping("/2fa/status")
+    public R<Map<String, Boolean>> status2fa() {
+        return R.ok("请求成功", Map.of("enabled", authService.is2faEnabled()));
+    }
 }

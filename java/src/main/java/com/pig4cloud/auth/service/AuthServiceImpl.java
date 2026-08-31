@@ -55,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final ConfigService configService;
     private final PasswordPolicyService passwordPolicyService;
+    private final TotpService totpService;
 
     @Override
     public LoginResult login(LoginRequest request, String ip, String userAgent) {
@@ -81,6 +82,12 @@ public class AuthServiceImpl implements AuthService {
             String authorityString = String.join(",", authorities);
 
             UserEntity user = userMapper.selectUserByUsername(request.getUsername());
+
+            // 两步认证：总开关开启且用户已绑定TOTP时，校验动态码/备用恢复码（code 1001=需要动态码）
+            if (configService.getBool("login.2fa-enabled", true)
+                    && user != null && Integer.valueOf(1).equals(user.getTotp_enabled())) {
+                verifyTwoFactor(request, user);
+            }
 
             Map<String, Object> claims = new HashMap<>();
             claims.put("username", authentication.getName());
@@ -112,6 +119,33 @@ public class AuthServiceImpl implements AuthService {
             saveLoginLog(request.getUsername(), ip, resolveTenantId(request.getUsername()), false, ex.getMessage());
             throw ex;
         }
+    }
+
+    /**
+     * 两步认证校验：TOTP动态码或一次性备用恢复码（命中即消费）。
+     * 失败抛code=1001（前端据此弹出动态码输入框），并计入失败锁定防止6位码爆破
+     */
+    private void verifyTwoFactor(LoginRequest request, UserEntity user) {
+        String code = request.getTotpCode();
+        if (code == null || code.isBlank()) {
+            throw new BizException(1001, "请输入动态验证码");
+        }
+        if (totpService.verify(user.getTotp_secret(), code, null)) {
+            return;
+        }
+        String hit = totpService.verifyBackupCode(code, user.getBackup_codes());
+        if (hit != null) {
+            // 消费命中的备用码
+            String remaining = java.util.Arrays.stream(user.getBackup_codes().split(","))
+                    .map(String::trim)
+                    .filter(saved -> !saved.equals(hit))
+                    .collect(java.util.stream.Collectors.joining(","));
+            UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", user.getId()).set("backup_codes", remaining);
+            userMapper.update(null, updateWrapper);
+            return;
+        }
+        throw new BizException(1001, "动态验证码不正确");
     }
 
     /**
@@ -255,5 +289,78 @@ public class AuthServiceImpl implements AuthService {
         loginLog.setMessage(message);
         loginLog.setCreateTime(new Date());
         loginLogService.saveLoginLog(loginLog);
+    }
+
+    private UserEntity currentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication() == null
+                ? null : SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = username == null ? null : userMapper.selectUserByUsername(username);
+        if (user == null) {
+            throw new BizException("获取用户信息失败");
+        }
+        return user;
+    }
+
+    @Override
+    public Map<String, String> setup2fa() {
+        UserEntity user = currentUser();
+        // 已启用时不允许重新生成（需先解绑），避免覆盖有效密钥
+        if (Integer.valueOf(1).equals(user.getTotp_enabled())) {
+            throw new BizException("两步认证已开启，如需重新绑定请先解绑");
+        }
+        String secret = totpService.generateSecret();
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", user.getId())
+                .set("totp_secret", secret)
+                .set("totp_enabled", 0)
+                .set("backup_codes", null);
+        userMapper.update(null, updateWrapper);
+        String otpauthUri = totpService.buildOtpauthUri(user.getUsername(), secret);
+        return Map.of("secret", secret, "otpauthUri", otpauthUri, "qrImage", totpService.qrImage(otpauthUri));
+    }
+
+    @Override
+    public List<String> enable2fa(String code) {
+        UserEntity user = currentUser();
+        if (user.getTotp_secret() == null || user.getTotp_secret().isBlank()) {
+            throw new BizException("请先生成绑定二维码");
+        }
+        if (!totpService.verify(user.getTotp_secret(), code, null)) {
+            throw new BizException("动态验证码不正确，请确认验证器时间是否准确");
+        }
+        // 生成一次性备用恢复码：明文仅本次返回，库中只存SHA256
+        var entry = totpService.generateBackupCodes();
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", user.getId())
+                .set("totp_enabled", 1)
+                .set("backup_codes", entry.getValue());
+        userMapper.update(null, updateWrapper);
+        log.info("用户[{}]已开启两步认证", user.getUsername());
+        return entry.getKey();
+    }
+
+    @Override
+    public boolean is2faEnabled() {
+        return Integer.valueOf(1).equals(currentUser().getTotp_enabled());
+    }
+
+    @Override
+    public void disable2fa(String password, String code) {
+        UserEntity user = currentUser();
+        if (!passwordEncoder.matches(password == null ? "" : password, user.getPassword())) {
+            throw new BizException("登录密码不正确");
+        }
+        boolean verified = totpService.verify(user.getTotp_secret(), code, null)
+                || totpService.verifyBackupCode(code, user.getBackup_codes()) != null;
+        if (!verified) {
+            throw new BizException("动态验证码不正确");
+        }
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", user.getId())
+                .set("totp_secret", null)
+                .set("totp_enabled", 0)
+                .set("backup_codes", null);
+        userMapper.update(null, updateWrapper);
+        log.info("用户[{}]已解绑两步认证", user.getUsername());
     }
 }

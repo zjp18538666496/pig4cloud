@@ -66,3 +66,31 @@ export function resetPasswordByEmail(data) {
         data,
     })
 }
+
+/**
+ * 2FA绑定第一步：生成TOTP密钥与二维码 {secret, otpauthUri, qrImage}
+ */
+export function setup2fa() {
+    return service({ url: '/auth/2fa/setup', method: 'post' })
+}
+
+/**
+ * 2FA绑定第二步：首次动态码确认，返回一次性备用恢复码列表
+ */
+export function enable2fa(code) {
+    return service({ url: '/auth/2fa/enable', method: 'post', data: { code } })
+}
+
+/**
+ * 2FA解绑（需密码+动态码/备用码）
+ */
+export function disable2fa(data) {
+    return service({ url: '/auth/2fa/disable', method: 'post', data })
+}
+
+/**
+ * 当前用户2FA开启状态
+ */
+export function get2faStatus() {
+    return service({ url: '/auth/2fa/status', method: 'get' })
+}

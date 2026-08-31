@@ -69,6 +69,21 @@ public class UserEntity {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Timestamp pwd_update_time;
 
+    /**
+     * TOTP两步认证密钥（Base32，未绑定为null）
+     */
+    private String totp_secret;
+
+    /**
+     * 是否开启两步认证
+     */
+    private Integer totp_enabled;
+
+    /**
+     * 备用恢复码（SHA256哈希，逗号分隔，一次性使用）
+     */
+    private String backup_codes;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Timestamp create_time;
 

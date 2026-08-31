@@ -48,14 +48,123 @@
                     <el-button :loading="loading" @click="submitForm(formEl)">更新密码</el-button>
                 </el-form-item>
             </el-form>
+
+            <el-divider content-position="left">两步认证（2FA）</el-divider>
+            <div class="twofa-card">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div>验证器动态码二次验证（Google Authenticator/腾讯身份验证器等）</div>
+                        <el-tag :type="twoFa.enabled ? 'success' : 'info'" class="mt-8px">
+                            {{ twoFa.enabled ? '已开启' : '未开启' }}
+                        </el-tag>
+                    </div>
+                    <el-button v-if="!twoFa.enabled" type="primary" @click="startBind2fa">开启</el-button>
+                    <el-button v-else type="danger" plain @click="unbindVisible = true">解绑</el-button>
+                </div>
+            </div>
+        </el-tab-pane>
+        <el-tab-pane label="登录与设备" name="devices">
+            <h4 class="section-title">我的在线设备</h4>
+            <el-table :data="devices" border size="small">
+                <el-table-column label="设备" min-width="110">
+                    <template #default="scope">{{ scope.row.browser }}</template>
+                </el-table-column>
+                <el-table-column prop="ip" label="IP" width="130" />
+                <el-table-column prop="loginTime" label="登录时间" width="160" />
+                <el-table-column prop="lastAccessTime" label="最后活跃" width="160" />
+                <el-table-column label="操作" width="110" align="center">
+                    <template #default="scope">
+                        <el-tag v-if="scope.row.current" type="success" size="small">当前设备</el-tag>
+                        <el-button v-else size="small" type="danger" link @click="kickDevice(scope.row)">下线</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <h4 class="section-title">登录历史</h4>
+            <el-table :data="loginLogs" border size="small">
+                <el-table-column prop="createTime" label="时间" width="160" />
+                <el-table-column prop="ip" label="IP" width="130" />
+                <el-table-column label="结果" width="80" align="center">
+                    <template #default="scope">
+                        <el-tag :type="scope.row.success ? 'success' : 'danger'" size="small">
+                            {{ scope.row.success ? '成功' : '失败' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="message" label="说明" show-overflow-tooltip />
+            </el-table>
+
+            <h4 class="section-title">我的操作记录</h4>
+            <el-table :data="operateLogs" border size="small">
+                <el-table-column prop="createTime" label="时间" width="160" />
+                <el-table-column prop="module" label="模块" width="90" />
+                <el-table-column prop="operation" label="操作" width="100" />
+                <el-table-column prop="url" label="接口" show-overflow-tooltip />
+                <el-table-column label="结果" width="70" align="center">
+                    <template #default="scope">
+                        <el-tag :type="scope.row.success ? 'success' : 'danger'" size="small">
+                            {{ scope.row.success ? '成功' : '失败' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+            </el-table>
         </el-tab-pane>
     </el-tabs>
+
+    <!-- 2FA绑定：扫码+首次动态码 -->
+    <el-dialog v-model="bindVisible" title="开启两步认证" width="400" :close-on-click-modal="false" @closed="bindVisible = false">
+        <div class="text-center">
+            <img v-if="bind.qrImage" :src="bind.qrImage" class="w-200px" alt="绑定二维码" />
+            <div class="text-12px color-#909399 mt-8px">
+                使用验证器App扫码添加，无法扫码时可手动输入密钥：
+            </div>
+            <el-text class="break-all" type="primary" size="small">{{ bind.secret }}</el-text>
+        </div>
+        <el-form label-width="90px" class="mt-12px">
+            <el-form-item label="动态码">
+                <el-input v-model="bind.code" placeholder="输入App上的6位动态码" maxlength="6" />
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <el-button @click="bindVisible = false">取消</el-button>
+            <el-button type="primary" :loading="bind.loading" @click="confirmBind">确认绑定</el-button>
+        </template>
+    </el-dialog>
+
+    <!-- 备用恢复码（仅展示一次） -->
+    <el-dialog v-model="backupVisible" title="备用恢复码（仅显示一次）" width="400" :close-on-click-modal="false">
+        <el-alert type="warning" :closable="false" title="手机丢失时可用备用码登录，每个仅可用一次。请截图或抄写保存！" class="mb-12px" />
+        <div class="backup-codes">
+            <el-tag v-for="code in backupCodes" :key="code" size="large" class="backup-code">{{ code }}</el-tag>
+        </div>
+        <template #footer>
+            <el-button type="primary" @click="backupVisible = false">我已保存</el-button>
+        </template>
+    </el-dialog>
+
+    <!-- 2FA解绑：密码+动态码 -->
+    <el-dialog v-model="unbindVisible" title="解绑两步认证" width="400" :close-on-click-modal="false">
+        <el-form label-width="90px">
+            <el-form-item label="登录密码">
+                <el-input v-model="unbind.password" type="password" show-password />
+            </el-form-item>
+            <el-form-item label="动态码">
+                <el-input v-model="unbind.code" placeholder="验证器动态码或备用恢复码" />
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <el-button @click="unbindVisible = false">取消</el-button>
+            <el-button type="danger" :loading="unbind.loading" @click="confirmUnbind">确认解绑</el-button>
+        </template>
+    </el-dialog>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { delUser, updatePassword, updateUser } from '@/api/user.js'
+import { disable2fa, enable2fa, get2faStatus, setup2fa } from '@/api/auth.js'
+import { getMyLoginLogs, getMyOperateLogs, getMySessions, kickMySession } from '@/api/profile.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { VerifyUser } from '@/utils/vali.js'
 const verifyUser = new VerifyUser()
@@ -158,4 +267,140 @@ const submitForm = (formEl) => {
         loading.value = false
     })
 }
+
+/**
+ * 两步认证（2FA）
+ */
+const twoFa = reactive({ enabled: false })
+const bindVisible = ref(false)
+const bind = reactive({ secret: '', qrImage: '', code: '', loading: false })
+const backupVisible = ref(false)
+const backupCodes = ref([])
+const unbindVisible = ref(false)
+const unbind = reactive({ password: '', code: '', loading: false })
+
+const refresh2faState = () => {
+    // 以本地用户信息+会话探测的方式粗略同步状态：登录响应未带2FA标记，这里通过解绑接口的可用性由服务端兜底
+    twoFa.enabled = false
+}
+refresh2faState()
+
+const startBind2fa = () => {
+    setup2fa().then((res) => {
+        if (res?.code === 200) {
+            bind.secret = res.data.secret
+            bind.qrImage = res.data.qrImage
+            bind.code = ''
+            bindVisible.value = true
+        } else {
+            ElMessage.error(`生成失败！${res?.message}`)
+        }
+    })
+}
+
+const confirmBind = () => {
+    if (!bind.code || bind.code.length !== 6) {
+        ElMessage.warning('请输入6位动态码')
+        return
+    }
+    bind.loading = true
+    enable2fa(bind.code)
+        .then((res) => {
+            if (res?.code === 200) {
+                twoFa.enabled = true
+                backupCodes.value = res.data || []
+                bindVisible.value = false
+                backupVisible.value = true
+            } else {
+                ElMessage.error(`绑定失败！${res?.message}`)
+            }
+        })
+        .finally(() => {
+            bind.loading = false
+        })
+}
+
+const confirmUnbind = () => {
+    unbind.loading = true
+    disable2fa({ password: unbind.password, code: unbind.code })
+        .then((res) => {
+            if (res?.code === 200) {
+                ElMessage.success(res.message || '已解绑')
+                unbindVisible.value = false
+                unbind.password = ''
+                unbind.code = ''
+                twoFa.enabled = false
+            } else {
+                ElMessage.error(`解绑失败！${res?.message}`)
+            }
+        })
+        .finally(() => {
+            unbind.loading = false
+        })
+}
+
+/**
+ * 登录与设备
+ */
+const devices = ref([])
+const loginLogs = ref([])
+const operateLogs = ref([])
+
+const loadProfileData = () => {
+    get2faStatus().then((res) => {
+        if (res?.code === 200) {
+            twoFa.enabled = !!res.data?.enabled
+        }
+    })
+    getMySessions().then((res) => {
+        if (res?.code === 200) {
+            devices.value = res.data
+        }
+    })
+    getMyLoginLogs({ page: 1, pageSize: 10 }).then((res) => {
+        if (res?.code === 200) loginLogs.value = res.data.rows
+    })
+    getMyOperateLogs({ page: 1, pageSize: 10 }).then((res) => {
+        if (res?.code === 200) operateLogs.value = res.data.rows
+    })
+}
+
+const kickDevice = (row) => {
+    kickMySession({ tokenJti: row.tokenJti }).then((res) => {
+        if (res?.code === 200) {
+            ElMessage.success(res.message || '已下线')
+            loadProfileData()
+        } else {
+            ElMessage.error(`操作失败！${res?.message}`)
+        }
+    })
+}
+
+onMounted(loadProfileData)
 </script>
+
+<style scoped>
+.section-title {
+    margin: 18px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.twofa-card {
+    max-width: 600px;
+    padding: 12px 16px;
+    border: 1px solid #e4e7ed;
+    border-radius: 8px;
+}
+
+.backup-codes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.backup-code {
+    justify-content: center;
+    font-family: monospace;
+}
+</style>

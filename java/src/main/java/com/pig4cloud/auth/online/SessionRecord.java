@@ -66,6 +66,11 @@ public class SessionRecord {
     private long refreshExpireAt;
 
     /**
+     * 是否当前设备（个人中心设备列表展示用，非持久化字段）
+     */
+    private Boolean current;
+
+    /**
      * 从User-Agent粗解析浏览器名称，仅用于在线列表展示
      */
     public static String parseBrowser(String userAgent) {

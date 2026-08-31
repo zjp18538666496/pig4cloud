@@ -1,5 +1,6 @@
 <template>
     <div class="header">
+        <GlobalSearch />
         <div class="flex items-center gap-12px mr-12px">
             <!-- 消息中心铃铛 -->
             <el-badge :value="unreadCount" :hidden="!unreadCount" :max="99">
@@ -135,6 +136,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import presonalCenter from '@/views/personal-center/Index.vue'
+import GlobalSearch from './GlobalSearch.vue'
 import { logout as logoutApi } from '@/api/auth.js'
 import { getMyMessages, getUnreadCount, markAllRead, markRead, sendMessage } from '@/api/message.js'
 import { updatePassword } from '@/api/user.js'
