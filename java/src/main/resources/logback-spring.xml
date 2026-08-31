@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+日志规范化配置：
+- 控制台（开发）+ 滚动文件（生产）双输出，按天+大小归档，zip压缩，自动清理
+- error单独落error文件，便于告警采集
+- 业务SQL日志(mybatis)与框架噪音分级控制
+- 生产profile(profiles.active != dev)额外启用AsyncAppender降低日志IO对请求的影响
+路径与级别可在application.yaml的logging.*或环境变量覆盖
+-->
+<configuration scan="true" scanPeriod="60 seconds">
+    <contextName>pigx-admin</contextName>
+
+    <!-- 属性默认值：优先取环境变量，未设置时用defaultValue表达式 -->
+    <property name="LOG_HOME" value="${LOG_HOME:-logs}"/>
+    <property name="LOG_LEVEL_ROOT" value="${LOG_LEVEL_ROOT:-INFO}"/>
+    <!-- 历史日志保留天数（按天归档数），清理策略由此推导 -->
+    <property name="MAX_HISTORY" value="${LOG_MAX_HISTORY:-30}"/>
+    <!-- 单文件上限，超出按序号切分 -->
+    <property name="MAX_FILE_SIZE" value="50MB"/>
+    <!-- 总量上限：超过后删除最老归档 -->
+    <property name="TOTAL_SIZE_CAP" value="2GB"/>
+
+    <!-- 彩色控制台（仅非windows生效的着色，windows下自动无色） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 全量日志：按天+大小滚动，zip压缩 -->
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/pigx-admin.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/pigx-admin.%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 错误日志：单列，便于接入告警 -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/pigx-admin-error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/pigx-admin-error.%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 只落ERROR及以上 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+
+    <!-- dev：控制台为主（文件可选），不启用异步，保证开发实时性 -->
+    <springProfile name="dev">
+        <root level="${LOG_LEVEL_ROOT}">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_ALL"/>
+            <appender-ref ref="FILE_ERROR"/>
+        </root>
+    </springProfile>
+
+    <!-- 非dev：控制台+文件，全量经AsyncAppender（neverBlock丢弃最老而非阻塞业务线程） -->
+    <springProfile name="!dev">
+        <appender name="ASYNC_ALL" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>1024</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <neverBlock>true</neverBlock>
+            <appender-ref ref="FILE_ALL"/>
+        </appender>
+        <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>256</queueSize>
+            <neverBlock>true</neverBlock>
+            <appender-ref ref="FILE_ERROR"/>
+        </appender>
+        <root level="${LOG_LEVEL_ROOT}">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_ALL"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+    </springProfile>
+
+    <!-- 业务分级：mybatis SQL默认INFO不打印SQL（debug才打印），框架噪音压级 -->
+    <logger name="com.pig4cloud" level="${LOG_LEVEL_ROOT}"/>
+    <logger name="com.baomidou.mybatisplus" level="WARN"/>
+    <logger name="org.mybatis" level="WARN"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.springframework.security" level="WARN"/>
+    <logger name="org.apache.commons.net" level="WARN"/>
+    <logger name="io.lettuce" level="WARN"/>
+    <logger name="org.mongodb.driver" level="WARN"/>
+    <logger name="org.apache.catalina" level="WARN"/>
+</configuration>

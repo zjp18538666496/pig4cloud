@@ -47,3 +47,12 @@ app:
     enabled: ${MAIL_ENABLED:false}
 tomcat:
   max-http-form-post-size: -1
+logging:
+  # 日志规范：策略见logback-spring.xml（控制台+按天/大小滚动zip归档+error单列+非dev异步）
+  # 目录默认相对启动目录logs/，生产建议挂载卷；环境变量LOG_HOME/LOG_LEVEL_ROOT覆盖
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+  devtools:
+    restart:
+      # 日志目录变化不触发devtools热重启
+      exclude: logs/**
