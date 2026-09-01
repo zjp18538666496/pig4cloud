@@ -12,6 +12,9 @@ COPY --from=extraction /app/extracted/dependencies/ ./
 COPY --from=extraction /app/extracted/spring-boot-loader/ ./
 COPY --from=extraction /app/extracted/snapshot-dependencies/ ./
 COPY --from=extraction /app/extracted/application/ ./
-ENV TZ=Asia/Shanghai
+ENV TZ=Asia/Shanghai \
+    LOG_HOME=/app/logs
+# 日志目录（logback-spring.xml写入/app/logs），生产挂载卷持久化：-v pigx-logs:/app/logs
+VOLUME /app/logs
 EXPOSE 9000
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

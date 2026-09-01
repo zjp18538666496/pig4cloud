@@ -1,0 +1,98 @@
+2026-09-01 00:16:19.762 INFO  [background-preinit] o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2026-09-01 00:16:19.785 INFO  [restartedMain] com.pig4cloud.Application - Starting Application using Java 17.0.11 with PID 17676 (D:\data\project\pig4cloud\java\target\classes started by Administrator in D:\data\project\pig4cloud\java)
+2026-09-01 00:16:19.786 INFO  [restartedMain] com.pig4cloud.Application - The following 1 profile is active: "dev"
+2026-09-01 00:16:21.876 INFO  [restartedMain] o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9000"]
+2026-09-01 00:16:23.485 WARN  [restartedMain] c.b.m.core.injector.methods.Insert - [com.pig4cloud.role.mapper.RoleMapper.insert] Has been loaded by XML or SqlProvider or Mybatis's Annotation, so ignoring this injection for [class com.baomidou.mybatisplus.core.injector.methods.Insert]
+2026-09-01 00:16:23.577 WARN  [restartedMain] o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used for username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider.
+2026-09-01 00:16:24.176 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-01 00:16:24.371 INFO  [restartedMain] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3680877d
+2026-09-01 00:16:24.372 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-01 00:16:24.404 INFO  [restartedMain] c.p.c.config.DatabaseInitializer - 检测到业务表已存在，跳过数据库初始化
+2026-09-01 00:16:25.243 WARN  [restartedMain] o.s.s.c.a.web.builders.WebSecurity - You are asking Spring Security to ignore Mvc [pattern='/error']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2026-09-01 00:16:25.718 INFO  [restartedMain] o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9000"]
+2026-09-01 00:16:25.744 INFO  [restartedMain] com.pig4cloud.Application - Started Application in 6.273 seconds (process running for 6.764)
+2026-09-01 00:17:41.725 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-09-01 00:17:41.806 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-09-01 21:55:05.385 INFO  [background-preinit] o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2026-09-01 21:55:05.410 INFO  [restartedMain] com.pig4cloud.Application - Starting Application using Java 17.0.11 with PID 7276 (D:\data\project\pig4cloud\java\target\classes started by Administrator in D:\data\project\pig4cloud\java)
+2026-09-01 21:55:05.410 INFO  [restartedMain] com.pig4cloud.Application - The following 1 profile is active: "dev"
+2026-09-01 21:55:06.984 INFO  [restartedMain] o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9000"]
+2026-09-01 21:55:07.682 WARN  [restartedMain] c.b.m.core.injector.methods.Insert - [com.pig4cloud.role.mapper.RoleMapper.insert] Has been loaded by XML or SqlProvider or Mybatis's Annotation, so ignoring this injection for [class com.baomidou.mybatisplus.core.injector.methods.Insert]
+2026-09-01 21:55:07.761 WARN  [restartedMain] o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used for username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider.
+2026-09-01 21:55:08.298 INFO  [restartedMain] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-01 21:55:11.426 WARN  [restartedMain] o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'databaseInitializer' defined in file [D:\data\project\pig4cloud\java\target\classes\com\pig4cloud\common\config\DatabaseInitializer.class]: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+2026-09-01 21:55:11.467 ERROR [restartedMain] o.s.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'databaseInitializer' defined in file [D:\data\project\pig4cloud\java\target\classes\com\pig4cloud\common\config\DatabaseInitializer.class]: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1788)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:600)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:337)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:962)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:624)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:335)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1363)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1352)
+	at com.pig4cloud.Application.main(Application.java:30)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+Caused by: com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64)
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:828)
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:448)
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241)
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:198)
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:137)
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:360)
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:202)
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:461)
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:550)
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:98)
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:111)
+	at com.pig4cloud.common.config.DatabaseInitializer.afterPropertiesSet(DatabaseInitializer.java:71)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1835)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1784)
+	... 21 common frames omitted
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480)
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61)
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:105)
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:151)
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:167)
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:89)
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120)
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:948)
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:818)
+	... 34 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: getsockopt
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:554)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:633)
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153)
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:63)
+	... 37 common frames omitted
