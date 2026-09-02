@@ -1,18 +1,23 @@
 package com.pig4cloud.stats.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.pig4cloud.auth.online.OnlineUserStore;
+import com.pig4cloud.auth.online.SessionRecord;
 import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.dept.mapper.DeptMapper;
 import com.pig4cloud.log.entity.LoginLog;
 import com.pig4cloud.notice.entity.NoticeEntity;
 import com.pig4cloud.notice.service.NoticeService;
 import com.pig4cloud.role.mapper.RoleMapper;
+import com.pig4cloud.tenant.entity.TenantEntity;
 import com.pig4cloud.tenant.mapper.TenantMapper;
 import com.pig4cloud.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
@@ -21,6 +26,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +67,65 @@ public class StatsService {
         List<NoticeEntity> notices = noticeService.latestPublished(5);
         stats.put("latestNotices", notices);
         return stats;
+    }
+
+    /**
+     * 租户维度使用报表（数据大屏，仅超管）：
+     * 每租户 用户数/角色数/部门数/在线数/配额使用率 + 近30天登录次数（Mongo按tenantId聚合）
+     */
+    public List<Map<String, Object>> tenantReport() {
+        List<TenantEntity> tenants = tenantMapper.selectList(
+                new QueryWrapper<TenantEntity>().orderByAsc("id"));
+        // 近30天登录按租户聚合
+        Date since = Date.from(LocalDate.now().minusDays(29)
+                .atStartOfDay(ZoneId.of("Asia/Shanghai")).toInstant());
+        Map<Integer, Long> loginByTenant = new HashMap<>();
+        try {
+            Aggregation aggregation = Aggregation.newAggregation(
+                    Aggregation.match(Criteria.where("success").is(true).and("createTime").gte(since)),
+                    Aggregation.group("tenantId").count().as("count"));
+            AggregationResults<Map> results =
+                    mongoTemplate.aggregate(aggregation, "login_log", Map.class);
+            for (Map row : results.getMappedResults()) {
+                Object tenantId = row.get("_id");
+                if (tenantId instanceof Number number) {
+                    loginByTenant.put(number.intValue(), ((Number) row.get("count")).longValue());
+                }
+            }
+        } catch (Exception ex) {
+            log.error("租户登录统计失败: {}", ex.getMessage());
+        }
+        // 在线数按租户汇总
+        Map<Integer, Long> onlineByTenant = new HashMap<>();
+        for (SessionRecord session : onlineUserStore.list()) {
+            onlineByTenant.merge(session.getTenantId(), 1L, Long::sum);
+        }
+        List<Map<String, Object>> report = new ArrayList<>();
+        for (TenantEntity tenant : tenants) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("tenantId", tenant.getId());
+            row.put("tenantName", tenant.getTenant_name());
+            row.put("status", tenant.getStatus());
+            row.put("expireTime", tenant.getExpire_time());
+            row.put("userCount", userMapper.selectCount(
+                    new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.pig4cloud.user.entity.UserEntity>()
+                            .eq("tenant_id", tenant.getId())));
+            row.put("roleCount", roleMapper.selectCount(
+                    new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.pig4cloud.role.entity.RoleEntity>()
+                            .eq("tenant_id", tenant.getId())));
+            row.put("deptCount", deptMapper.selectCount(
+                    new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.pig4cloud.dept.entity.DeptEntity>()
+                            .eq("tenant_id", tenant.getId())));
+            row.put("onlineCount", onlineByTenant.getOrDefault(tenant.getId(), 0L));
+            row.put("login30d", loginByTenant.getOrDefault(tenant.getId(), 0L));
+            row.put("userLimit", tenant.getUser_limit());
+            row.put("quotaUsedPercent", tenant.getUser_limit() == null ? null
+                    : Math.round(userMapper.selectCount(
+                    new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.pig4cloud.user.entity.UserEntity>()
+                            .eq("tenant_id", tenant.getId())) * 1000.0 / tenant.getUser_limit()) / 10.0);
+            report.add(row);
+        }
+        return report;
     }
 
     /**

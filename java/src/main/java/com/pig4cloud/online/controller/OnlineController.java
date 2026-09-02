@@ -3,6 +3,7 @@ package com.pig4cloud.online.controller;
 import com.pig4cloud.auth.online.OnlineUserStore;
 import com.pig4cloud.auth.online.SessionRecord;
 import com.pig4cloud.auth.online.TokenBlacklist;
+import com.pig4cloud.auth.service.AuthService;
 import com.pig4cloud.common.dto.BasePageQuery;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.PageResult;
@@ -30,6 +31,7 @@ public class OnlineController {
 
     private final OnlineUserStore onlineUserStore;
     private final TokenBlacklist tokenBlacklist;
+    private final AuthService authService;
 
     @PostMapping("/getOnlineUsers")
     @PreAuthorize("hasAuthority('online:read')")
@@ -70,6 +72,21 @@ public class OnlineController {
     @Setter
     public static class OnlineQueryDto extends BasePageQuery {
         private String username = "";
+    }
+
+    /**
+     * 超管代理登录：以目标用户身份签发token（响应头带新token，前端保存后即进入代理视角）
+     */
+    @PostMapping("/impersonate")
+    @PreAuthorize("hasAuthority('super')")
+    public R<com.pig4cloud.user.vo.UserVO> impersonate(@Valid @RequestBody KickOutDto dto,
+                                                       jakarta.servlet.http.HttpServletResponse response) {
+        String operator = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        var result = authService.impersonate(dto.getTokenJti().trim(), operator);
+        response.setHeader("Authorization", "Bearer " + result.accessToken());
+        response.setHeader("Refresh-Token", result.refreshToken());
+        return R.ok("请求成功", result.user());
     }
 
     @Getter

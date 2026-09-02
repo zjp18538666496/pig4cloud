@@ -151,5 +151,14 @@ public class NoticeService {
         notice.setTitle(dto.getTitle());
         notice.setContent(dto.getContent());
         notice.setStatus(dto.getStatus() == null ? "0" : dto.getStatus());
+        if ("2".equals(notice.getStatus())) {
+            // 定时发布必须带发布时间
+            if (dto.getPublishTime() == null) {
+                throw new BizException("定时发布必须选择发布时间");
+            }
+            notice.setPublish_time(dto.getPublishTime());
+        } else {
+            notice.setPublish_time(null);
+        }
     }
 }

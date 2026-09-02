@@ -135,6 +135,12 @@
             <artifactId>javase</artifactId>
             <version>3.5.3</version>
         </dependency>
+        <!--        Flowable审批流引擎（自动建ACT_表；场景：角色申请审批）-->
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter</artifactId>
+            <version>7.0.1</version>
+        </dependency>
     </dependencies>
 
     <properties>

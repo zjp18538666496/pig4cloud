@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://pig4cloud.approval">
+
+    <!-- 通用审批流程：申请人提交 → 审批人(approver变量)通过/驳回 -->
+    <process id="roleApproval" name="角色申请审批">
+        <startEvent id="start"/>
+        <sequenceFlow id="flow1" sourceRef="start" targetRef="approveTask"/>
+        <userTask id="approveTask" name="审批" flowable:assignee="${approver}"
+                  flowable:formFieldValidation="false"/>
+        <sequenceFlow id="flow2" sourceRef="approveTask" targetRef="gateway"/>
+        <exclusiveGateway id="gateway"/>
+        <sequenceFlow id="approved" sourceRef="gateway" targetRef="endApproved">
+            <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="rejected" sourceRef="gateway" targetRef="endRejected">
+            <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+        </sequenceFlow>
+        <endEvent id="endApproved"/>
+        <endEvent id="endRejected"/>
+    </process>
+</definitions>

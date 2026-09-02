@@ -1,6 +1,11 @@
 server:
   port: 9000
+  # 优雅停机：收到SIGTERM后停止接新请求，等在途请求完成再退出（配合K8s/Compose滚动发布请求不掉）
+  shutdown: graceful
 spring:
+  lifecycle:
+    # 优雅停机最长等待时间
+    timeout-per-shutdown-phase: 30s
   profiles:
     active: dev  # 默认环境
   # 本地敏感配置（数据库/FTP/JWT密钥），不入库，参考 application-local.yaml.example
@@ -23,10 +28,21 @@ spring:
       host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+flowable:
+  # 启动时自动建/更新ACT_表
+  database-schema-update: true
+  # 关闭异步执行器（审批场景同步完成任务即可，减少线程占用）
+  async-executor-activate: false
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:
     map-underscore-to-camel-case: false
+springdoc:
+  # 接口文档开关：生产环境设SWAGGER_ENABLED=false关闭，避免接口暴露
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
 jwt:
   # 通过环境变量JWT_SECRET或application-local.yaml提供，禁止提交到仓库
   secret: ${JWT_SECRET:}

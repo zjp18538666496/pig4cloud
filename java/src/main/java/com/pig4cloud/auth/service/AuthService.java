@@ -63,4 +63,9 @@ public interface AuthService {
      * 重新生成备用恢复码（需验证当前动态码或旧备用码），旧码全部作废
      */
     List<String> regenerateBackupCodes(String code);
+
+    /**
+     * 超管代理登录：以目标用户身份签发token（claims带impersonator标记，全程登录日志审计）
+     */
+    LoginResult impersonate(String targetUsername, String operator);
 }

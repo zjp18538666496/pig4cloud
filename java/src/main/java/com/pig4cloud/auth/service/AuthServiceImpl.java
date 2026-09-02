@@ -57,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordPolicyService passwordPolicyService;
     private final TotpService totpService;
     private final com.pig4cloud.auth.online.SessionKickService sessionKickService;
+    private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
     @Override
     public LoginResult login(LoginRequest request, String ip, String userAgent) {
@@ -298,6 +299,42 @@ public class AuthServiceImpl implements AuthService {
         loginLog.setMessage(message);
         loginLog.setCreateTime(new Date());
         loginLogService.saveLoginLog(loginLog);
+    }
+
+    @Override
+    public LoginResult impersonate(String targetUsername, String operator) {
+        UserEntity user = userMapper.selectUserByUsername(targetUsername);
+        if (user == null) {
+            throw new BizException("目标用户不存在");
+        }
+        if (targetUsername.equals(operator)) {
+            throw new BizException("不能代理登录自己");
+        }
+        if (Integer.valueOf(1).equals(user.getTotp_enabled())) {
+            throw new BizException("目标用户已开启两步认证，出于安全考虑不允许代理");
+        }
+        // 复用认证链取目标用户权限（含租户停用/过期校验）
+        org.springframework.security.core.userdetails.UserDetails details =
+                userDetailsService.loadUserByUsername(targetUsername);
+        List<String> authorities = details.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", targetUsername);
+        claims.put("authorityString", String.join(",", authorities));
+        claims.put("tenantId", user.getTenant_id());
+        claims.put("impersonator", operator);
+
+        UserVO userVO = UserVO.from(user);
+        userVO.setPermissions(authorities);
+        userVO.setImpersonator(operator);
+        String accessToken = jwtUtils.getJwt(claims);
+        String refreshToken = jwtUtils.getRefreshToken(claims);
+        registerSession(accessToken, refreshToken, userVO, user, null, "代理登录");
+        saveLoginLog(targetUsername, null, user.getTenant_id(), true, "代理登录（由 " + operator + " 发起，全程可审计）");
+        log.info("超管[{}]代理登录用户[{}]", operator, targetUsername);
+        return new LoginResult(accessToken, refreshToken, userVO);
     }
 
     private UserEntity currentUser() {

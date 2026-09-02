@@ -33,6 +33,11 @@ public class UserVO {
     private Boolean force2fa;
 
     /**
+     * 代理登录标记：值为发起代理的超管账号（仅代理登录时返回）
+     */
+    private String impersonator;
+
+    /**
      * 权限点集合（角色编码+按钮操作权限），登录时填充，供前端v-permission使用
      */
     private List<String> permissions;

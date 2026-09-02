@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import EditUser from '@/views/user-manager/components/EditUser.vue'
 import { debounce } from '@/utils/utils.js'
 import { createUser, delUser, downloadImportTemplate, exportUsers, getUserLists, importUsers, updateUser } from '@/api/user.js'
+import { impersonate } from '@/api/auth.js'
 import { getDeptTree } from '@/api/dept.js'
 import { getTenantLists } from '@/api/tenant.js'
 import BaseTable from '@/utils/table.js'
@@ -154,6 +155,32 @@ const handleImportFile = (event) => {
         } else {
             ElMessage.error(`导入失败！${res?.message}`)
         }
+    })
+}
+
+/**
+ * 超管代理登录：备份当前token → 换目标用户token进入代理视角（顶栏可退出代理）
+ */
+const handleImpersonate = (row) => {
+    ElMessageBox.confirm(
+        `将以【${row.username}】的身份登录系统进行排查，当前登录态会暂存，可随时退出代理。确定继续吗？`,
+        '代理登录',
+        { confirmButtonText: '进入代理', cancelButtonText: '取消', type: 'warning' },
+    ).then(() => {
+        localStorage.setItem('proxyBackup', JSON.stringify({
+            authorization: localStorage.getItem('authorization'),
+            refreshToken: localStorage.getItem('refreshToken'),
+            userinfo: localStorage.getItem('userinfo'),
+        }))
+        impersonate(row.username).then((res) => {
+            if (res?.code === 200) {
+                localStorage.setItem('userinfo', JSON.stringify(res.data))
+                ElMessage.success(`已进入代理视角（${row.username}）`)
+                window.location.href = '/'
+            } else {
+                ElMessage.error(`代理失败！${res?.message}`)
+            }
+        })
     })
 }
 
@@ -342,9 +369,10 @@ onUnmounted(() => {
             <el-table-column prop="create_time" label="创建时间" align="center" />
             <el-table-column prop="update_time" label="更新时间" align="center" />
             <el-table-column prop="last_login_time" label="最后登录时间" align="center" />
-            <el-table-column prop="address" label="操作" align="center">
+            <el-table-column prop="address" label="操作" align="center" width="230">
                 <template #default="scope">
                     <el-button v-permission="['user:write']" size="small" @click="handleEdit(scope.$index, scope.row)"> 编辑</el-button>
+                    <el-button v-if="isSuper" size="small" type="warning" @click="handleImpersonate(scope.row)">代理</el-button>
                     <el-button v-permission="['user:remove']" size="small" type="danger" @click="handleDelete(scope.$index, scope.row)"> 删除 </el-button>
                 </template>
             </el-table-column>

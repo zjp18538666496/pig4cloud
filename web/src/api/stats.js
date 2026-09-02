@@ -10,3 +10,10 @@ export function getDashboardStats() {
         method: 'post',
     })
 }
+
+/**
+ * 数据大屏：租户维度使用报表（超管）
+ */
+export function getTenantReport() {
+    return service({ url: '/stats/tenantReport', method: 'get' })
+}

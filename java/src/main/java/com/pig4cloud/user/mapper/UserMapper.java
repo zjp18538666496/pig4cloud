@@ -18,10 +18,16 @@ import java.util.Map;
 @Mapper
 public interface UserMapper extends BaseMapper<UserEntity> {
 
-    @Select("SELECT * FROM sys_user WHERE username = #{username}")
+    @Select("SELECT * FROM sys_user WHERE username = #{username} AND deleted = 0")
     UserEntity selectUserByUsername(String username);
 
-    @Select("SELECT * FROM sys_user WHERE email = #{email} LIMIT 1")
+    /**
+     * 查重用（含回收站数据，绕过@TableLogic过滤）：避免软删除账号占用的唯一索引冲突
+     */
+    @Select("SELECT COUNT(*) FROM sys_user WHERE username = #{username}")
+    int countByUsernameIncludeDeleted(String username);
+
+    @Select("SELECT * FROM sys_user WHERE email = #{email} AND deleted = 0")
     UserEntity selectUserByEmail(String email);
 
     @Update("UPDATE sys_user SET last_login_time = NOW() WHERE username = #{username}")
@@ -50,6 +56,7 @@ public interface UserMapper extends BaseMapper<UserEntity> {
             "LEFT JOIN user_post up ON u.id = up.user_id",
             "LEFT JOIN sys_post p2 ON up.post_id = p2.id",
             "<where>",
+            "  u.deleted = 0",
             "  <if test='deptIds != null and deptIds.size() > 0'>",
             "    <choose>",
             "      <when test='selfId != null'>",
@@ -88,6 +95,7 @@ public interface UserMapper extends BaseMapper<UserEntity> {
             "<script>",
             "SELECT COUNT(*) FROM sys_user u",
             "<where>",
+            "  u.deleted = 0",
             "  <if test='deptIds != null and deptIds.size() > 0'>",
             "    <choose>",
             "      <when test='selfId != null'>",
@@ -147,7 +155,7 @@ public interface UserMapper extends BaseMapper<UserEntity> {
             SELECT DISTINCT u.username
             FROM sys_user u
             JOIN user_role ur ON u.id = ur.user_id
-            WHERE ur.role_id = #{roleId}
+            WHERE ur.role_id = #{roleId} AND u.deleted = 0
             """)
     List<String> selectUsernamesByRoleId(Integer roleId);
 

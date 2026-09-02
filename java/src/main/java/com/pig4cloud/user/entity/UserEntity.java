@@ -84,6 +84,18 @@ public class UserEntity {
      */
     private String backup_codes;
 
+    /**
+     * 软删除标记（1=在回收站；@TableLogic使MP查询/删除自动过滤）
+     */
+    @com.baomidou.mybatisplus.annotation.TableLogic
+    private Integer deleted;
+
+    /**
+     * 删除时间
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Timestamp delete_time;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Timestamp create_time;
 

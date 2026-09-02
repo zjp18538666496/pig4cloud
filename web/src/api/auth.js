@@ -101,3 +101,10 @@ export function get2faStatus() {
 export function regenerateBackupCodes(code) {
     return service({ url: '/auth/2fa/backup-codes/regenerate', method: 'post', data: { code } })
 }
+
+/**
+ * 超管代理登录（响应头带目标用户token，前端保存后进入代理视角）
+ */
+export function impersonate(username) {
+    return service({ url: '/online/impersonate', method: 'post', data: { tokenJti: username } })
+}

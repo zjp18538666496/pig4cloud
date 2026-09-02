@@ -27,6 +27,11 @@ public class OperateLog {
     private Integer tenantId;
 
     /**
+     * 变更对比（编辑/删除类操作的before→after字段级差异JSON，如{"mobile":"138****6496"→"13900001111"}）
+     */
+    private String diff;
+
+    /**
      * 操作人（未认证接口如登录/注册取请求参数中的username）
      */
     private String username;

@@ -29,9 +29,15 @@ public class NoticeEntity {
     private String content;
 
     /**
-     * 状态(0草稿1发布)
+     * 状态(0草稿1发布2定时待发布)
      */
     private String status;
+
+    /**
+     * 定时发布时间（status=2时到点由noticePublishJob自动发布）
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date publish_time;
 
     /**
      * 租户id(0为平台全员可见)

@@ -2,8 +2,12 @@ package com.pig4cloud.role.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+
+import java.util.Date;
 
 @Data
 @TableName("sys_role")
@@ -44,4 +48,16 @@ public class RoleEntity {
      * 父角色id(0为顶级)；菜单/按钮权限沿父链继承，角色编码与数据权限不继承
      */
     private Integer parent_id;
+
+    /**
+     * 软删除标记（1=在回收站；@TableLogic使MP查询/删除自动过滤）
+     */
+    @TableLogic
+    private Integer deleted;
+
+    /**
+     * 删除时间
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date delete_time;
 }

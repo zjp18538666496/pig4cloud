@@ -57,6 +57,9 @@ public class OperateLogAspect {
         } catch (Throwable ex) {
             record(joinPoint, logRecord, null, ex, System.currentTimeMillis() - start);
             throw ex;
+        } finally {
+            // 业务Service通过AuditDiffContext暂存的变更对比写入日志（一次性消费）
+            com.pig4cloud.log.audit.AuditDiffContext.getAndClear();
         }
     }
 
@@ -71,6 +74,7 @@ public class OperateLogAspect {
             if (com.pig4cloud.common.context.UserContext.get() != null) {
                 operateLog.setTenantId(com.pig4cloud.common.context.UserContext.getTenantId());
             }
+            operateLog.setDiff(com.pig4cloud.log.audit.AuditDiffContext.getAndClear());
             fillRequestInfo(operateLog);
             operateLog.setParams(truncate(writeJson(paramsNode)));
             if (ex != null) {

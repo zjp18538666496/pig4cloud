@@ -29,6 +29,8 @@ public interface RoleMapper extends BaseMapper<RoleEntity> {
                 sys_role r
             LEFT JOIN role_menu rm ON r.id = rm.role_id
             LEFT JOIN sys_menu m ON m.id = rm.menu_id AND m.type != '0'
+            WHERE
+                r.deleted = 0
             GROUP BY
                 r.id
             LIMIT #{pageSize} OFFSET #{page};
@@ -42,6 +44,8 @@ public interface RoleMapper extends BaseMapper<RoleEntity> {
                 sys_role r
             LEFT JOIN role_menu rm ON r.id = rm.role_id
             LEFT JOIN sys_menu m ON m.id = rm.menu_id
+            WHERE
+                r.deleted = 0
             """)
     long selectUserList2Count();
 
@@ -53,6 +57,8 @@ public interface RoleMapper extends BaseMapper<RoleEntity> {
                 sys_role r
             LEFT JOIN role_menu rm ON r.id = rm.role_id
             LEFT JOIN sys_menu m ON m.id = rm.menu_id AND m.type != '0'
+            WHERE
+                r.deleted = 0
             GROUP BY
                 r.id
             ORDER BY
@@ -65,7 +71,7 @@ public interface RoleMapper extends BaseMapper<RoleEntity> {
             FROM sys_role r
             JOIN user_role ur ON r.id = ur.role_id
             JOIN sys_user u ON u.id = ur.user_id
-            WHERE u.username = #{username}
+            WHERE u.username = #{username} AND r.deleted = 0
             """)
     List<RoleEntity> selectRolesByUsername(String username);
 }

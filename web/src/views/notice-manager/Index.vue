@@ -41,7 +41,7 @@ const handleSizeChange = () => {
     getNoticeList()
 }
 
-const statusText = (status) => ({ '0': '草稿', '1': '发布' }[status] || status)
+const statusText = (status) => ({ '0': '草稿', '1': '发布', '2': '定时' }[status] || status)
 
 /**
  * 新增/编辑弹窗
@@ -59,8 +59,8 @@ const rules = reactive({
 const openDialog = (type, row) => {
     dialog.type = type
     dialog.form = type === 'create'
-        ? { id: null, title: '', content: '', status: '0' }
-        : { id: row.id, title: row.title, content: row.content, status: row.status }
+        ? { id: null, title: '', content: '', status: '0', publish_time: null }
+        : { id: row.id, title: row.title, content: row.content, status: row.status, publish_time: row.publish_time }
     dialog.visible = true
 }
 
@@ -158,7 +158,11 @@ const handleDelete = (row) => {
                     <el-radio-group v-model="dialog.form.status">
                         <el-radio value="0">草稿（仅管理端可见）</el-radio>
                         <el-radio value="1">发布（用户端可见）</el-radio>
+                        <el-radio value="2">定时发布</el-radio>
                     </el-radio-group>
+                </el-form-item>
+                <el-form-item v-if="dialog.form.status === '2'" label="发布时间">
+                    <el-date-picker v-model="dialog.form.publish_time" type="datetime" placeholder="到点自动发布" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
                 </el-form-item>
             </el-form>
             <template #footer>

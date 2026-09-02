@@ -1,5 +1,10 @@
 <template>
     <div class="header">
+        <!-- 代理登录横幅 -->
+        <div v-if="userInfo.impersonator" class="proxy-banner">
+            <span>代理视角：{{ userInfo.username }}（由 {{ userInfo.impersonator }} 发起）</span>
+            <el-button size="small" type="warning" plain @click="exitProxy">退出代理</el-button>
+        </div>
         <GlobalSearch />
         <div class="flex items-center gap-12px mr-12px">
             <!-- 消息中心铃铛 -->
@@ -222,6 +227,25 @@ const on2faEnabled = () => {
 }
 
 /**
+ * 退出代理：还原发起代理前的登录态
+ */
+const exitProxy = () => {
+    try {
+        const backup = JSON.parse(localStorage.getItem('proxyBackup') || 'null')
+        if (backup && backup.authorization) {
+            localStorage.setItem('authorization', backup.authorization)
+            localStorage.setItem('refreshToken', backup.refreshToken)
+            localStorage.setItem('userinfo', backup.userinfo)
+        }
+        localStorage.removeItem('proxyBackup')
+        window.location.href = '/'
+    } catch {
+        localStorage.clear()
+        window.location.href = '/login'
+    }
+}
+
+/**
  * 消息中心：未读数轮询 + WebSocket实时推送刷新
  */
 const unreadCount = ref(0)
@@ -420,6 +444,17 @@ onUnmounted(() => {
     font-size: 13px;
     color: #fff;
     cursor: pointer;
+}
+
+.proxy-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 12px;
+    border-radius: 12px;
+    background: rgba(255, 143, 31, 0.25);
+    color: #fff;
+    font-size: 12px;
 }
 
 :focus-visible {

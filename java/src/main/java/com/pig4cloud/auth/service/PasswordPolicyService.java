@@ -2,21 +2,46 @@ package com.pig4cloud.auth.service;
 
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.config.service.ConfigService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * 密码策略：最小长度/复杂度要求走sys_config（pwd.min-length/pwd.require-complex），
- * 创建用户/注册/改密/重置统一校验，改配置即时生效
+ * 密码策略：最小长度/复杂度/弱口令字典走sys_config，
+ * 创建用户/注册/改密/重置统一校验，改配置即时生效。
+ * 弱口令字典加载自classpath weak-passwords.txt（pwd.weak-dict-enabled开关）
  */
 @Service
 public class PasswordPolicyService {
 
     private final ConfigService configService;
+    private volatile Set<String> weakDict;
 
     public PasswordPolicyService(ConfigService configService) {
         this.configService = configService;
+    }
+
+    @PostConstruct
+    public void loadWeakDict() {
+        try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(
+                java.util.Objects.requireNonNull(getClass().getResourceAsStream("/weak-passwords.txt")),
+                StandardCharsets.UTF_8))) {
+            Set<String> dict = new HashSet<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isBlank()) {
+                    dict.add(line.trim().toLowerCase());
+                }
+            }
+            weakDict = dict;
+        } catch (IOException | NullPointerException ex) {
+            weakDict = Set.of();
+        }
     }
 
     /**
@@ -34,6 +59,11 @@ public class PasswordPolicyService {
                 && !(rawPassword.matches(".*[A-Za-z].*") && rawPassword.matches(".*\\d.*"))) {
             throw new BizException("密码必须同时包含字母和数字");
         }
+        if (configService.getBool("pwd.weak-dict-enabled", true)
+                && weakDict != null
+                && weakDict.contains(rawPassword.toLowerCase())) {
+            throw new BizException("密码过于简单（常见弱口令），请更换");
+        }
     }
 
     /**
@@ -42,7 +72,8 @@ public class PasswordPolicyService {
     public Map<String, Object> policy() {
         return Map.of(
                 "minLength", configService.getInt("pwd.min-length", 8),
-                "requireComplex", configService.getBool("pwd.require-complex", false));
+                "requireComplex", configService.getBool("pwd.require-complex", false),
+                "weakDictEnabled", configService.getBool("pwd.weak-dict-enabled", true));
     }
 
     /**

@@ -135,6 +135,12 @@ public class TenantServiceImpl implements TenantService {
             throw new BizException("租户不存在");
         }
         boolean packageChanged = dto.getPackageId() != null && !dto.getPackageId().equals(exists.getPackage_id());
+        // 审计：记录变更前后字段对比
+        com.pig4cloud.log.audit.AuditDiffContext.set(com.pig4cloud.log.audit.DiffUtil.diff(
+                Map.of("tenant_name", nvl(exists.getTenant_name()), "status", nvl(exists.getStatus()),
+                        "user_limit", String.valueOf(exists.getUser_limit())),
+                Map.of("tenant_name", nvl(dto.getTenantName()), "status", nvl(dto.getStatus()),
+                        "user_limit", String.valueOf(dto.getUserLimit()))));
         // 换套餐时同步重绑该租户tenant_admin角色的菜单
         if (packageChanged) {
             List<String> packageMenuIds = packageService.resolvePackageMenuIds(dto.getPackageId());
@@ -201,5 +207,9 @@ public class TenantServiceImpl implements TenantService {
                 })
                 .toList();
         menuMapper.insertUserRoles(roleMenus);
+    }
+
+    private String nvl(String value) {
+        return value == null ? "" : value;
     }
 }

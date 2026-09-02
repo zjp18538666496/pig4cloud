@@ -56,16 +56,16 @@ public class UserServiceImpl implements UserService {
     private final SessionKickService sessionKickService;
     private final PasswordPolicyService passwordPolicyService;
     private final com.pig4cloud.config.service.ConfigService configService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final FtpService ftpService;
     private final FileUtils fileUtils;
 
     @Override
     public R<Void> createUser(UserCreateDto dto) {
-        QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", dto.getUsername());
-        if (userMapper.selectOne(queryWrapper) != null) {
-            throw new BizException("用户已存在");
+        // 查重包含回收站数据：软删除账号占用username唯一索引，直接插入会撞库
+        if (userMapper.countByUsernameIncludeDeleted(dto.getUsername()) > 0) {
+            throw new BizException("用户已存在（若已删除请先在回收站恢复或彻底删除）");
         }
         // 密码策略校验（最小长度/复杂度走sys_config）
         passwordPolicyService.validate(dto.getPassword());
@@ -126,7 +126,18 @@ public class UserServiceImpl implements UserService {
         sessionKickService.kickUser(dto.getUsername());
         QueryWrapper<UserEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", dto.getUsername());
-        int rows = userMapper.delete(queryWrapper);
+        UserEntity user = userMapper.selectOne(queryWrapper);
+        if (user == null) {
+            return R.ok("删除失败", null);
+        }
+        int rows;
+        if (configService.getBool("recycle.enabled", true)) {
+            // 软删除进回收站（MP @TableLogic自动把delete转为update deleted=1并写delete_time）
+            rows = userMapper.deleteById(user.getId());
+        } else {
+            // 硬删除（回收站关闭时的原始行为）
+            rows = jdbcTemplate.update("DELETE FROM sys_user WHERE username = ?", dto.getUsername());
+        }
         return R.ok(rows > 0 ? "删除成功" : "删除失败", null);
     }
 
@@ -269,6 +280,13 @@ public class UserServiceImpl implements UserService {
                 throw new BizException("只能修改本人信息");
             }
         }
+        // 审计：记录变更前后字段对比
+        UserEntity before = userMapper.selectById(dto.getId());
+        com.pig4cloud.log.audit.AuditDiffContext.set(com.pig4cloud.log.audit.DiffUtil.diff(
+                before == null ? Map.of() : Map.of("username", nvl(before.getUsername()), "name", nvl(before.getName()),
+                        "mobile", nvl(before.getMobile()), "email", nvl(before.getEmail())),
+                Map.of("username", nvl(dto.getUsername()), "name", nvl(dto.getName()),
+                        "mobile", nvl(dto.getMobile()), "email", nvl(dto.getEmail()))));
 
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", dto.getId())
@@ -340,5 +358,9 @@ public class UserServiceImpl implements UserService {
             throw new BizException("获取用户信息失败");
         }
         return authentication.getName();
+    }
+
+    private String nvl(String value) {
+        return value == null ? "" : value;
     }
 }

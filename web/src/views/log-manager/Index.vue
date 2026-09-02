@@ -34,6 +34,14 @@
                     </el-table-column>
                     <el-table-column prop="costMs" label="耗时(ms)" width="85" align="center" />
                     <el-table-column prop="errorMsg" label="失败信息" align="left" show-overflow-tooltip />
+                    <el-table-column prop="diff" label="变更对比" align="left" width="200">
+                        <template #default="scope">
+                            <el-tooltip v-if="scope.row.diff" :content="scope.row.diff" placement="top">
+                                <span class="diff-cell">{{ scope.row.diff }}</span>
+                            </el-tooltip>
+                            <span v-else>-</span>
+                        </template>
+                    </el-table-column>
                 </el-table>
                 <el-pagination
                     v-model:current-page="operateTable.query.page"
@@ -185,3 +193,16 @@ const handleLoginSizeChange = () => {
 
 onMounted(getOperateList)
 </script>
+
+<style scoped>
+.diff-cell {
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    font-family: monospace;
+    font-size: 12px;
+    cursor: help;
+}
+</style>

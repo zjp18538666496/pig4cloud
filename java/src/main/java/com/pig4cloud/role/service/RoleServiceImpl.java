@@ -32,6 +32,8 @@ public class RoleServiceImpl implements RoleService {
     private final RoleHierarchyService roleHierarchyService;
     private final SessionKickService sessionKickService;
     private final UserMapper userMapper;
+    private final com.pig4cloud.config.service.ConfigService configService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -68,6 +70,12 @@ public class RoleServiceImpl implements RoleService {
                 && !dto.getParentId().equals(exists.getParent_id())) {
             throw new BizException("超级管理员角色不支持调整上级角色");
         }
+        // 审计：记录变更前后字段对比
+        com.pig4cloud.log.audit.AuditDiffContext.set(com.pig4cloud.log.audit.DiffUtil.diff(
+                Map.of("role_name", nvl(exists.getRole_name()), "description", nvl(exists.getDescription()),
+                        "data_scope", nvl(exists.getData_scope())),
+                Map.of("role_name", nvl(dto.getRoleName()), "description", nvl(dto.getDescription()),
+                        "data_scope", nvl(dto.getDataScope()))));
         validateParent(dto.getParentId(), exists, exists.getTenant_id());
         UpdateWrapper<RoleEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", dto.getId());
@@ -82,8 +90,11 @@ public class RoleServiceImpl implements RoleService {
         if (rows <= 0) {
             return R.fail("更新失败");
         }
-        menuMapper.deleteMenus(dto.getId());
-        saveRoleMenus(dto.getId(), dto.getMenuCodes());
+        if (dto.getMenuCodes() != null) {
+            // 显式传入菜单才重建；null表示本次不动菜单（避免误清空）
+            menuMapper.deleteMenus(dto.getId());
+            saveRoleMenus(dto.getId(), dto.getMenuCodes());
+        }
         // 菜单/权限变更后踢掉持有该角色的在线用户，权限立即生效（token里权限是登录时烤入的）
         sessionKickService.kickUsernames(userMapper.selectUsernamesByRoleId(dto.getId()));
         return R.ok("更新成功", null);
@@ -109,7 +120,14 @@ public class RoleServiceImpl implements RoleService {
                 .toList();
         QueryWrapper<RoleEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role_code", dto.getRoleCode());
-        int rows = roleMapper.delete(queryWrapper);
+        int rows;
+        if (configService.getBool("recycle.enabled", true)) {
+            // 软删除进回收站（MP @TableLogic自动转为update deleted=1）
+            rows = roleMapper.delete(queryWrapper);
+        } else {
+            // 硬删除
+            rows = jdbcTemplate.update("DELETE FROM sys_role WHERE role_code = ?", dto.getRoleCode());
+        }
         sessionKickService.kickUsernames(holders);
         return R.ok(rows > 0 ? "删除成功" : "删除失败", null);
     }
@@ -186,5 +204,9 @@ public class RoleServiceImpl implements RoleService {
         if (insertResult <= 0) {
             throw new BizException("更新角色菜单关联失败");
         }
+    }
+
+    private String nvl(String value) {
+        return value == null ? "" : value;
     }
 }
