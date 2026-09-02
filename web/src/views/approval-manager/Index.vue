@@ -100,10 +100,21 @@ onMounted(() => {
                 <el-table :data="myApps" border>
                     <el-table-column prop="applicantName" label="申请人" width="110" align="center" />
                     <el-table-column prop="roleName" label="申请角色" width="150" align="center" />
-                    <el-table-column prop="reason" label="申请理由" min-width="200" show-overflow-tooltip />
+                    <el-table-column prop="reason" label="申请理由" min-width="180" show-overflow-tooltip />
                     <el-table-column label="状态" width="90" align="center">
                         <template #default="scope">
                             <el-tag :type="statusTag(scope.row)">{{ scope.row.status }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="审批人" width="110" align="center">
+                        <template #default="scope">
+                            <span v-if="scope.row.approver">{{ scope.row.approver }}</span>
+                            <span v-else class="color-#909399">待审批</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="审批时间" width="170" align="center">
+                        <template #default="scope">
+                            {{ scope.row.approveTime || '-' }}
                         </template>
                     </el-table-column>
                     <el-table-column prop="time" label="提交时间" width="170" align="center" />

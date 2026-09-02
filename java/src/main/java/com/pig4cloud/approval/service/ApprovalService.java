@@ -122,9 +122,24 @@ public class ApprovalService {
                 .orderByProcessInstanceStartTime().desc()
                 .list();
         for (HistoricProcessInstance instance : instances) {
-            result.add(toItem(instance.getId(), instance.getEndTime() == null ? "审批中" :
+            Map<String, Object> item = toItem(instance.getId(), instance.getEndTime() == null ? "审批中" :
                             Boolean.TRUE.equals(instance.getProcessVariables().get("approved")) ? "已通过" : "已驳回",
-                    instance.getProcessVariables(), instance.getStartTime()));
+                    instance.getProcessVariables(), instance.getStartTime());
+            // 审批人与审批时间：取该流程已办结的审批任务，让申请人能看到谁处理的
+            List<org.flowable.task.api.history.HistoricTaskInstance> tasks =
+                    historyService.createHistoricTaskInstanceQuery()
+                            .processInstanceId(instance.getId())
+                            .taskName("审批")
+                            .finished()
+                            .orderByHistoricTaskInstanceEndTime().desc()
+                            .list();
+            if (!tasks.isEmpty()) {
+                item.put("approver", tasks.get(0).getAssignee());
+                // Map里的Date不走@JsonFormat，手动格式化为东八区
+                item.put("approveTime", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                        .format(tasks.get(0).getEndTime()));
+            }
+            result.add(item);
         }
         return R.ok("获取数据成功", result);
     }
