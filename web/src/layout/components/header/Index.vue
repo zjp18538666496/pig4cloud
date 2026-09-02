@@ -43,6 +43,9 @@
         <presonalCenter />
     </el-drawer>
 
+    <!-- 强制开启两步认证（不可关闭） -->
+    <Force2faDialog :user-info="userInfo" @enabled="on2faEnabled" />
+
     <!-- 消息中心抽屉 -->
     <el-drawer v-model="messageDrawer" :title="$t('header.messages')" size="480">
         <div class="flex justify-between items-center mb-10px">
@@ -137,6 +140,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import presonalCenter from '@/views/personal-center/Index.vue'
 import GlobalSearch from './GlobalSearch.vue'
+import Force2faDialog from './Force2faDialog.vue'
 import { logout as logoutApi } from '@/api/auth.js'
 import { getMyMessages, getUnreadCount, markAllRead, markRead, sendMessage } from '@/api/message.js'
 import { updatePassword } from '@/api/user.js'
@@ -207,6 +211,14 @@ const switchDark = () => {
 }
 const switchLocale = () => {
     setLocale(locale.value === 'zh-CN' ? 'en' : 'zh-CN')
+}
+
+/**
+ * 强制2FA绑定成功：更新本地用户标记
+ */
+const on2faEnabled = () => {
+    userInfo.value = { ...userInfo.value, force2fa: false }
+    localStorage.setItem('userinfo', JSON.stringify(userInfo.value))
 }
 
 /**

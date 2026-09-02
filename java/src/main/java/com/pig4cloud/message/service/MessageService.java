@@ -11,7 +11,7 @@ import com.pig4cloud.message.entity.SysMessageEntity;
 import com.pig4cloud.message.mapper.SysMessageMapper;
 import com.pig4cloud.user.entity.UserEntity;
 import com.pig4cloud.user.mapper.UserMapper;
-import com.pig4cloud.websocket.PushWebSocketHandler;
+import com.pig4cloud.websocket.WsPushPublisher;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,12 +29,12 @@ public class MessageService {
 
     private final SysMessageMapper messageMapper;
     private final UserMapper userMapper;
-    private final PushWebSocketHandler pushHandler;
+    private final WsPushPublisher wsPushPublisher;
 
-    public MessageService(SysMessageMapper messageMapper, UserMapper userMapper, PushWebSocketHandler pushHandler) {
+    public MessageService(SysMessageMapper messageMapper, UserMapper userMapper, WsPushPublisher wsPushPublisher) {
         this.messageMapper = messageMapper;
         this.userMapper = userMapper;
-        this.pushHandler = pushHandler;
+        this.wsPushPublisher = wsPushPublisher;
     }
 
     @Getter
@@ -149,7 +149,7 @@ public class MessageService {
         message.setCreate_by(createBy);
         message.setCreate_time(new Date());
         messageMapper.insert(message);
-        // WebSocket实时推送未读刷新信号
-        pushHandler.push(target.getId().longValue(), "{\"type\":\"message\"}");
+        // 经发布器推送（memory本机直推；redis经频道广播到所有实例）
+        wsPushPublisher.publish(target.getId().longValue(), "{\"type\":\"message\"}");
     }
 }

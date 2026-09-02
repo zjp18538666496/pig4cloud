@@ -64,6 +64,17 @@ public class MemoryStateStore implements StateStore {
     }
 
     @Override
+    public boolean putIfAbsent(String key, String value, long ttlMillis) {
+        synchronized (this) {
+            if (exists(key)) {
+                return false;
+            }
+            put(key, value, ttlMillis);
+            return true;
+        }
+    }
+
+    @Override
     public Set<String> keys(String prefix) {
         Set<String> result = new java.util.LinkedHashSet<>();
         store.forEach((key, entry) -> {

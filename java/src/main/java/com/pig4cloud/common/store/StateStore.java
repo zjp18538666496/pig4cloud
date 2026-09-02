@@ -29,6 +29,13 @@ public interface StateStore {
     long increment(String key, long ttlMillis);
 
     /**
+     * 不存在时才写入（分布式锁原语）
+     *
+     * @return true=写入成功(获得锁)；false=键已存在
+     */
+    boolean putIfAbsent(String key, String value, long ttlMillis);
+
+    /**
      * 按前缀取全部有效键
      */
     Set<String> keys(String prefix);

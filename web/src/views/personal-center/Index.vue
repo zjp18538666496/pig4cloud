@@ -59,7 +59,10 @@
                         </el-tag>
                     </div>
                     <el-button v-if="!twoFa.enabled" type="primary" @click="startBind2fa">开启</el-button>
-                    <el-button v-else type="danger" plain @click="unbindVisible = true">解绑</el-button>
+                    <template v-else>
+                        <el-button type="warning" plain @click="regenVisible = true">重新生成备用码</el-button>
+                        <el-button type="danger" plain @click="unbindVisible = true">解绑</el-button>
+                    </template>
                 </div>
             </div>
         </el-tab-pane>
@@ -142,6 +145,16 @@
         </template>
     </el-dialog>
 
+    <!-- 重新生成备用码 -->
+    <el-dialog v-model="regenVisible" title="重新生成备用恢复码" width="380" :close-on-click-modal="false">
+        <el-alert type="warning" :closable="false" title="旧备用码将全部作废，请输入当前动态码确认" class="mb-12px" />
+        <el-input v-model="regen.code" placeholder="验证器6位动态码" maxlength="6" />
+        <template #footer>
+            <el-button @click="regenVisible = false">取消</el-button>
+            <el-button type="primary" :loading="regen.loading" @click="confirmRegen">确认重新生成</el-button>
+        </template>
+    </el-dialog>
+
     <!-- 2FA解绑：密码+动态码 -->
     <el-dialog v-model="unbindVisible" title="解绑两步认证" width="400" :close-on-click-modal="false">
         <el-form label-width="90px">
@@ -163,7 +176,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { delUser, updatePassword, updateUser } from '@/api/user.js'
-import { disable2fa, enable2fa, get2faStatus, setup2fa } from '@/api/auth.js'
+import { disable2fa, enable2fa, get2faStatus, regenerateBackupCodes, setup2fa } from '@/api/auth.js'
 import { getMyLoginLogs, getMyOperateLogs, getMySessions, kickMySession } from '@/api/profile.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { VerifyUser } from '@/utils/vali.js'
@@ -336,6 +349,33 @@ const confirmUnbind = () => {
         })
         .finally(() => {
             unbind.loading = false
+        })
+}
+
+/**
+ * 重新生成备用恢复码（旧码全部作废，需验证当前动态码）
+ */
+const regenVisible = ref(false)
+const regen = reactive({ code: '', loading: false })
+const confirmRegen = () => {
+    if (!regen.code) {
+        ElMessage.warning('请输入当前动态码')
+        return
+    }
+    regen.loading = true
+    regenerateBackupCodes(regen.code)
+        .then((res) => {
+            if (res?.code === 200) {
+                regenVisible.value = false
+                regen.code = ''
+                backupCodes.value = res.data || []
+                backupVisible.value = true
+            } else {
+                ElMessage.error(`生成失败！${res?.message}`)
+            }
+        })
+        .finally(() => {
+            regen.loading = false
         })
 }
 

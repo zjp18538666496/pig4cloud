@@ -23,6 +23,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.pig4cloud.dict.mapper",
         "com.pig4cloud.post.mapper",
         "com.pig4cloud.message.mapper",
+        "com.pig4cloud.apikey.mapper",
         "com.pig4cloud.job.mapper"
 }) // 扫描各业务模块Mapper接口
 public class Application {

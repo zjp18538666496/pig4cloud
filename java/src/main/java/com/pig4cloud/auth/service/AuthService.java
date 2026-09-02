@@ -58,4 +58,9 @@ public interface AuthService {
      * 当前用户是否已开启两步认证
      */
     boolean is2faEnabled();
+
+    /**
+     * 重新生成备用恢复码（需验证当前动态码或旧备用码），旧码全部作废
+     */
+    List<String> regenerateBackupCodes(String code);
 }

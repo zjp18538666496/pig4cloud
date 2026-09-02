@@ -28,6 +28,11 @@ public class UserVO {
     private Boolean forcePwdChange;
 
     /**
+     * 是否需要引导开启两步认证（login.2fa-force-enabled开启且本人未绑定），登录响应下发
+     */
+    private Boolean force2fa;
+
+    /**
      * 权限点集合（角色编码+按钮操作权限），登录时填充，供前端v-permission使用
      */
     private List<String> permissions;

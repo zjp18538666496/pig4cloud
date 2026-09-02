@@ -302,6 +302,12 @@ onUnmounted(() => {
             </el-table-column>
             <el-table-column prop="name" label="昵称" align="center" />
             <el-table-column prop="username" label="用户名称" align="center" />
+            <el-table-column label="2FA" width="70" align="center">
+                <template #default="scope">
+                    <el-tag v-if="scope.row.totp_enabled === 1" type="success" size="small">已开启</el-tag>
+                    <span v-else>-</span>
+                </template>
+            </el-table-column>
             <el-table-column prop="tenant_name" label="所属租户" align="center" width="120">
                 <template #default="scope">
                     {{ scope.row.tenant_name || `平台(${scope.row.tenant_id})` }}

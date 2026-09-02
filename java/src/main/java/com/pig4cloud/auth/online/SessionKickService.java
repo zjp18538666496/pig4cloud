@@ -36,4 +36,19 @@ public class SessionKickService {
     public void kickTenant(Integer tenantId) {
         onlineUserStore.removeByTenant(tenantId).forEach(this::kickSession);
     }
+
+    /**
+     * 并发设备数限制：同账号会话超过max时从最旧开始下线（当前登录是最新一条，天然保留）
+     */
+    public void enforceSessionLimit(String username, int max) {
+        List<SessionRecord> sessions = onlineUserStore.list().stream()
+                .filter(session -> username.equals(session.getUsername()))
+                // list()为最新在前，此处按最旧在前排序后逐个下线
+                .sorted(java.util.Comparator.comparing(SessionRecord::getLoginTime))
+                .toList();
+        int excess = sessions.size() - max;
+        for (int i = 0; i < excess; i++) {
+            kickSession(sessions.get(i));
+        }
+    }
 }

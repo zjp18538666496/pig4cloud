@@ -56,6 +56,12 @@ public class RedisStateStore implements StateStore {
     }
 
     @Override
+    public boolean putIfAbsent(String key, String value, long ttlMillis) {
+        return Boolean.TRUE.equals(redisTemplate.opsForValue()
+                .setIfAbsent(key, value, ttlMillis, TimeUnit.MILLISECONDS));
+    }
+
+    @Override
     public Set<String> keys(String prefix) {
         Set<String> result = new LinkedHashSet<>();
         // SCAN增量遍历，避免KEYS阻塞Redis

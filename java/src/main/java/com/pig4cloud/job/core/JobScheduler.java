@@ -1,6 +1,7 @@
 package com.pig4cloud.job.core;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.pig4cloud.common.store.StateStore;
 import com.pig4cloud.job.entity.SysJobEntity;
 import com.pig4cloud.job.entity.SysJobLogEntity;
 import com.pig4cloud.job.mapper.SysJobLogMapper;
@@ -14,26 +15,35 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * 轻量定时调度（单机）：每30秒扫描启用任务，按cron计算下次执行时间到期即运行并落执行日志。
- * 内存记忆下次执行时间，重启后重新计算。多实例部署时每个实例都会调度，任务需自行保证幂等
+ * 轻量定时调度：每30秒扫描启用任务，按cron计算下次执行时间到期即运行并落执行日志。
+ * 多实例适配：cron触发执行前以StateStore抢占任务锁（putIfAbsent+10分钟TTL），
+ * 谁抢到谁执行，其余实例跳过；手动执行不受锁限制但复用锁防并发。
+ * 内存记忆下次执行时间，重启后重新计算
  */
 @Slf4j
 @Component
 public class JobScheduler {
 
+    private static final long LOCK_TTL_MILLIS = 10 * 60 * 1000L;
+
     private final SysJobMapper jobMapper;
     private final SysJobLogMapper jobLogMapper;
+    private final StateStore stateStore;
     private final Map<String, JobHandler> handlers;
+    private final String nodeId = UUID.randomUUID().toString().substring(0, 8);
     /**
      * jobId -> 下次执行时间
      */
     private final Map<Integer, Date> nextRunMap = new HashMap<>();
 
-    public JobScheduler(SysJobMapper jobMapper, SysJobLogMapper jobLogMapper, List<JobHandler> handlerList) {
+    public JobScheduler(SysJobMapper jobMapper, SysJobLogMapper jobLogMapper,
+                        StateStore stateStore, List<JobHandler> handlerList) {
         this.jobMapper = jobMapper;
         this.jobLogMapper = jobLogMapper;
+        this.stateStore = stateStore;
         this.handlers = new HashMap<>();
         handlerList.forEach(handler -> this.handlers.put(handler.name(), handler));
     }
@@ -52,7 +62,16 @@ public class JobScheduler {
                 }
                 // 补齐错过的周期再执行，避免每30秒重复触发
                 nextRunMap.put(job.getId(), computeNext(job.getCron(), new Date()));
-                runJob(job);
+                // 分布式锁：多实例部署时同一任务只有一个实例执行
+                if (!stateStore.putIfAbsent("job:running:" + job.getId(), nodeId, LOCK_TTL_MILLIS)) {
+                    log.debug("任务[{}]已被其它实例抢占执行", job.getJob_name());
+                    continue;
+                }
+                try {
+                    runJob(job);
+                } finally {
+                    stateStore.delete("job:running:" + job.getId());
+                }
             } catch (Exception ex) {
                 log.error("任务[{}]调度异常: {}", job.getJob_name(), ex.getMessage());
                 nextRunMap.remove(job.getId());
@@ -61,12 +80,15 @@ public class JobScheduler {
     }
 
     /**
-     * 立即执行一次（手动触发），落执行日志
+     * 立即执行一次（手动触发），落执行日志；复用任务锁防与cron执行并发
      */
     public String runOnce(SysJobEntity job) {
         JobHandler handler = handlers.get(job.getHandler());
         if (handler == null) {
             return "处理器不存在：" + job.getHandler();
+        }
+        if (!stateStore.putIfAbsent("job:running:" + job.getId(), nodeId, LOCK_TTL_MILLIS)) {
+            return "该任务正在执行中，请稍后再试";
         }
         long start = System.currentTimeMillis();
         try {
@@ -77,6 +99,8 @@ public class JobScheduler {
             log.error("任务[{}]手动执行失败", job.getJob_name(), ex);
             saveLog(job, "0", truncate(ex.getMessage()), System.currentTimeMillis() - start);
             return "执行失败：" + ex.getMessage();
+        } finally {
+            stateStore.delete("job:running:" + job.getId());
         }
     }
 

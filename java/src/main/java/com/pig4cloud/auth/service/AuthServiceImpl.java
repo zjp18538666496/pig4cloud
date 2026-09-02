@@ -56,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
     private final ConfigService configService;
     private final PasswordPolicyService passwordPolicyService;
     private final TotpService totpService;
+    private final com.pig4cloud.auth.online.SessionKickService sessionKickService;
 
     @Override
     public LoginResult login(LoginRequest request, String ip, String userAgent) {
@@ -100,6 +101,9 @@ public class AuthServiceImpl implements AuthService {
                 userVO.setPermissions(authorities);
                 // 密码策略：初始密码未改或密码过期时强制修改
                 userVO.setForcePwdChange(isForcePwdChange(user));
+                // 2FA治理：强制开启时未绑定者登录后引导绑定
+                userVO.setForce2fa(configService.getBool("login.2fa-force-enabled", false)
+                        && (user == null || !Integer.valueOf(1).equals(user.getTotp_enabled())));
             }
             String accessToken = jwtUtils.getJwt(claims);
             String refreshToken = jwtUtils.getRefreshToken(claims);
@@ -108,6 +112,11 @@ public class AuthServiceImpl implements AuthService {
             loginAttemptService.recordSuccess(request.getUsername());
             userMapper.updateLastLoginTime(request.getUsername());
             registerSession(accessToken, refreshToken, userVO, user, ip, userAgent);
+            // 并发设备数限制：超限自动下线最旧设备（0=不限制）
+            int maxSessions = configService.getInt("login.max-sessions-per-user", 3);
+            if (maxSessions > 0) {
+                sessionKickService.enforceSessionLimit(request.getUsername(), maxSessions);
+            }
             saveLoginLog(request.getUsername(), ip, user == null ? null : user.getTenant_id(), true, "登录成功");
             return new LoginResult(accessToken, refreshToken, userVO);
         } catch (AuthenticationException ex) {
@@ -342,6 +351,24 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public boolean is2faEnabled() {
         return Integer.valueOf(1).equals(currentUser().getTotp_enabled());
+    }
+
+    @Override
+    public List<String> regenerateBackupCodes(String code) {
+        UserEntity user = currentUser();
+        if (!Integer.valueOf(1).equals(user.getTotp_enabled())) {
+            throw new BizException("请先开启两步认证");
+        }
+        boolean verified = totpService.verify(user.getTotp_secret(), code, null)
+                || totpService.verifyBackupCode(code, user.getBackup_codes()) != null;
+        if (!verified) {
+            throw new BizException("动态验证码不正确");
+        }
+        var entry = totpService.generateBackupCodes();
+        UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("id", user.getId()).set("backup_codes", entry.getValue());
+        userMapper.update(null, updateWrapper);
+        return entry.getKey();
     }
 
     @Override

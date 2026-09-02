@@ -83,6 +83,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/config/policy").permitAll()
                 // 头像公开访问（仅返回登记在sys_user.avatar中的FTP路径）；其余文件接口需登录
                 .requestMatchers(HttpMethod.GET, "/api/file/avatar/**").permitAll()
+                // Open API：由OpenApiKeyFilter校验X-Api-Key（本链放行，过滤器负责鉴权/限流/Scope）
+                .requestMatchers("/api/open/**").permitAll()
                 // WebSocket握手（/ws/{token}自带JWT校验）
                 .requestMatchers("/ws/**").permitAll()
                 // 接口文档

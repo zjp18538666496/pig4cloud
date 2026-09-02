@@ -55,6 +55,7 @@ public class UserServiceImpl implements UserService {
     private final DeptService deptService;
     private final SessionKickService sessionKickService;
     private final PasswordPolicyService passwordPolicyService;
+    private final com.pig4cloud.config.service.ConfigService configService;
     private final PasswordEncoder passwordEncoder;
     private final FtpService ftpService;
     private final FileUtils fileUtils;
@@ -143,7 +144,29 @@ public class UserServiceImpl implements UserService {
                 filter.deptIds(), filter.selfId(), userDto.getUsername(), filterDeptIds, tenantId);
         long total = userMapper.selectUserList2Count(
                 filter.deptIds(), filter.selfId(), userDto.getUsername(), filterDeptIds, tenantId);
+        // 脱敏开关：无user:write权限者看到的手机号/邮箱为脱敏形式
+        if (maskEnabledForViewer()) {
+            list.forEach(this::maskRow);
+        }
         return R.ok("获取数据成功", PageResult.of(list, total, pageSize, page));
+    }
+
+    private boolean maskEnabledForViewer() {
+        boolean hasUserWrite = SecurityContextHolder.getContext().getAuthentication() != null
+                && SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(authority -> "user:write".equals(authority.getAuthority()));
+        return configService.getBool("mask.enabled", true) && !hasUserWrite;
+    }
+
+    private void maskRow(Map<String, Object> row) {
+        Object mobile = row.get("mobile");
+        if (mobile instanceof String value && !value.isBlank()) {
+            row.put("mobile", com.pig4cloud.common.util.DesensitizeUtil.maskMobile(value));
+        }
+        Object email = row.get("email");
+        if (email instanceof String value && !value.isBlank()) {
+            row.put("email", com.pig4cloud.common.util.DesensitizeUtil.maskEmail(value));
+        }
     }
 
     @Override
@@ -303,7 +326,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public R<UserVO> getUser(String username) {
         //脱敏后返回，不携带密码
-        return R.ok(UserVO.from(userMapper.selectUserByUsername(username)));
+        UserVO vo = UserVO.from(userMapper.selectUserByUsername(username));
+        if (vo != null && maskEnabledForViewer()) {
+            vo.setMobile(com.pig4cloud.common.util.DesensitizeUtil.maskMobile(vo.getMobile()));
+            vo.setEmail(com.pig4cloud.common.util.DesensitizeUtil.maskEmail(vo.getEmail()));
+        }
+        return R.ok(vo);
     }
 
     private String currentUsername() {

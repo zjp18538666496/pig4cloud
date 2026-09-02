@@ -94,3 +94,10 @@ export function disable2fa(data) {
 export function get2faStatus() {
     return service({ url: '/auth/2fa/status', method: 'get' })
 }
+
+/**
+ * 重新生成备用恢复码（需验证动态码/旧备用码），旧码全部作废
+ */
+export function regenerateBackupCodes(code) {
+    return service({ url: '/auth/2fa/backup-codes/regenerate', method: 'post', data: { code } })
+}

@@ -23,7 +23,7 @@ public class MyTenantHandler implements TenantLineHandler {
     private static final Set<String> IGNORE_TABLES = Set.of(
             "sys_tenant", "sys_menu", "sys_permission", "sys_notice", "sys_tenant_package",
             "sys_config", "sys_dict", "sys_dict_item", "sys_job", "sys_job_log",
-            "sys_schema_version", "user_post",
+            "sys_api_key", "sys_schema_version", "user_post",
             "user_role", "role_menu", "role_permission");
 
     @Override

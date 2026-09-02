@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -140,5 +141,14 @@ public class AuthController {
     @GetMapping("/2fa/status")
     public R<Map<String, Boolean>> status2fa() {
         return R.ok("请求成功", Map.of("enabled", authService.is2faEnabled()));
+    }
+
+    /**
+     * 重新生成备用恢复码（需验证动态码/旧备用码），旧码全部作废
+     */
+    @PostMapping("/2fa/backup-codes/regenerate")
+    @LogRecord(module = "认证", operation = "重新生成备用恢复码")
+    public R<List<String>> regenerateBackupCodes(@RequestBody Map<String, String> body) {
+        return R.ok("请求成功", authService.regenerateBackupCodes(body.get("code")));
     }
 }
