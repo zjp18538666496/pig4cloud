@@ -82,6 +82,11 @@ app:
     # 短信验证码登录：enabled=true开启；mock=true时验证码直接返回给前端(仅开发环境!)
     enabled: ${SMS_ENABLED:false}
     mock: ${SMS_MOCK:false}
+management:
+  health:
+    # LDAP健康检查指示器：未启用LDAP登录时必须关闭，否则actuator健康检查连localhost:389报错
+    ldap:
+      enabled: ${LDAP_HEALTH_ENABLED:false}
   mail:
     # 找回密码邮件开关：开启需同时在application-local.yaml配置spring.mail.*，否则接口提示未配置
     enabled: ${MAIL_ENABLED:false}
