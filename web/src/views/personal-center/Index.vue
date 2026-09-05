@@ -114,6 +114,41 @@
                 </el-table-column>
             </el-table>
         </el-tab-pane>
+        <el-tab-pane label="我的申请" name="approvals">
+            <div class="mb-10px">
+                <el-button type="primary" size="small" @click="openApply">申请角色</el-button>
+            </div>
+            <el-table :data="myApprovals" border size="small">
+                <el-table-column prop="createTime" label="申请时间" width="160" />
+                <el-table-column prop="title" label="申请" min-width="160" show-overflow-tooltip />
+                <el-table-column prop="reason" label="理由" min-width="120" show-overflow-tooltip />
+                <el-table-column label="状态" width="80" align="center">
+                    <template #default="scope">
+                        <el-tag :type="scope.row.status === '0' ? 'warning' : scope.row.status === '1' ? 'success' : 'danger'" size="small">
+                            {{ scope.row.status === '0' ? '待审批' : scope.row.status === '1' ? '已通过' : '已驳回' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="approveComment" label="审批意见" min-width="120" show-overflow-tooltip />
+            </el-table>
+
+            <el-dialog v-model="applyVisible" title="申请角色" width="440" :close-on-click-modal="false">
+                <el-form label-width="80px">
+                    <el-form-item label="选择角色">
+                        <el-select v-model="applyForm.roleId" placeholder="选择要申请的角色" style="width: 100%">
+                            <el-option v-for="r in roleOptionList" :key="r.id" :label="r.roleName" :value="r.id" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="申请理由">
+                        <el-input v-model="applyForm.reason" type="textarea" :rows="3" maxlength="500" placeholder="请说明申请原因，便于审批人判断" />
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="applyVisible = false">取消</el-button>
+                    <el-button type="primary" :loading="applyLoading" @click="submitApply">提交申请</el-button>
+                </template>
+            </el-dialog>
+        </el-tab-pane>
     </el-tabs>
 
     <!-- 2FA绑定：扫码+首次动态码 -->
@@ -180,6 +215,7 @@ import { useRouter } from 'vue-router'
 import { delUser, updatePassword, updateUser } from '@/api/user.js'
 import { disable2fa, enable2fa, get2faStatus, regenerateBackupCodes, setup2fa } from '@/api/auth.js'
 import { getMyLoginLogs, getMyOperateLogs, getMySessions, kickMySession } from '@/api/profile.js'
+import { applyApproval, myApplications, roleOptions } from '@/api/approval.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { VerifyUser } from '@/utils/vali.js'
 const verifyUser = new VerifyUser()

@@ -561,6 +561,48 @@ INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
 SELECT 'export.retention-days', '导出文件保留天数', '7', '导出中心文件生成后保留天数，0=永久保留'
 WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'export.retention-days');
 
+
+-- ----------------------------
+-- 轻量审批：申请单（状态机：0待审批/1通过/2驳回；apply_type: role_apply角色申请/tenant_open租户开通/handover离职交接）
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_approval`;
+CREATE TABLE `sys_approval`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '申请id',
+  `title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '申请标题',
+  `apply_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '类型(role_apply/tenant_open/handover)',
+  `biz_data` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '业务数据(JSON,如角色申请的roleId)',
+  `reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '申请理由',
+  `applicant` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '申请人账号',
+  `tenant_id` int(11) NULL DEFAULT NULL COMMENT '申请人租户',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '状态(0待审批1通过2驳回)',
+  `approver` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '审批人',
+  `approve_comment` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '审批意见',
+  `approve_time` datetime NULL DEFAULT NULL COMMENT '审批时间',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '申请时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_approval_status`(`status`, `id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '审批申请表' ROW_FORMAT = Dynamic;
+
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'approval.assignee', '审批人账号', 'admin', '审批中心待审单的审批人账号（站内信通知对象）'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'approval.assignee');
+
+INSERT INTO `sys_notify_template` (`template_code`, `template_name`, `title_template`, `content_template`, `status`, `remark`, `create_time`) VALUES
+('approval-pending', '审批待办通知', '新审批待办：${title}', '申请人【${applicant}】提交了申请：${title}。理由：${reason}', '1', '有新审批单时推送', NOW()),
+('approval-result', '审批结果通知', '审批${result}：${title}', '您提交的申请【${title}】已被${result}。审批意见：${comment}', '1', '审批完成时推送给申请人', NOW());
+
+-- ----------------------------
+-- 菜单：审批中心（系统管理，approval:manage仅super）
+-- ----------------------------
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 211, 2, '审批中心', '/approval-center', '1', '1', '2', '@/views/approval-center/Index.vue', 'approval-center', NULL
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 211);
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 21101, 211, '审批管理', NULL, '1', '2', '3', NULL, NULL, 'approval:manage'
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 21101);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 907, 211, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 907);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 908, 21101, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 908);
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================
