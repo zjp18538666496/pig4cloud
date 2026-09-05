@@ -17,6 +17,9 @@ let registeredToken = null
 let registeredSignature = null
 let registeredRouteNames = []
 
+// 菜单本地缓存：后端不可用时用上次成功的菜单表降级注册路由（页面可用，数据接口报错属预期）
+const MENU_CACHE_KEY = 'cached-flat-menu'
+
 function clearRegisteredRoutes() {
     registeredRouteNames.forEach((name) => {
         if (router.hasRoute(name)) router.removeRoute(name)
@@ -34,15 +37,35 @@ export async function ensureDynamicRoutes() {
     const token = localStorage.getItem('authorization')
     if (!token) return false
 
-    const res = await selectMenuLists({ menuType: 'flatMenu' })
-    if (res?.code !== 200 || !Array.isArray(res.data)) return false
+    let menus
+    let degraded = false
+    try {
+        const res = await selectMenuLists({ menuType: 'flatMenu' })
+        if (res?.code !== 200 || !Array.isArray(res.data)) {
+            return false
+        }
+        menus = res.data
+        // 成功后缓存菜单表，供后端不可用时降级
+        localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(menus))
+    } catch (ex) {
+        // 后端不可达：降级用本地缓存的菜单表注册，保证布局可用（数据接口会报错属预期）
+        try {
+            menus = JSON.parse(localStorage.getItem(MENU_CACHE_KEY) || 'null')
+        } catch {
+            menus = null
+        }
+        if (!Array.isArray(menus) || menus.length === 0) {
+            return false
+        }
+        degraded = true
+    }
 
     // 菜单集合签名：新增/删除菜单后自动重建路由（服务端有缓存，开销低）
-    const signature = res.data.map((item) => item.id).join(',')
+    const signature = menus.map((item) => item.id).join(',') + (degraded ? ':degraded' : '')
     if (registeredToken === token && registeredSignature === signature) return true
 
     clearRegisteredRoutes()
-    res.data.forEach((item) => {
+    menus.forEach((item) => {
         if (item.type !== '1') return
         const component = resolveComponent(item.component_path)
         if (!component) {

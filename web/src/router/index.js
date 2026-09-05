@@ -3,6 +3,7 @@ import Layout from '@/layout/Index.vue'
 import Home from '@/views/home/Index.vue'
 import Login from '@/views/login/Index.vue'
 import errorPage from '@/views/error-page/404/Index.vue'
+import ServerDown from '@/views/error-page/server-down/Index.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,12 @@ const router = createRouter({
             path: '/404',
             name: '/404',
             component: errorPage,
+            hidden: true,
+        },
+        {
+            path: '/server-down',
+            name: 'server-down',
+            component: ServerDown,
             hidden: true,
         },
     ],
