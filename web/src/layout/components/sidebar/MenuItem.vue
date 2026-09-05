@@ -11,7 +11,7 @@
             <el-icon>
                 <component :is="iconComponent" />
             </el-icon>
-            {{ menu.menu_name }}
+            <span>{{ menu.menu_name }}</span>
         </template>
         <menu-item v-for="child in childMenus" :key="child.id" :menu="child" />
     </el-sub-menu>

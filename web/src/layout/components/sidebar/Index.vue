@@ -62,7 +62,8 @@ onUnmounted(() => {
  */
 const toggleCollapse = () => {
     isCollapse.value = !isCollapse.value
-    width.value = isCollapse.value ? '63px' : '200px'
+    // 64px与element-plus折叠态菜单宽度一致，避免菜单被裁切1px
+    width.value = isCollapse.value ? '64px' : '200px'
     borderRight.value = isCollapse.value
         ? {
               borderRight: 'none',
@@ -101,6 +102,18 @@ const toggleCollapse = () => {
 
     .el-menu {
         flex: 1;
+        // 菜单树超出屏幕高度时允许上下滚动
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(144, 147, 153, 0.4);
+            border-radius: 2px;
+        }
     }
 }
 </style>
