@@ -11,8 +11,10 @@ const resolveComponent = (componentPath) => {
     return path ? viewModules[path] : undefined
 }
 
-// 注册状态：记录注册时使用的token，token变化(重新登录/切换账号)时重建路由
+// 注册状态：记录注册时使用的token与菜单签名——token变化(重新登录)或菜单集合变化(新增/删除菜单)
+// 都会触发路由重建，避免"侧边栏有新菜单但路由未注册"导致点击报错
 let registeredToken = null
+let registeredSignature = null
 let registeredRouteNames = []
 
 function clearRegisteredRoutes() {
@@ -30,10 +32,14 @@ function clearRegisteredRoutes() {
  */
 export async function ensureDynamicRoutes() {
     const token = localStorage.getItem('authorization')
-    if (token && registeredToken === token) return true
+    if (!token) return false
 
     const res = await selectMenuLists({ menuType: 'flatMenu' })
     if (res?.code !== 200 || !Array.isArray(res.data)) return false
+
+    // 菜单集合签名：新增/删除菜单后自动重建路由（服务端有缓存，开销低）
+    const signature = res.data.map((item) => item.id).join(',')
+    if (registeredToken === token && registeredSignature === signature) return true
 
     clearRegisteredRoutes()
     res.data.forEach((item) => {
@@ -51,5 +57,6 @@ export async function ensureDynamicRoutes() {
         registeredRouteNames.push(item.component_name)
     })
     registeredToken = token
+    registeredSignature = signature
     return true
 }
