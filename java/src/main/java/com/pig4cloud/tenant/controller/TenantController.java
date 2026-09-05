@@ -10,7 +10,9 @@ import com.pig4cloud.tenant.service.TenantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,6 +43,14 @@ public class TenantController {
     @PreAuthorize("hasAuthority('tenant:manage')")
     public R<Void> updateTenant(@Valid @RequestBody TenantUpdateDto dto) {
         return tenantService.updateTenant(dto);
+    }
+
+    /**
+     * 公开接口：按租户编码查品牌（登录页展示，无需登录）；租户码为空返回平台默认
+     */
+    @GetMapping("/brand")
+    public R<com.pig4cloud.tenant.dto.TenantBrandVO> brand(@RequestParam(required = false) String tenantCode) {
+        return R.ok(tenantService.getTenantBrand(tenantCode));
     }
 
     @PostMapping("/delTenant")

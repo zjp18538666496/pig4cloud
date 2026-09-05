@@ -11,7 +11,7 @@ import com.pig4cloud.dept.service.DataScopeService;
 import com.pig4cloud.dept.service.DeptService;
 import com.pig4cloud.auth.online.SessionKickService;
 import com.pig4cloud.auth.service.PasswordPolicyService;
-import com.pig4cloud.file.service.FtpService;
+
 import com.pig4cloud.file.util.FileUtils;
 import com.pig4cloud.role.mapper.RoleMapper;
 import com.pig4cloud.tenant.entity.TenantEntity;
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     private final com.pig4cloud.config.service.ConfigService configService;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
-    private final FtpService ftpService;
+    private final com.pig4cloud.file.service.StorageService storageService;
     private final FileUtils fileUtils;
 
     @Override
@@ -329,10 +329,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public R<Void> updateAvatar(Long userId, MultipartFile avatar) throws IOException {
-        // 存完整FTP文件路径（目录+原文件名）：头像公开接口按此路径直接流式返回
+    public R<Void> updateAvatar(Long userId, MultipartFile avatar) throws Exception {
+        // 存完整存储路径（目录+原文件名）：头像公开接口按此路径经StorageService直接流式返回
         String remotePath = "/test/" + fileUtils.generateFilePath(avatar) + avatar.getOriginalFilename();
-        ftpService.uploadFile(remotePath, avatar);
+        storageService.upload(remotePath, avatar);
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", userId)
                 .set("avatar", remotePath)

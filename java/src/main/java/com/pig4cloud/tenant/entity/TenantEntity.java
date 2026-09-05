@@ -54,4 +54,19 @@ public class TenantEntity {
      * 用户数上限（空为不限制）
      */
     private Integer user_limit;
+
+    /**
+     * 品牌名称（登录页/侧边栏展示，空则用tenant_name）
+     */
+    private String brand_name;
+
+    /**
+     * 品牌logo地址（空则不展示图片）
+     */
+    private String brand_logo;
+
+    /**
+     * 品牌主题色（如#409EFF，登录页/侧边栏点缀）
+     */
+    private String brand_color;
 }

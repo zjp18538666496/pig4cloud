@@ -4,7 +4,10 @@
             <img src="/public/img/background/login_bg.cbfed30c.svg" />
         </div>
         <div class="login-box">
-            <div class="title">PIGX ADMIN</div>
+            <div class="title" :style="brand.color ? { color: brand.color } : {}">
+                <img v-if="brand.logo" :src="brand.logo" class="brand-logo" alt="logo" />
+                {{ brand.name }}
+            </div>
             <div class="from">
                 <component :is="currentComponent" @zc="zc" @dl="dl"></component>
             </div>
@@ -12,11 +15,28 @@
     </div>
 </template>
 <script setup>
-import { shallowRef } from 'vue'
+import { onMounted, reactive, shallowRef } from 'vue'
+import { useRoute } from 'vue-router'
 import Login from '@/views/login/components/Login.vue'
 import Register from '@/views/login/components/Register.vue'
+import { getTenantBrand } from '@/api/tenant.js'
 
 const currentComponent = shallowRef(Login)
+
+// 租户品牌：URL带?tenant=租户编码时展示对应品牌（名称/logo/主题色），默认PIGX ADMIN
+const route = useRoute()
+const brand = reactive({ name: 'PIGX ADMIN', logo: null, color: null })
+onMounted(() => {
+    const tenantCode = route.query.tenant
+    if (!tenantCode) return
+    getTenantBrand(tenantCode).then((res) => {
+        if (res?.code === 200 && res.data) {
+            brand.name = res.data.name || brand.name
+            brand.logo = res.data.logo
+            brand.color = res.data.color
+        }
+    })
+})
 const dl = () => {
     currentComponent.value = Register
 }
@@ -55,6 +75,12 @@ const zc = () => {
         justify-content: center;
         padding-left: 100px;
         width: 50vw;
+
+        .brand-logo {
+            height: 36px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
 
         .title {
             text-align: center;

@@ -89,6 +89,7 @@ onUnmounted(() => {
             <el-table-column prop="name" label="昵称" width="130" />
             <el-table-column prop="tenantId" label="租户ID" width="90" align="center" />
             <el-table-column prop="ip" label="登录IP" width="150" />
+            <el-table-column prop="region" label="归属地" width="150" show-overflow-tooltip />
             <el-table-column prop="browser" label="浏览器" width="130" />
             <el-table-column prop="loginTime" label="登录时间" width="170" />
             <el-table-column prop="lastAccessTime" label="最后访问时间" width="170" />

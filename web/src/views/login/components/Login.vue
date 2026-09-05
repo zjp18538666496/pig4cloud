@@ -3,6 +3,7 @@ import { Lock, User } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/login.js'
+import { useUserInfoStore } from '@/stores/user-info.js'
 import { getCaptcha, resetPasswordByEmail, sendResetCode } from '@/api/auth.js'
 import { getPolicy } from '@/api/config.js'
 import { useRouter } from 'vue-router'
@@ -55,6 +56,8 @@ const login1 = () => {
             if (res?.code === 200 && res.data) {
                 ElMessage({ message: '登录成功', type: 'success' })
                 localStorage.setItem('userinfo', JSON.stringify(res.data))
+                // 租户品牌：登录后侧边栏跟随展示
+                useUserInfoStore().brand = res.data.brand || null
                 // 动态路由由路由守卫在导航时注册，这里直接跳转即可
                 await router.push('/')
             } else {

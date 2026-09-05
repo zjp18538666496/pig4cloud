@@ -76,7 +76,8 @@
                 <el-table :data="loginTable.rows" border style="width: 100%" :max-height="logTableHeight">
                     <el-table-column prop="createTime" label="时间" width="170" align="center" />
                     <el-table-column prop="username" label="操作人" width="130" align="center" />
-                    <el-table-column prop="ip" label="来源IP" width="150" align="center" />
+                    <el-table-column prop="ip" label="来源IP" width="140" align="center" />
+                    <el-table-column prop="region" label="归属地" width="150" align="center" show-overflow-tooltip />
                     <el-table-column prop="success" label="结果" width="90" align="center">
                         <template #default="scope">
                             <el-tag :type="scope.row.success ? 'success' : 'danger'">

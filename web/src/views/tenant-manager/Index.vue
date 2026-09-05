@@ -70,6 +70,15 @@
                 <el-form-item label="用户数上限">
                     <el-input-number v-model="dialog.form.user_limit" :min="0" :max="999999" placeholder="不填为不限" style="width: 100%" />
                 </el-form-item>
+                <el-form-item label="品牌名称">
+                    <el-input v-model="dialog.form.brand_name" placeholder="登录页/侧边栏展示，不填用租户名称" />
+                </el-form-item>
+                <el-form-item label="品牌Logo">
+                    <el-input v-model="dialog.form.brand_logo" placeholder="图片地址URL" />
+                </el-form-item>
+                <el-form-item label="主题色">
+                    <el-color-picker v-model="dialog.form.brand_color" show-alpha />
+                </el-form-item>
                 <el-form-item v-if="dialog.type === 'edit'" label="状态">
                     <el-radio-group v-model="dialog.form.status">
                         <el-radio value="1">启用</el-radio>
@@ -106,7 +115,7 @@ const tenantTable = reactive({
 const dialog = reactive({
     visible: false,
     type: 'create',
-    form: { id: null, tenant_code: '', tenant_name: '', status: '1', package_id: null, expire_time: null, user_limit: null },
+    form: { id: null, tenant_code: '', tenant_name: '', status: '1', package_id: null, expire_time: null, user_limit: null, brand_name: '', brand_logo: '', brand_color: '' },
 })
 
 const formRef = ref()
@@ -156,7 +165,7 @@ const handleSizeChange = () => {
 
 const openCreate = () => {
     dialog.type = 'create'
-    dialog.form = { id: null, tenant_code: '', tenant_name: '', status: '1', package_id: null, expire_time: null, user_limit: null }
+    dialog.form = { id: null, tenant_code: '', tenant_name: '', status: '1', package_id: null, expire_time: null, user_limit: null, brand_name: '', brand_logo: '', brand_color: '' }
     loadPackages()
     dialog.visible = true
 }
@@ -171,6 +180,9 @@ const handleEdit = (row) => {
         package_id: row.package_id,
         expire_time: row.expire_time,
         user_limit: row.user_limit,
+        brand_name: row.brand_name || '',
+        brand_logo: row.brand_logo || '',
+        brand_color: row.brand_color || '',
     }
     loadPackages()
     dialog.visible = true

@@ -58,6 +58,8 @@ public class AuthServiceImpl implements AuthService {
     private final TotpService totpService;
     private final com.pig4cloud.auth.online.SessionKickService sessionKickService;
     private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+    private final com.pig4cloud.common.util.IpRegionService ipRegionService;
+    private final com.pig4cloud.tenant.service.TenantService tenantService;
 
     @Override
     public LoginResult login(LoginRequest request, String ip, String userAgent) {
@@ -119,7 +121,8 @@ public class AuthServiceImpl implements AuthService {
                 sessionKickService.enforceSessionLimit(request.getUsername(), maxSessions);
             }
             saveLoginLog(request.getUsername(), ip, user == null ? null : user.getTenant_id(), true, "登录成功");
-            return new LoginResult(accessToken, refreshToken, userVO);
+            return new LoginResult(accessToken, refreshToken, userVO,
+                    tenantService.getBrandByTenantId(user == null ? null : user.getTenant_id()));
         } catch (AuthenticationException ex) {
             loginAttemptService.recordFailure(request.getUsername());
             String message = ex instanceof BadCredentialsException ? "用户名或密码不正确" : ex.getMessage();
@@ -198,6 +201,7 @@ public class AuthServiceImpl implements AuthService {
                 .name(userVO != null ? userVO.getName() : null)
                 .tenantId(user == null ? 0 : user.getTenant_id())
                 .ip(ip)
+                .region(ipRegionService.resolve(ip))
                 .browser(SessionRecord.parseBrowser(userAgent))
                 .loginTime(new Date())
                 .lastAccessTime(new Date())
@@ -294,6 +298,7 @@ public class AuthServiceImpl implements AuthService {
         LoginLog loginLog = new LoginLog();
         loginLog.setUsername(username);
         loginLog.setIp(ip);
+        loginLog.setRegion(ipRegionService.resolve(ip));
         loginLog.setTenantId(tenantId);
         loginLog.setSuccess(success);
         loginLog.setMessage(message);
@@ -334,7 +339,8 @@ public class AuthServiceImpl implements AuthService {
         registerSession(accessToken, refreshToken, userVO, user, null, "代理登录");
         saveLoginLog(targetUsername, null, user.getTenant_id(), true, "代理登录（由 " + operator + " 发起，全程可审计）");
         log.info("超管[{}]代理登录用户[{}]", operator, targetUsername);
-        return new LoginResult(accessToken, refreshToken, userVO);
+        return new LoginResult(accessToken, refreshToken, userVO,
+                tenantService.getBrandByTenantId(user.getTenant_id()));
     }
 
     private UserEntity currentUser() {

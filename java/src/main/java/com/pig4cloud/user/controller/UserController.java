@@ -75,7 +75,7 @@ public class UserController {
 
     @PostMapping("/updateAvatar")
     @LogRecord(module = "用户管理", operation = "更新头像")
-    public R<Void> updateAvatar(@RequestParam("id") Long id, @RequestParam("avatar") MultipartFile avatar) throws IOException {
+    public R<Void> updateAvatar(@RequestParam("id") Long id, @RequestParam("avatar") MultipartFile avatar) throws Exception {
         return userService.updateAvatar(id, avatar);
     }
 

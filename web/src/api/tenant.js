@@ -27,6 +27,17 @@ export function createTenant(data) {
 }
 
 /**
+ * 公开接口：按租户编码查品牌（登录页展示，无需登录）
+ */
+export function getTenantBrand(tenantCode) {
+    return service({
+        url: '/tenant/brand',
+        method: 'get',
+        params: { tenantCode },
+    })
+}
+
+/**
  * 更新租户（名称/状态）
  * @param data
  * @return {*}

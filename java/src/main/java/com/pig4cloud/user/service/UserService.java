@@ -65,5 +65,5 @@ public interface UserService {
     /**
      * 更新用户头像
      */
-    R<Void> updateAvatar(Long userId, MultipartFile avatar) throws IOException;
+    R<Void> updateAvatar(Long userId, MultipartFile avatar) throws Exception;
 }

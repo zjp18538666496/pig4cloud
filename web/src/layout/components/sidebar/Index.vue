@@ -19,6 +19,7 @@
 import { Menu as IconMenu } from '@element-plus/icons-vue'
 import { storeToRefs } from 'pinia'
 import { useSidebarStore } from '@/stores/sidebar.js'
+import { useUserInfoStore } from '@/stores/user-info.js'
 import { useRoute } from 'vue-router'
 import MenuItem from '@/layout/components/sidebar/MenuItem.vue'
 import { selectMenuLists } from '@/api/menu.js'
@@ -29,6 +30,10 @@ const route = useRoute()
 const store = useSidebarStore()
 let { isCollapse, width, logo, borderRight } = storeToRefs(store)
 const userInfo = JSON.parse(localStorage.getItem('userinfo') || '{}')
+// 租户品牌：租户配置了brand_name则跟随展示，默认PIGX ADMIN
+const brand = useUserInfoStore().brand
+const brandName = brand?.name || 'PIGX ADMIN'
+const brandShort = (brand?.name || 'PIGX').slice(0, 4)
 let menuTree = ref([])
 const refreshMenu = () => {
     selectMenuLists({ menuType: '' }).then((res) => {
@@ -66,10 +71,10 @@ const toggleCollapse = () => {
               borderRight: '1px solid #9a9a9a',
           }
     if (isCollapse.value) {
-        logo.value = 'PIGX'
+        logo.value = brandShort
     } else {
         setTimeout(() => {
-            logo.value = 'PIGX ADMIN'
+            logo.value = brandName
         }, 500)
     }
 }

@@ -17,6 +17,7 @@ import com.pig4cloud.role.entity.RoleEntity;
 import com.pig4cloud.role.mapper.RoleMapper;
 import com.pig4cloud.tenant.dto.TenantCreateDto;
 import com.pig4cloud.tenant.dto.TenantDto;
+import com.pig4cloud.tenant.dto.TenantBrandVO;
 import com.pig4cloud.tenant.dto.TenantUpdateDto;
 import com.pig4cloud.tenant.entity.TenantEntity;
 import com.pig4cloud.tenant.mapper.TenantMapper;
@@ -159,6 +160,9 @@ public class TenantServiceImpl implements TenantService {
                 .set("package_id", dto.getPackageId())
                 .set("expire_time", dto.getExpireTime())
                 .set("user_limit", dto.getUserLimit())
+                .set("brand_name", dto.getBrandName())
+                .set("brand_logo", dto.getBrandLogo())
+                .set("brand_color", dto.getBrandColor())
                 .set("update_time", new Date());
         tenantMapper.update(null, updateWrapper);
         // 禁用或换套餐（菜单范围变了）时踢掉该租户全部在线会话，权限/可见菜单立即生效
@@ -166,6 +170,35 @@ public class TenantServiceImpl implements TenantService {
             sessionKickService.kickTenant(dto.getId());
         }
         return R.ok("更新成功", null);
+    }
+
+    @Override
+    public TenantBrandVO getTenantBrand(String tenantCode) {
+        if (tenantCode == null || tenantCode.isBlank()) {
+            return TenantBrandVO.defaultBrand();
+        }
+        TenantEntity tenant = tenantMapper.selectOne(new QueryWrapper<TenantEntity>()
+                .eq("tenant_code", tenantCode));
+        if (tenant == null || !"1".equals(tenant.getStatus())) {
+            return TenantBrandVO.defaultBrand();
+        }
+        String name = tenant.getBrand_name() != null && !tenant.getBrand_name().isBlank()
+                ? tenant.getBrand_name() : tenant.getTenant_name();
+        return new TenantBrandVO(tenant.getTenant_code(), name, tenant.getBrand_logo(), tenant.getBrand_color());
+    }
+
+    @Override
+    public TenantBrandVO getBrandByTenantId(Integer tenantId) {
+        if (tenantId == null || tenantId == 0) {
+            return TenantBrandVO.defaultBrand();
+        }
+        TenantEntity tenant = tenantMapper.selectById(tenantId);
+        if (tenant == null) {
+            return TenantBrandVO.defaultBrand();
+        }
+        String name = tenant.getBrand_name() != null && !tenant.getBrand_name().isBlank()
+                ? tenant.getBrand_name() : tenant.getTenant_name();
+        return new TenantBrandVO(tenant.getTenant_code(), name, tenant.getBrand_logo(), tenant.getBrand_color());
     }
 
     @Override

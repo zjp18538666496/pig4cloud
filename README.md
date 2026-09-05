@@ -18,11 +18,14 @@
 - **回收站**：用户/角色删除改为软删除（可开关），支持恢复与彻底清除
 - **多租户**：共享表+tenant_id自动隔离；租户套餐（决定可用菜单，变更即时生效）、有效期（过期自动禁用任务）、用户数配额、租户删除
 - **通知与消息**：通知公告（平台/租户两级，可选扇出站内信）、站内信中心（WebSocket实时推送+未读铃铛）
-- **系统管理**：字典管理、参数配置（密码策略/锁定阈值/日志保留/脱敏等即时生效）、定时任务管理（cron调度/手动执行/执行日志）
+- **租户品牌**：租户级品牌名称/logo/主题色，登录页带`?tenant=租户编码`跟随展示，登录后侧边栏跟随
+- **三权分立**：预置安全管理员（security，账号权限与安全参数）与审计员（auditor，仅日志查看导出）角色，等保场景开箱即用
+- **系统管理**：字典管理、参数配置（密码策略/锁定阈值/日志保留/脱敏等即时生效）、定时任务管理（cron调度/手动执行/执行日志，内置基于StateStore的分布式周期锁，多实例不重复执行）
 - **日志审计**：操作日志与登录日志（MongoDB，按租户隔离+超管全局视图，支持Excel导出、保留期自动清理）
 - **Excel导入导出**：用户列表导出/模板下载/批量导入（逐行校验报告）、弱口令字典校验（可开关）
 - **开放能力**：Open API（API Key授权范围/限流/过期，`/api/open/v1` 对外查询用户与公告）、代码生成器（读表结构生成CRUD，预览/下载）
-- **可观测性**：监控中心（JVM/系统概览）、健康自检、全局搜索、数据大屏（ECharts）
+- **可观测性**：监控中心（JVM/系统概览）、健康自检、全局搜索、数据大屏（ECharts）、登录IP归属地（ip2region离线解析，不依赖外网）
+- **文件存储**：local（本地）/ftp/s3（MinIO等S3兼容对象存储）三种存储按`app.storage.type`一键切换，业务代码零改动
 - **个人中心**：自己的登录/操作日志、在线会话查看与踢出
 - **首页仪表盘**：统计卡片+登录趋势+最新公告
 - **前端体验**：菜单图标、暗黑模式、多标签页、中英文切换、验证码开关联动
@@ -157,6 +160,8 @@ java -jar target/pig4cloud-1.0-SNAPSHOT.jar
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | `127.0.0.1` / `6379` / 空 | Redis连接（STORE_TYPE=redis时使用） |
 | `DB_INIT` | `true` | 首次启动自动建库建表+演示数据；生产建议`false` |
 | `MAIL_ENABLED` | `false` | 找回密码邮件开关（需配置spring.mail.*） |
+| `STORAGE_TYPE` | `local` | 文件存储：`local`本地 / `ftp` / `s3`（S3兼容对象存储） |
+| `S3_ENDPOINT` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET` | `http://127.0.0.1:9000` / `minioadmin` / 无 / `pigx-admin` | S3存储连接参数（STORAGE_TYPE=s3时使用） |
 
 数据库（MySQL）与MongoDB连接放在`application-local.yaml`（参考application-local.yaml.example），也可用`SPRING_DATASOURCE_URL`等标准环境变量覆盖。
 
@@ -213,6 +218,6 @@ Dockerfile位于`java/docker/Dockerfile`（基于eclipse-temurin:17-jre，按Spr
 ### 5. 部署注意事项
 
 - **Nginx的`try_files ... /index.html`不能省**：前端是history路由，缺失会导致刷新业务页面404
-- **多实例部署**：`STORE_TYPE=redis`必配，且任务调度为单机内存版，多实例时任务会重复执行（需自行保证幂等或只开一个实例跑任务）
+- **多实例部署**：`STORE_TYPE=redis`必配（会话/验证码/任务分布式锁等共享）；任务调度已内置周期锁，同一周期只有一个实例执行
 - **数据库自动初始化**：全新库首启自动建表+演示数据（单一完整初始化脚本，无增量升级机制）
 - **文件存储依赖FTP**：头像/上传走FTP（application-local.yaml的ftp.*），生产需保证FTP可达

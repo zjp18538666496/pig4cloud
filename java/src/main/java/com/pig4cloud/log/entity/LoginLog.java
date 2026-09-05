@@ -29,6 +29,11 @@ public class LoginLog {
     private String ip;
 
     /**
+     * IP归属地（ip2region离线解析，如"广东省深圳市 电信"；内网为"内网IP"）
+     */
+    private String region;
+
+    /**
      * 是否登录成功
      */
     private Boolean success;

@@ -42,6 +42,11 @@ public class SessionRecord {
     private String ip;
 
     /**
+     * IP归属地（登录时ip2region离线解析）
+     */
+    private String region;
+
+    /**
      * 登录浏览器（由User-Agent解析）
      */
     private String browser;

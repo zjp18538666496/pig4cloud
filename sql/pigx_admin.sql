@@ -421,6 +421,36 @@ INSERT INTO `user_role` VALUES (64, 14, 154);
 INSERT INTO `user_role` VALUES (65, 15, 155);
 INSERT INTO `user_role` VALUES (66, 16, 156);
 
+
+-- ----------------------------
+-- 三权分立预置角色（等保场景）：系统管理员root之外，预置安全管理员与审计员
+-- security=安全管理员（用户/角色/菜单/部门/岗位/参数配置），auditor=审计员（仅日志查看与导出）
+-- 角色未绑定账号，可通过角色管理按需调整后授予用户
+-- ----------------------------
+INSERT INTO `sys_role` VALUES (103, 'security', '安全管理员', '三权分立-安全员：账号权限与安全参数配置', 0, '1', 0);
+INSERT INTO `sys_role` VALUES (104, 'auditor', '审计员', '三权分立-审计员：仅日志查看与导出报告', 0, '1', 0);
+INSERT INTO `role_menu` VALUES (800, 2, 103);
+INSERT INTO `role_menu` VALUES (801, 201, 103);
+INSERT INTO `role_menu` VALUES (802, 20101, 103);
+INSERT INTO `role_menu` VALUES (803, 2010101, 103);
+INSERT INTO `role_menu` VALUES (804, 2010102, 103);
+INSERT INTO `role_menu` VALUES (805, 20102, 103);
+INSERT INTO `role_menu` VALUES (806, 2010201, 103);
+INSERT INTO `role_menu` VALUES (807, 2010202, 103);
+INSERT INTO `role_menu` VALUES (808, 20103, 103);
+INSERT INTO `role_menu` VALUES (809, 2010301, 103);
+INSERT INTO `role_menu` VALUES (810, 2010302, 103);
+INSERT INTO `role_menu` VALUES (811, 20104, 103);
+INSERT INTO `role_menu` VALUES (812, 2010401, 103);
+INSERT INTO `role_menu` VALUES (813, 2010402, 103);
+INSERT INTO `role_menu` VALUES (814, 20105, 103);
+INSERT INTO `role_menu` VALUES (815, 2010501, 103);
+INSERT INTO `role_menu` VALUES (816, 2010502, 103);
+INSERT INTO `role_menu` VALUES (817, 206, 103);
+INSERT INTO `role_menu` VALUES (818, 20601, 103);
+INSERT INTO `role_menu` VALUES (820, 202, 104);
+INSERT INTO `role_menu` VALUES (821, 20201, 104);
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================

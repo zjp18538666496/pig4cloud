@@ -135,8 +135,19 @@
             <artifactId>javase</artifactId>
             <version>3.5.3</version>
         </dependency>
+        <!--        ip2region离线IP归属地（登录日志/在线用户展示，jar内自带xdb数据）-->
+        <dependency>
+            <groupId>net.dreamlu</groupId>
+            <artifactId>mica-ip2region</artifactId>
+            <version>3.5.7</version>
+        </dependency>
+        <!--        S3对象存储客户端（MinIO兼容，app.storage.type=s3时启用）-->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.10</version>
+        </dependency>
     </dependencies>
-
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>

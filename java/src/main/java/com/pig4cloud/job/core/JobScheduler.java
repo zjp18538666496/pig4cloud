@@ -19,8 +19,8 @@ import java.util.UUID;
 
 /**
  * 轻量定时调度：每30秒扫描启用任务，按cron计算下次执行时间到期即运行并落执行日志。
- * 多实例适配：cron触发执行前以StateStore抢占任务锁（putIfAbsent+10分钟TTL），
- * 谁抢到谁执行，其余实例跳过；手动执行不受锁限制但复用锁防并发。
+ * 多实例适配：cron触发执行前以StateStore抢占周期锁（putIfAbsent，TTL到下个触发点+60s），
+ * 谁抢到谁执行本周期，其余实例跳过；手动执行使用独立的运行互斥锁防并发。
  * 内存记忆下次执行时间，重启后重新计算
  */
 @Slf4j
@@ -61,16 +61,20 @@ public class JobScheduler {
                     continue;
                 }
                 // 补齐错过的周期再执行，避免每30秒重复触发
-                nextRunMap.put(job.getId(), computeNext(job.getCron(), new Date()));
-                // 分布式锁：多实例部署时同一任务只有一个实例执行
-                if (!stateStore.putIfAbsent("job:running:" + job.getId(), nodeId, LOCK_TTL_MILLIS)) {
-                    log.debug("任务[{}]已被其它实例抢占执行", job.getJob_name());
+                Date nextFire = computeNext(job.getCron(), new Date());
+                nextRunMap.put(job.getId(), nextFire);
+                // 分布式锁：抢占本周期执行权，锁持有到下个触发点+60s才过期（不在执行后立即释放，
+                // 否则其它实例晚几秒tick时会在同一周期重复执行），多实例只有一个实例执行本周期
+                long slotTtl = Math.max(30_000L,
+                        (nextFire == null ? LOCK_TTL_MILLIS : nextFire.getTime() - System.currentTimeMillis() + 60_000L));
+                if (!stateStore.putIfAbsent("job:slot:" + job.getId(), nodeId, slotTtl)) {
+                    log.debug("任务[{}]本周期已被其它实例抢占执行", job.getJob_name());
                     continue;
                 }
                 try {
                     runJob(job);
-                } finally {
-                    stateStore.delete("job:running:" + job.getId());
+                } catch (Exception runEx) {
+                    log.error("任务[{}]执行异常: {}", job.getJob_name(), runEx.getMessage());
                 }
             } catch (Exception ex) {
                 log.error("任务[{}]调度异常: {}", job.getJob_name(), ex.getMessage());
@@ -80,7 +84,7 @@ public class JobScheduler {
     }
 
     /**
-     * 立即执行一次（手动触发），落执行日志；复用任务锁防与cron执行并发
+     * 立即执行一次（手动触发），落执行日志；运行互斥锁防重复触发
      */
     public String runOnce(SysJobEntity job) {
         JobHandler handler = handlers.get(job.getHandler());

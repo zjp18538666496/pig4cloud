@@ -73,6 +73,7 @@
                     <template #default="scope">{{ scope.row.browser }}</template>
                 </el-table-column>
                 <el-table-column prop="ip" label="IP" width="130" />
+                <el-table-column prop="region" label="归属地" width="130" show-overflow-tooltip />
                 <el-table-column prop="loginTime" label="登录时间" width="160" />
                 <el-table-column prop="lastAccessTime" label="最后活跃" width="160" />
                 <el-table-column label="操作" width="110" align="center">
@@ -87,6 +88,7 @@
             <el-table :data="loginLogs" border size="small">
                 <el-table-column prop="createTime" label="时间" width="160" />
                 <el-table-column prop="ip" label="IP" width="130" />
+                <el-table-column prop="region" label="归属地" width="130" show-overflow-tooltip />
                 <el-table-column label="结果" width="80" align="center">
                     <template #default="scope">
                         <el-tag :type="scope.row.success ? 'success' : 'danger'" size="small">

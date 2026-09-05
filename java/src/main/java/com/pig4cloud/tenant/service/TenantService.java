@@ -4,6 +4,7 @@ import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.tenant.dto.TenantCreateDto;
 import com.pig4cloud.tenant.dto.TenantDto;
+import com.pig4cloud.tenant.dto.TenantBrandVO;
 import com.pig4cloud.tenant.dto.TenantUpdateDto;
 import com.pig4cloud.tenant.entity.TenantEntity;
 
@@ -23,6 +24,16 @@ public interface TenantService {
      * 编辑租户（名称/状态/套餐/有效期/配额）；套餐变更重绑管理员角色菜单，禁用/换套餐踢会话
      */
     R<Void> updateTenant(TenantUpdateDto dto);
+
+    /**
+     * 公开查询租户品牌（登录页展示用，无需登录）；租户码为空或不存在返回平台默认
+     */
+    TenantBrandVO getTenantBrand(String tenantCode);
+
+    /**
+     * 按租户id取品牌（登录成功后随用户信息下发）；平台层返回默认品牌
+     */
+    TenantBrandVO getBrandByTenantId(Integer tenantId);
 
     /**
      * 删除租户：租户下存在用户时拒绝；级联清理角色/部门/公告/套餐绑定并踢会话

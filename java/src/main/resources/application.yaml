@@ -28,6 +28,13 @@ spring:
       host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+s3:
+  # app.storage.type=s3时启用；MinIO等自建存储path-style-access=true，公有云S3端点一般为false
+  endpoint: ${S3_ENDPOINT:http://127.0.0.1:9000}
+  access-key: ${S3_ACCESS_KEY:minioadmin}
+  secret-key: ${S3_SECRET_KEY:minioadmin}
+  bucket: ${S3_BUCKET:pigx-admin}
+  path-style-access: ${S3_PATH_STYLE:true}
 mybatis-plus:
   mapper-locations: classpath:/mapper/*.xml
   configuration:
@@ -53,6 +60,9 @@ app:
   db-init:
     # 首次启动自动建表+灌入演示数据，生产环境置为false或用环境变量DB_INIT控制
     enabled: ${DB_INIT:true}
+  storage:
+    # 文件存储类型：local(默认,本地uploadFile目录) | ftp | s3(MinIO/OSS等S3兼容)
+    type: ${STORAGE_TYPE:local}
   mail:
     # 找回密码邮件开关：开启需同时在application-local.yaml配置spring.mail.*，否则接口提示未配置
     enabled: ${MAIL_ENABLED:false}

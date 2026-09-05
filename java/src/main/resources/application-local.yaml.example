@@ -25,6 +25,13 @@ ftp:
   port: 21
   user: root
   password: your-ftp-password
+# S3对象存储（app.storage.type=s3时使用；本地开发可用docker run -p 9000:9000 minio/minio）
+# s3:
+#   endpoint: http://127.0.0.1:9000
+#   access-key: minioadmin
+#   secret-key: your-s3-secret
+#   bucket: pigx-admin
+#   path-style-access: true
 jwt:
   # 生成方式: openssl rand -base64 32
   secret: your-base64-secret-at-least-32-bytes

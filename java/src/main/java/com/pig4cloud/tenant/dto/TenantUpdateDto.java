@@ -43,4 +43,25 @@ public class TenantUpdateDto {
      */
     @JsonProperty("user_limit")
     private Integer userLimit;
+
+    /**
+     * 品牌名称（登录页/侧边栏展示，空则用tenant_name）
+     */
+    @Size(max = 64, message = "品牌名称最长64个字符")
+    @JsonProperty("brand_name")
+    private String brandName;
+
+    /**
+     * 品牌logo地址
+     */
+    @Size(max = 255, message = "品牌logo最长255个字符")
+    @JsonProperty("brand_logo")
+    private String brandLogo;
+
+    /**
+     * 品牌主题色
+     */
+    @Size(max = 16, message = "品牌主题色最长16个字符")
+    @JsonProperty("brand_color")
+    private String brandColor;
 }

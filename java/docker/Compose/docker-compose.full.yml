@@ -1,5 +1,5 @@
 # ============================================================
-# 一键全家桶：MySQL + MongoDB + Redis + 后端应用 + Nginx
+# 一键全家桶：MySQL + MongoDB + Redis + MinIO(对象存储) + 后端应用 + Nginx
 # 用法：
 #   cd java && mvn -DskipTests package
 #   cd docker/Compose
@@ -53,6 +53,27 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: minio/minio:latest
+    container_name: pigx-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      TZ: Asia/Shanghai
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?请设置S3密钥}
+    ports:
+      - "9001:9001"   # MinIO控制台
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pigx
+
   pig4cloud:
     build:
       context: ../../
@@ -67,6 +88,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
       TZ: Asia/Shanghai
       JWT_SECRET: ${JWT_SECRET:?请设置JWT密钥}
@@ -76,6 +99,12 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       DB_INIT: ${DB_INIT:-true}
+      # 文件存储走S3（MinIO）；STORAGE_TYPE可改local/ftp
+      STORAGE_TYPE: s3
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET:-pigx-admin}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/pigx_admin?createDatabaseIfNotExist=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
@@ -102,6 +131,7 @@ volumes:
   mysql-data:
   mongo-data:
   redis-data:
+  minio-data:
 
 networks:
   pigx:
