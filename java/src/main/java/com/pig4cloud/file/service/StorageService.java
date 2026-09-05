@@ -21,6 +21,13 @@ public interface StorageService {
     InputStream download(String path) throws Exception;
 
     /**
+     * 列出存储文件（文件管理页）：返回 path/sizeBytes/lastModifiedMs；不支持列表的存储返回空
+     */
+    default java.util.List<java.util.Map<String, Object>> listFiles(String prefix) {
+        return java.util.List.of();
+    }
+
+    /**
      * 删除存储文件（导出文件过保留期清理用）；实现按需覆盖
      */
     default void deleteFile(String path) throws Exception {

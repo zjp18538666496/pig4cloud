@@ -2,6 +2,8 @@ package com.pig4cloud.file.service;
 
 import com.pig4cloud.file.config.S3Properties;
 import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.ListObjectsArgs;
+import io.minio.Result;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
@@ -62,6 +64,30 @@ public class S3StorageServiceImpl implements StorageService {
                 .stream(in, size, -1)
                 .build());
         return "/" + stripLeadingSlash(path);
+    }
+
+    @Override
+    public java.util.List<java.util.Map<String, Object>> listFiles(String prefix) {
+        java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        try {
+            Iterable<Result<io.minio.messages.Item>> items = minioClient.listObjects(ListObjectsArgs.builder()
+                    .bucket(properties.getBucket())
+                    .prefix(prefix == null ? "" : stripLeadingSlash(prefix))
+                    .maxKeys(500)
+                    .build());
+            for (Result<io.minio.messages.Item> item : items) {
+                io.minio.messages.Item obj = item.get();
+                java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+                row.put("path", "/" + obj.objectName());
+                row.put("sizeBytes", obj.size());
+                row.put("lastModifiedMs", obj.lastModified() == null ? 0L : obj.lastModified().toInstant().toEpochMilli());
+                result.add(row);
+                if (result.size() >= 500) break;
+            }
+        } catch (Exception ex) {
+            log.warn("S3文件列表读取失败: {}", ex.getMessage());
+        }
+        return result;
     }
 
     @Override

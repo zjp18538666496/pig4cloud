@@ -65,6 +65,33 @@ public class FileController {
     }
 
     /**
+     * 存储文件列表（仅平台超管；local/s3支持，ftp不支持返回空）
+     */
+    @GetMapping("/list")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('super')")
+    public R<java.util.List<java.util.Map<String, Object>>> list(@RequestParam(required = false) String prefix) {
+        return R.ok("获取数据成功", storageService.listFiles(prefix));
+    }
+
+    /**
+     * 删除存储文件（仅平台超管）
+     */
+    @PostMapping("/delete")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('super')")
+    public R<Void> deleteFile(@org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> body) {
+        String path = body.get("path");
+        if (path == null || path.isBlank() || path.contains("..")) {
+            return R.fail("非法路径");
+        }
+        try {
+            storageService.deleteFile(path);
+            return R.ok("删除成功", null);
+        } catch (Exception e) {
+            return R.fail("删除失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 生成预签名URL（需登录）：mode=get下载直连 / mode=put前端直传；
      * 仅对象存储(app.storage.type=s3)支持，其它存储返回null
      */

@@ -604,6 +604,16 @@ WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 21101);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 907, 211, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 907);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 908, 21101, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 908);
 
+
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 212, 3, '文件管理', '/file-manager', '1', '1', '2', '@/views/file-manager/Index.vue', 'file-manager', 'super'
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 212);
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 213, 3, '备份管理', '/backup-manager', '1', '1', '2', '@/views/backup-manager/Index.vue', 'backup-manager', 'super'
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 213);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 909, 212, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 909);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 910, 213, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 910);
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================
