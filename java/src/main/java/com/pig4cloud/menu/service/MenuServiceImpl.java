@@ -2,6 +2,7 @@ package com.pig4cloud.menu.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.pig4cloud.common.exception.BizException;
+import com.pig4cloud.common.cache.BizCacheService;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.menu.dto.MenuDto;
 import com.pig4cloud.menu.dto.MenuSelectDto;
@@ -25,6 +26,7 @@ public class MenuServiceImpl implements MenuService {
     private final MenuMapper menuMapper;
     private final RoleMapper roleMapper;
     private final RoleHierarchyService roleHierarchyService;
+    private final BizCacheService bizCacheService;
 
     @Override
     public R<Void> createMenu(MenuEntity menuEntity) {
@@ -35,6 +37,7 @@ public class MenuServiceImpl implements MenuService {
         menuEntity.setLevel(calcMenuLevel(newId));
         menuEntity.setId(newId);
         int rows = menuMapper.insert(menuEntity);
+        bizCacheService.evictMenus();
         return R.ok(rows > 0 ? "创建成功" : "创建失败", null);
     }
 
@@ -80,6 +83,7 @@ public class MenuServiceImpl implements MenuService {
             return R.ok(insertRows > 0 ? "更新成功" : "更新失败", null);
         }
         int updateRows = menuMapper.updateById(menuEntity);
+        bizCacheService.evictMenus();
         return R.ok(updateRows > 0 ? "更新成功" : "更新失败", null);
     }
 
@@ -87,6 +91,7 @@ public class MenuServiceImpl implements MenuService {
     @Transactional
     public R<Void> deleteMenu(MenuEntity menuEntity) {
         int deleteCount = deleteMenuAndSubmenus(menuEntity.getId());
+        bizCacheService.evictMenus();
         return R.ok(deleteCount > 0 ? "删除成功" : "删除失败", null);
     }
 
@@ -104,12 +109,18 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public R<?> selectMenuLists(MenuSelectDto dto) {
         String name = currentUsername();
+        String menuType = dto == null ? "" : dto.getMenuType();
+        // 菜单树走本地缓存（菜单/角色/用户角色绑定变更时主动失效），避免每次导航实时查库
+        return bizCacheService.getMenuTree(name + ":" + menuType, () -> doSelectMenuLists(name, menuType));
+    }
+
+    private R<?> doSelectMenuLists(String name, String menuType) {
         // 当前用户的菜单 = 自身角色+祖先角色（沿父链继承）绑定的菜单
         List<RoleEntity> userRoles = roleMapper.selectRolesByUsername(name);
         List<Integer> effectiveRoleIds = roleHierarchyService.effectiveRoleIds(userRoles);
         List<MenuEntity> selectList = effectiveRoleIds.isEmpty()
                 ? List.of() : menuMapper.selectMenusByRoleIds(effectiveRoleIds);
-        if (dto != null && "flatMenu".equals(dto.getMenuType())) {
+        if ("flatMenu".equals(menuType)) {
             return R.ok("获取数据成功", selectList);
         }
         return R.ok("获取数据成功", MenuTreeBuilder.build(selectList));

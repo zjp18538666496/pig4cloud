@@ -453,6 +453,18 @@ INSERT INTO `role_menu` VALUES (820, 202, 104);
 INSERT INTO `role_menu` VALUES (900, 307, 100);
 INSERT INTO `role_menu` VALUES (821, 20201, 104);
 
+
+-- ----------------------------
+-- 岗位演示数据（默认租户与科技租户）
+-- ----------------------------
+INSERT INTO `sys_post` VALUES (1, 'ceo', '总经理', 1, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (2, 'cto', '技术总监', 2, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (3, 'dev', '研发工程师', 3, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (4, 'pm', '产品经理', 4, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (5, 'hr', '人事专员', 5, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (6, 'tech-lead', '研发组长', 1, '1', 10, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (7, 'tech-dev', '研发工程师', 2, '1', 10, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (8, 'tech-qa', '测试工程师', 3, '1', 10, NOW(), NULL);
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================

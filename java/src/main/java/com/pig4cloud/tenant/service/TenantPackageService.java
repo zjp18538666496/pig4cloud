@@ -6,6 +6,7 @@ import com.pig4cloud.auth.online.SessionKickService;
 import com.pig4cloud.common.dto.BasePageQuery;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.PageResult;
+import com.pig4cloud.common.cache.BizCacheService;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.menu.mapper.MenuMapper;
@@ -38,6 +39,7 @@ import java.util.Map;
 public class TenantPackageService {
 
     private final TenantPackageMapper packageMapper;
+    private final BizCacheService bizCacheService;
     private final TenantMapper tenantMapper;
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
@@ -95,6 +97,7 @@ public class TenantPackageService {
                     saveRoleMenus(adminRole.getId(), menuIds);
                 }
                 sessionKickService.kickTenant(tenant.getId());
+                bizCacheService.evictMenus();
             }
         }
         return R.ok("更新成功", null);

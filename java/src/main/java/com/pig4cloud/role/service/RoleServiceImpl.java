@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.common.result.PageResult;
+import com.pig4cloud.common.cache.BizCacheService;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.auth.online.SessionKickService;
 import com.pig4cloud.menu.mapper.MenuMapper;
@@ -30,6 +31,7 @@ public class RoleServiceImpl implements RoleService {
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
     private final RoleHierarchyService roleHierarchyService;
+    private final BizCacheService bizCacheService;
     private final SessionKickService sessionKickService;
     private final UserMapper userMapper;
     private final com.pig4cloud.config.service.ConfigService configService;
@@ -55,6 +57,7 @@ public class RoleServiceImpl implements RoleService {
             return R.fail("创建失败");
         }
         saveRoleMenus(roleEntity.getId(), dto.getMenuCodes());
+        bizCacheService.evictMenus();
         return R.ok("更新成功", null);
     }
 
@@ -97,6 +100,7 @@ public class RoleServiceImpl implements RoleService {
         }
         // 菜单/权限变更后踢掉持有该角色的在线用户，权限立即生效（token里权限是登录时烤入的）
         sessionKickService.kickUsernames(userMapper.selectUsernamesByRoleId(dto.getId()));
+        bizCacheService.evictMenus();
         return R.ok("更新成功", null);
     }
 
@@ -129,6 +133,7 @@ public class RoleServiceImpl implements RoleService {
             rows = jdbcTemplate.update("DELETE FROM sys_role WHERE role_code = ?", dto.getRoleCode());
         }
         sessionKickService.kickUsernames(holders);
+        bizCacheService.evictMenus();
         return R.ok(rows > 0 ? "删除成功" : "删除失败", null);
     }
 

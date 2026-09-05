@@ -141,6 +141,12 @@
             <artifactId>mica-ip2region</artifactId>
             <version>3.5.7</version>
         </dependency>
+        <!--        本地缓存（菜单树/租户品牌热数据）-->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+        </dependency>
         <!--        S3对象存储客户端（MinIO兼容，app.storage.type=s3时启用）-->
         <dependency>
             <groupId>io.minio</groupId>

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.context.UserContext;
 import com.pig4cloud.common.result.PageResult;
+import com.pig4cloud.common.cache.BizCacheService;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.dept.service.DataScopeFilter;
 import com.pig4cloud.dept.service.DataScopeService;
@@ -59,6 +60,7 @@ public class UserServiceImpl implements UserService {
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final com.pig4cloud.file.service.StorageService storageService;
+    private final com.pig4cloud.common.cache.BizCacheService bizCacheService;
     private final FileUtils fileUtils;
 
     @Override
@@ -103,6 +105,7 @@ public class UserServiceImpl implements UserService {
         if (rows > 0 && dto.getPostIds() != null && !dto.getPostIds().isEmpty()) {
             bindPosts(userEntity.getId().longValue(), dto.getPostIds());
         }
+        bizCacheService.evictMenus();
         return R.ok(rows > 0 ? "注册成功" : "注册失败", null);
     }
 
@@ -138,6 +141,7 @@ public class UserServiceImpl implements UserService {
             // 硬删除（回收站关闭时的原始行为）
             rows = jdbcTemplate.update("DELETE FROM sys_user WHERE username = ?", dto.getUsername());
         }
+        bizCacheService.evictMenus();
         return R.ok(rows > 0 ? "删除成功" : "删除失败", null);
     }
 
@@ -325,6 +329,7 @@ public class UserServiceImpl implements UserService {
             // 角色变更后踢掉该用户在线会话，权限立即生效
             sessionKickService.kickUser(dto.getUsername());
         }
+        bizCacheService.evictMenus();
         return R.ok("更新成功", null);
     }
 

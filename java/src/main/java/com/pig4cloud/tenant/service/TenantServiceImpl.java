@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pig4cloud.auth.online.SessionKickService;
+import com.pig4cloud.common.cache.BizCacheService;
 import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
@@ -48,6 +49,7 @@ public class TenantServiceImpl implements TenantService {
 
     private final TenantMapper tenantMapper;
     private final UserMapper userMapper;
+    private final BizCacheService bizCacheService;
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
     private final NoticeMapper noticeMapper;
@@ -169,6 +171,8 @@ public class TenantServiceImpl implements TenantService {
         if ("0".equals(dto.getStatus()) || packageChanged) {
             sessionKickService.kickTenant(dto.getId());
         }
+        bizCacheService.evictMenus();
+        bizCacheService.evictBrands();
         return R.ok("更新成功", null);
     }
 
@@ -177,14 +181,17 @@ public class TenantServiceImpl implements TenantService {
         if (tenantCode == null || tenantCode.isBlank()) {
             return TenantBrandVO.defaultBrand();
         }
+        return bizCacheService.getBrand("code:" + tenantCode,
+                () -> loadTenantBrand(tenantCode));
+    }
+
+    private TenantBrandVO loadTenantBrand(String tenantCode) {
         TenantEntity tenant = tenantMapper.selectOne(new QueryWrapper<TenantEntity>()
                 .eq("tenant_code", tenantCode));
         if (tenant == null || !"1".equals(tenant.getStatus())) {
             return TenantBrandVO.defaultBrand();
         }
-        String name = tenant.getBrand_name() != null && !tenant.getBrand_name().isBlank()
-                ? tenant.getBrand_name() : tenant.getTenant_name();
-        return new TenantBrandVO(tenant.getTenant_code(), name, tenant.getBrand_logo(), tenant.getBrand_color());
+        return toBrand(tenant);
     }
 
     @Override
@@ -192,10 +199,19 @@ public class TenantServiceImpl implements TenantService {
         if (tenantId == null || tenantId == 0) {
             return TenantBrandVO.defaultBrand();
         }
+        return bizCacheService.getBrand("id:" + tenantId,
+                () -> loadBrandByTenantId(tenantId));
+    }
+
+    private TenantBrandVO loadBrandByTenantId(Integer tenantId) {
         TenantEntity tenant = tenantMapper.selectById(tenantId);
         if (tenant == null) {
             return TenantBrandVO.defaultBrand();
         }
+        return toBrand(tenant);
+    }
+
+    private TenantBrandVO toBrand(TenantEntity tenant) {
         String name = tenant.getBrand_name() != null && !tenant.getBrand_name().isBlank()
                 ? tenant.getBrand_name() : tenant.getTenant_name();
         return new TenantBrandVO(tenant.getTenant_code(), name, tenant.getBrand_logo(), tenant.getBrand_color());
