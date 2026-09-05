@@ -1,5 +1,6 @@
 package com.pig4cloud.file.service;
 
+import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,26 @@ public class FtpStorageServiceImpl implements StorageService {
     public String upload(String path, MultipartFile file) throws Exception {
         ftpService.uploadFile(path, file);
         return path;
+    }
+
+    @Override
+    public String uploadFile(String path, InputStream in, long size) throws Exception {
+        FTPClient ftpClient = new FTPClient();
+        try {
+            ftpService.configureFTPClient(ftpClient);
+            String dir = path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : "";
+            if (!dir.isBlank() && !ftpClient.changeWorkingDirectory(dir) && !ftpClient.makeDirectory(dir)) {
+                throw new IllegalStateException("FTP创建目录失败：" + dir);
+            }
+            String fileName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+            if (!ftpClient.storeFile(fileName, in)) {
+                throw new IllegalStateException("FTP上传失败：" + ftpClient.getReplyCode());
+            }
+            return path;
+        } finally {
+            try { ftpService.disconnectFTPClient(ftpClient); } catch (Exception ignored) { }
+            in.close();
+        }
     }
 
     @Override

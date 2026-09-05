@@ -2,6 +2,7 @@ package com.pig4cloud.user.controller;
 
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.log.annotation.LogRecord;
+import com.pig4cloud.common.annotation.Reauth;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.user.dto.PasswordUpdateDto;
 import com.pig4cloud.user.dto.ResetPasswordDto;
@@ -86,6 +87,7 @@ public class UserController {
     }
 
     @PostMapping("/resetPassword")
+    @Reauth
     @LogRecord(module = "用户管理", operation = "重置密码")
     @PreAuthorize("hasAuthority('user:write')")
     public R<Void> resetPassword(@Valid @RequestBody ResetPasswordDto dto) {

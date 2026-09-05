@@ -25,4 +25,9 @@ public class LoginRequest {
      * 两步认证动态码（已绑定TOTP的用户必填；也接受备用恢复码）
      */
     private String totpCode;
+
+    /**
+     * 短信验证码（短信登录模式使用）
+     */
+    private String smsCode;
 }

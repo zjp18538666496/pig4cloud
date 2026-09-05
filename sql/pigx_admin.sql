@@ -126,6 +126,7 @@ CREATE TABLE `sys_user`  (
   `id` int(40) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '用户名',
   `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '密码',
+  `auth_source` varchar(16) NULL DEFAULT 'local' COMMENT '认证来源(local本地密码/ldap)',
   `username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '账号',
   `mobile` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '手机号',
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '邮箱',
@@ -511,6 +512,44 @@ ${content}', '1', '公告发布时推送给全部启用渠道', NOW()),
 失败信息：${message}', '1', '定时任务执行失败时告警', NOW()),
 ('tenant-expire-warning', '租户到期预警', '租户即将到期：${tenantName}', '租户【${tenantName}】将于 ${expireTime} 到期，请及时处理。', '1', '租户到期前7天预警', NOW()),
 ('user-quota-warning', '用户配额预警', '租户用户数即将达到上限：${tenantName}', '租户【${tenantName}】用户数 ${used}/${limit}，已达90%，请注意。', '1', '租户用户数达到配额90%时预警', NOW());
+
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'reauth.enabled', '敏感操作二次认证', 'true', '删除租户/重置密码需请求头携带当前登录密码确认'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'reauth.enabled');
+
+
+-- ----------------------------
+-- 异步导出任务（下载中心）
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_export_task`;
+CREATE TABLE `sys_export_task`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '任务id',
+  `title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '任务标题',
+  `task_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '类型(user)',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '状态(0处理中1成功2失败)',
+  `file_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件存储路径',
+  `total` int(11) NULL DEFAULT 0 COMMENT '导出行数',
+  `message` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '失败原因',
+  `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '创建人',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `finish_time` datetime NULL DEFAULT NULL COMMENT '完成时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '导出任务表' ROW_FORMAT = Dynamic;
+
+
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 209, 2, '导出中心', '/export-center', '1', '1', '2', '@/views/export-center/Index.vue', 'export-center', NULL
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 209);
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 308, 3, '通知管理', '/notify-manager', '1', '1', '2', '@/views/notify-manager/Index.vue', 'notify-manager', NULL
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 308);
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 30801, 308, '通知管理', NULL, '1', '2', '3', NULL, NULL, 'notify:manage'
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 30801);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 902, 209, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 902);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 903, 209, 102 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 903);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 904, 308, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 904);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 905, 30801, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 905);
 
 SET FOREIGN_KEY_CHECKS = 1;
 

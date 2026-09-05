@@ -19,4 +19,25 @@ public interface StorageService {
      * 按存储路径下载文件流
      */
     InputStream download(String path) throws Exception;
+
+    /**
+     * 预签名下载URL（限时直连下载，绕过后端带宽）；不支持预签名的存储返回null
+     */
+    default String presignedGetUrl(String path, int expireSeconds) {
+        return null;
+    }
+
+    /**
+     * 预签名上传URL（前端直传）；不支持预签名的存储返回null
+     */
+    default String presignedPutUrl(String path, int expireSeconds) {
+        return null;
+    }
+
+    /**
+     * 流式上传（后端生成的文件，如导出Excel）；默认不支持，各实现按需覆盖
+     */
+    default String uploadFile(String path, java.io.InputStream in, long size) throws Exception {
+        throw new UnsupportedOperationException("当前存储不支持流式上传");
+    }
 }

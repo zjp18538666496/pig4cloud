@@ -63,6 +63,8 @@ public class AuthServiceImpl implements AuthService {
     private final com.pig4cloud.common.util.IpRegionService ipRegionService;
     private final com.pig4cloud.tenant.service.TenantService tenantService;
     private final SysMessageMapper messageMapper;
+    private final SmsLoginService smsLoginService;
+    private final org.springframework.beans.factory.ObjectProvider<LdapAuthService> ldapAuthProvider;
 
     @Override
     public LoginResult login(LoginRequest request, String ip, String userAgent) {
@@ -78,8 +80,21 @@ public class AuthServiceImpl implements AuthService {
             // 失败锁定校验
             loginAttemptService.checkLocked(request.getUsername());
 
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+            // 账号先查出来：短信/LDAP登录分支与普通密码登录共用后续签发逻辑
+            UserEntity preUser = userMapper.selectUserByUsername(request.getUsername());
+            Authentication authentication;
+            if (request.getSmsCode() != null && !request.getSmsCode().isBlank()) {
+                // 短信验证码登录：免密校验验证码
+                smsLoginService.verifyCode(request.getUsername(), request.getSmsCode());
+                authentication = buildInternalAuthentication(request.getUsername());
+            } else if (preUser != null && "ldap".equals(preUser.getAuth_source())) {
+                // LDAP账号：密码由LDAP/AD服务器校验
+                authenticateLdap(request.getUsername(), request.getPassword());
+                authentication = buildInternalAuthentication(request.getUsername());
+            } else {
+                authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+            }
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             // 角色编码+按钮权限点合并存入token，解析端再拆开
@@ -88,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
                     .toList();
             String authorityString = String.join(",", authorities);
 
-            UserEntity user = userMapper.selectUserByUsername(request.getUsername());
+            UserEntity user = preUser;
 
             // 两步认证：总开关开启且用户已绑定TOTP时，校验动态码/备用恢复码（code 1001=需要动态码）
             if (configService.getBool("login.2fa-enabled", true)
@@ -96,37 +111,7 @@ public class AuthServiceImpl implements AuthService {
                 verifyTwoFactor(request, user);
             }
 
-            Map<String, Object> claims = new HashMap<>();
-            claims.put("username", authentication.getName());
-            claims.put("authorityString", authorityString);
-            claims.put("tenantId", user == null ? 0 : user.getTenant_id());
-
-            UserVO userVO = UserVO.from(user);
-            if (userVO != null) {
-                // 权限点随登录响应下发，前端v-permission据此控制按钮
-                userVO.setPermissions(authorities);
-                // 密码策略：初始密码未改或密码过期时强制修改
-                userVO.setForcePwdChange(isForcePwdChange(user));
-                // 2FA治理：强制开启时未绑定者登录后引导绑定
-                userVO.setForce2fa(configService.getBool("login.2fa-force-enabled", false)
-                        && (user == null || !Integer.valueOf(1).equals(user.getTotp_enabled())));
-            }
-            String accessToken = jwtUtils.getJwt(claims);
-            String refreshToken = jwtUtils.getRefreshToken(claims);
-
-            // 登录成功：解除失败锁定、更新最后登录时间、注册在线会话、记录登录日志
-            loginAttemptService.recordSuccess(request.getUsername());
-            userMapper.updateLastLoginTime(request.getUsername());
-            registerSession(accessToken, refreshToken, userVO, user, ip, userAgent);
-            // 并发设备数限制：超限自动下线最旧设备（0=不限制）
-            int maxSessions = configService.getInt("login.max-sessions-per-user", 3);
-            if (maxSessions > 0) {
-                sessionKickService.enforceSessionLimit(request.getUsername(), maxSessions);
-            }
-            saveLoginLog(request.getUsername(), ip, user == null ? null : user.getTenant_id(), true, "登录成功");
-            checkUnusualRegion(user, ip);
-            return new LoginResult(accessToken, refreshToken, userVO,
-                    tenantService.getBrandByTenantId(user == null ? null : user.getTenant_id()));
+            return issueLogin(user, authorities, ip, userAgent, request.getUsername(), "登录成功");
         } catch (AuthenticationException ex) {
             loginAttemptService.recordFailure(request.getUsername());
             String message = ex instanceof BadCredentialsException ? "用户名或密码不正确" : ex.getMessage();
@@ -342,6 +327,81 @@ public class AuthServiceImpl implements AuthService {
         loginLog.setMessage(message);
         loginLog.setCreateTime(new Date());
         loginLogService.saveLoginLog(loginLog);
+    }
+
+
+    /**
+     * 认证通过后的统一签发：claims/会话/登录日志/异地检测/品牌（登录与OIDC共用）
+     */
+    private LoginResult issueLogin(UserEntity user, List<String> authorities, String ip,
+                                   String userAgent, String username, String message) {
+        String authorityString = String.join(",", authorities);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", username);
+        claims.put("authorityString", authorityString);
+        claims.put("tenantId", user == null ? 0 : user.getTenant_id());
+
+        UserVO userVO = UserVO.from(user);
+        if (userVO != null) {
+            // 权限点随登录响应下发，前端v-permission据此控制按钮
+            userVO.setPermissions(authorities);
+            // 密码策略：初始密码未改或密码过期时强制修改
+            userVO.setForcePwdChange(isForcePwdChange(user));
+            // 2FA治理：强制开启时未绑定者登录后引导绑定
+            userVO.setForce2fa(configService.getBool("login.2fa-force-enabled", false)
+                    && (user == null || !Integer.valueOf(1).equals(user.getTotp_enabled())));
+        }
+        String accessToken = jwtUtils.getJwt(claims);
+        String refreshToken = jwtUtils.getRefreshToken(claims);
+
+        // 登录成功：解除失败锁定、更新最后登录时间、注册在线会话、记录登录日志
+        loginAttemptService.recordSuccess(username);
+        userMapper.updateLastLoginTime(username);
+        registerSession(accessToken, refreshToken, userVO, user, ip, userAgent);
+        // 并发设备数限制：超限自动下线最旧设备（0=不限制）
+        int maxSessions = configService.getInt("login.max-sessions-per-user", 3);
+        if (maxSessions > 0) {
+            sessionKickService.enforceSessionLimit(username, maxSessions);
+        }
+        saveLoginLog(username, ip, user == null ? null : user.getTenant_id(), true, message);
+        checkUnusualRegion(user, ip);
+        return new LoginResult(accessToken, refreshToken, userVO,
+                tenantService.getBrandByTenantId(user == null ? null : user.getTenant_id()));
+    }
+
+    /**
+     * 短信/LDAP等免密认证路径：从UserDetailsService取权限构造已认证token
+     */
+    private Authentication buildInternalAuthentication(String username) {
+        try {
+            var userDetails = userDetailsService.loadUserByUsername(username);
+            return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                    username, null, userDetails.getAuthorities());
+        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
+            throw new BadCredentialsException("账号不存在");
+        }
+    }
+
+    private void authenticateLdap(String username, String password) {
+        LdapAuthService ldap = ldapAuthProvider.getIfAvailable();
+        if (ldap == null) {
+            throw new BadCredentialsException("LDAP登录未开启（app.ldap.enabled=false）");
+        }
+        ldap.authenticate(username, password == null ? "" : password);
+    }
+
+    @Override
+    public LoginResult oidcLogin(String username, String ip, String userAgent) {
+        UserEntity user = userMapper.selectUserByUsername(username);
+        if (user == null) {
+            throw new BadCredentialsException("本地账号不存在：" + username + "，请先联系管理员创建同名账号");
+        }
+        Authentication authentication = buildInternalAuthentication(username);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        List<String> authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority).toList();
+        return issueLogin(user, authorities, ip, userAgent, username, "OIDC单点登录");
     }
 
     @Override

@@ -47,6 +47,11 @@ public class FileController {
         // 双保险：只允许返回登记为头像的路径
         String registeredPath = user.getAvatar();
         try {
+            // 对象存储支持预签名时302直连，节省后端带宽
+            String presigned = storageService.presignedGetUrl(registeredPath, 600);
+            if (presigned != null) {
+                return ResponseEntity.status(302).location(java.net.URI.create(presigned)).build();
+            }
             InputStream inputStream = storageService.download(registeredPath);
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"avatar\"");
@@ -57,6 +62,25 @@ public class FileController {
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    /**
+     * 生成预签名URL（需登录）：mode=get下载直连 / mode=put前端直传；
+     * 仅对象存储(app.storage.type=s3)支持，其它存储返回null
+     */
+    @GetMapping("/presign")
+    public R<String> presign(@RequestParam String path,
+                             @RequestParam(defaultValue = "get") String mode,
+                             @RequestParam(defaultValue = "600") int expireSeconds) {
+        // 仅允许业务前缀，防止预签名出存储根下的任意文件
+        if (path == null || path.isBlank() || path.contains("..")) {
+            return R.fail("非法路径");
+        }
+        int expire = Math.min(Math.max(expireSeconds, 10), 7 * 24 * 3600);
+        String url = "put".equalsIgnoreCase(mode)
+                ? storageService.presignedPutUrl(path, expire)
+                : storageService.presignedGetUrl(path, expire);
+        return url == null ? R.fail("当前存储类型不支持预签名") : R.ok("生成成功", url);
     }
 
     /**

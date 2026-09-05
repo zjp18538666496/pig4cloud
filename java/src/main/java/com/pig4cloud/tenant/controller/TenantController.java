@@ -1,5 +1,6 @@
 package com.pig4cloud.tenant.controller;
 
+import com.pig4cloud.common.annotation.Reauth;
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.tenant.dto.TenantCreateDto;
@@ -54,6 +55,7 @@ public class TenantController {
     }
 
     @PostMapping("/delTenant")
+    @Reauth
     @PreAuthorize("hasAuthority('tenant:manage')")
     public R<Void> delTenant(@RequestBody TenantUpdateDto dto) {
         return tenantService.deleteTenant(dto.getId());

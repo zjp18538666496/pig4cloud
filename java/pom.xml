@@ -141,6 +141,11 @@
             <artifactId>mica-ip2region</artifactId>
             <version>3.5.7</version>
         </dependency>
+        <!--        LDAP登录（app.ldap.enabled=true时启用）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-ldap</artifactId>
+        </dependency>
         <!--        本地缓存（菜单树/租户品牌热数据）-->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

@@ -35,6 +35,20 @@ public class LocalStorageServiceImpl implements StorageService {
     }
 
     @Override
+    public String uploadFile(String path, java.io.InputStream in, long size) throws Exception {
+        Path target = Paths.get(BASE_DIR).toAbsolutePath().normalize().resolve(path).normalize();
+        if (!target.startsWith(Paths.get(BASE_DIR).toAbsolutePath().normalize())) {
+            throw new IllegalArgumentException("非法存储路径：" + path);
+        }
+        File dir = target.getParent().toFile();
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("创建目录失败：" + dir.getAbsolutePath());
+        }
+        java.nio.file.Files.copy(in, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        return "/" + path;
+    }
+
+    @Override
     public InputStream download(String path) throws Exception {
         Path base = Paths.get(BASE_DIR).toAbsolutePath().normalize();
         Path target = base.resolve(path).normalize();

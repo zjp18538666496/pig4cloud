@@ -9,6 +9,8 @@ import com.pig4cloud.auth.dto.SendResetCodeDto;
 import com.pig4cloud.auth.service.AuthService;
 import com.pig4cloud.auth.service.CaptchaService;
 import com.pig4cloud.auth.service.IpRateLimiter;
+import com.pig4cloud.auth.service.OidcService;
+import com.pig4cloud.auth.service.SmsLoginService;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.config.service.ConfigService;
 import com.pig4cloud.common.util.ServletUtils;
@@ -37,6 +39,9 @@ public class AuthController {
     private final AuthService authService;
     private final CaptchaService captchaService;
     private final IpRateLimiter ipRateLimiter;
+    private final OidcService oidcService;
+    private final SmsLoginService smsLoginService;
+    private final com.pig4cloud.user.mapper.UserMapper userMapper;
     private final ConfigService configService;
 
     /**
@@ -75,6 +80,75 @@ public class AuthController {
     public R<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         authService.logout(authHeader);
         return R.ok("登出成功", null);
+    }
+
+    /**
+     * 发送短信登录验证码（app.sms.enabled开启；mock模式验证码直接返回前端仅供开发）
+     */
+    @PostMapping("/sms/send")
+    public R<String> smsSend(@RequestBody java.util.Map<String, String> body, HttpServletRequest servletRequest) {
+        String mobile = body.get("mobile") == null ? "" : body.get("mobile").trim();
+        if (!mobile.matches("^1[3-9]\\d{9}$")) {
+            return R.fail("手机号格式不正确");
+        }
+        String clientIp = ServletUtils.getClientIp(servletRequest);
+        ipRateLimiter.checkLimit("sms:ip", clientIp, 5, 10 * 60 * 1000L, "短信发送过于频繁，请10分钟后再试");
+        if (userMapper.selectUserByUsername(mobile) == null) {
+            return R.fail("该手机号未绑定任何账号");
+        }
+        String mockCode = smsLoginService.sendCode(mobile);
+        return mockCode == null ? R.ok("验证码已发送", null) : R.ok("开发模式验证码：" + mockCode, mockCode);
+    }
+
+    /**
+     * OIDC配置（公开）：登录页据此显示SSO按钮并跳转
+     */
+    @GetMapping("/oidc/config")
+    public R<java.util.Map<String, Object>> oidcConfig() {
+        return R.ok(oidcService.isEnabled() ? java.util.Map.of(
+                "enabled", true,
+                "authorizeUrl", "/api/auth/oidc/login") : java.util.Map.of("enabled", false));
+    }
+
+    /**
+     * OIDC授权跳转（302到IdP）
+     */
+    @GetMapping("/oidc/login")
+    public void oidcLogin(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        response.sendRedirect(oidcService.buildAuthorizeUrl());
+    }
+
+    /**
+     * OIDC回调：code换userinfo→匹配本地账号→签发一次性ticket→回前端换登录态
+     */
+    @GetMapping("/oidc/callback")
+    public void oidcCallback(@org.springframework.web.bind.annotation.RequestParam String code,
+                             @org.springframework.web.bind.annotation.RequestParam String state,
+                             HttpServletRequest servletRequest,
+                             jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        try {
+            String username = oidcService.resolveUsername(code, state);
+            String ticket = oidcService.issueTicket(username);
+            response.sendRedirect("/login?ticket=" + ticket);
+        } catch (Exception ex) {
+            response.sendRedirect("/login?ssoError=" + java.net.URLEncoder.encode(
+                    ex.getMessage() == null ? "OIDC登录失败" : ex.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    /**
+     * 用一次性ticket换登录态（响应结构与密码登录一致：头带token，体带用户与品牌）
+     */
+    @GetMapping("/oidc/exchange")
+    public R<UserVO> oidcExchange(@org.springframework.web.bind.annotation.RequestParam String ticket,
+                                  HttpServletRequest servletRequest, jakarta.servlet.http.HttpServletResponse response) {
+        String username = oidcService.exchangeTicket(ticket);
+        String clientIp = ServletUtils.getClientIp(servletRequest);
+        LoginResult result = authService.oidcLogin(username, clientIp, servletRequest.getHeader("User-Agent"));
+        response.setHeader("Authorization", "Bearer " + result.accessToken());
+        response.setHeader("Refresh-Token", result.refreshToken());
+        result.user().setBrand(result.brand());
+        return R.ok("登录成功", result.user());
     }
 
     /**

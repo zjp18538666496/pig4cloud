@@ -1,10 +1,12 @@
 package com.pig4cloud.file.service;
 
 import com.pig4cloud.file.config.S3Properties;
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.http.Method;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -49,6 +51,46 @@ public class S3StorageServiceImpl implements StorageService {
                     .build());
         }
         return "/" + stripLeadingSlash(path);
+    }
+
+    @Override
+    public String uploadFile(String path, InputStream in, long size) throws Exception {
+        minioClient.putObject(PutObjectArgs.builder()
+                .bucket(properties.getBucket())
+                .object(stripLeadingSlash(path))
+                .stream(in, size, -1)
+                .build());
+        return "/" + stripLeadingSlash(path);
+    }
+
+    @Override
+    public String presignedGetUrl(String path, int expireSeconds) {
+        try {
+            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Method.GET)
+                    .bucket(properties.getBucket())
+                    .object(stripLeadingSlash(path))
+                    .expiry(Math.max(1, expireSeconds))
+                    .build());
+        } catch (Exception ex) {
+            log.warn("预签名下载URL生成失败: {}", ex.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public String presignedPutUrl(String path, int expireSeconds) {
+        try {
+            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Method.PUT)
+                    .bucket(properties.getBucket())
+                    .object(stripLeadingSlash(path))
+                    .expiry(Math.max(1, expireSeconds))
+                    .build());
+        } catch (Exception ex) {
+            log.warn("预签名上传URL生成失败: {}", ex.getMessage());
+            return null;
+        }
     }
 
     @Override

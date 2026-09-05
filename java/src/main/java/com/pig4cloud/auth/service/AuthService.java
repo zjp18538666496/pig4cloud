@@ -12,6 +12,11 @@ import java.util.Map;
 public interface AuthService {
 
     /**
+     * OIDC单点登录签发：username为userinfo中匹配到的本地账号
+     */
+    LoginResult oidcLogin(String username, String ip, String userAgent);
+
+    /**
      * 账号密码登录：验证码校验→失败锁定校验→认证→注册在线会话→写登录日志
      *
      * @param ip        客户端ip

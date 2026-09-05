@@ -77,6 +77,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/user/register").permitAll()
                 // 图形验证码与邮箱找回密码（公开）
                 .requestMatchers(HttpMethod.GET, "/api/auth/captcha").permitAll()
+                // OIDC单点登录与短信验证码（公开）
+                .requestMatchers("/api/auth/oidc/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/sms/send").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/sendResetCode").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/resetPasswordByEmail").permitAll()
                 // 密码策略（公开，登录/注册表单提示用，不含敏感信息）

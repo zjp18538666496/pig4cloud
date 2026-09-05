@@ -29,6 +29,11 @@ public class UserEntity {
     private String password;
 
     /**
+     * 认证来源(local本地密码/ldap)
+     */
+    private String auth_source;
+
+    /**
      * 姓名
      */
     private String name;
