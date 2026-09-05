@@ -56,6 +56,7 @@ service.interceptors.response.use(
         const authorization = response.headers['authorization']
         if (authorization) localStorage.setItem('authorization', authorization)
         if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
+        window.dispatchEvent(new window.CustomEvent('pigx:server-ok'))
         switch (response.data.code) {
             case 401:
                 if (response.config.isRefreshToken) {
@@ -74,6 +75,10 @@ service.interceptors.response.use(
     async (error) => {
         if (error?.response?.status === 401) {
             await clearAndGoLogin()
+        } else if (!error?.response || !error.response.data?.code) {
+            // 网络/服务不可达（代理500空体等）：不逐条弹错，发全局断连事件由横幅统一提示
+            window.dispatchEvent(new window.CustomEvent('pigx:server-error'))
+            return Promise.reject({ ...error, silent: true, message: '后端服务连接失败' })
         } else {
             ElMessage({ message: error.message || error, type: 'error' })
         }
