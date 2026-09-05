@@ -104,10 +104,9 @@ com.pig4cloud
 - 租户被禁用或过期后其下账号无法登录；用户数达到配额后无法继续新增用户
 - 通知公告：超管发布平台公告（全员可见），租户管理员发布本租户公告
 
-## 数据库升级
+## 数据库初始化
 
-- 全新环境无需手动导入：首次启动自动建库建表灌数据。
-- **老库升级**：本版本新增部门/公告/套餐表与若干列。后端启动时自动检测（`sys_dept`表不存在）并执行 `java/src/main/resources/sql/upgrade_20260830.sql`，也可手动 source。存量租户的 tenant_admin 角色如需新菜单，请在角色管理里重新勾选保存。
+- 全新环境无需手动导入：首次启动自动建库建表灌数据。初始化脚本为完整版（`sql/pigx_admin.sql`，classpath副本在`java/src/main/resources/sql/pigx_admin_init.sql`），已包含全部表结构与种子数据，新库一次执行到位。
 
 ## 接口文档
 
@@ -198,5 +197,5 @@ Dockerfile基于eclipse-temurin:17-jre，按Spring Boot分层jar构建（依赖�
 
 - **Nginx的`try_files ... /index.html`不能省**：前端是history路由，缺失会导致刷新业务页面404
 - **多实例部署**：`STORE_TYPE=redis`必配，且任务调度为单机内存版，多实例时任务会重复执行（需自行保证幂等或只开一个实例跑任务）
-- **数据库自动初始化**：全新库首启自动建表+演示数据；老库自动执行增量升级（sys_schema_version登记）
+- **数据库自动初始化**：全新库首启自动建表+演示数据（单一完整初始化脚本，无增量升级机制）
 - **文件存储依赖FTP**：头像/上传走FTP（application-local.yaml的ftp.*），生产需保证FTP可达
