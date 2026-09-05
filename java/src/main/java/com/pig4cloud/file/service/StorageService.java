@@ -21,6 +21,13 @@ public interface StorageService {
     InputStream download(String path) throws Exception;
 
     /**
+     * 删除存储文件（导出文件过保留期清理用）；实现按需覆盖
+     */
+    default void deleteFile(String path) throws Exception {
+        throw new UnsupportedOperationException("当前存储不支持删除文件");
+    }
+
+    /**
      * 预签名下载URL（限时直连下载，绕过后端带宽）；不支持预签名的存储返回null
      */
     default String presignedGetUrl(String path, int expireSeconds) {

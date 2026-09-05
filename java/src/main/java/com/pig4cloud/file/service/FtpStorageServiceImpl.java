@@ -47,6 +47,19 @@ public class FtpStorageServiceImpl implements StorageService {
     }
 
     @Override
+    public void deleteFile(String path) throws Exception {
+        FTPClient ftpClient = new FTPClient();
+        try {
+            ftpService.configureFTPClient(ftpClient);
+            if (!ftpClient.deleteFile(path)) {
+                throw new IllegalStateException("FTP删除失败：" + ftpClient.getReplyCode());
+            }
+        } finally {
+            try { ftpService.disconnectFTPClient(ftpClient); } catch (Exception ignored) { }
+        }
+    }
+
+    @Override
     public InputStream download(String path) throws Exception {
         return ftpService.downloadFile(path);
     }

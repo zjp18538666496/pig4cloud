@@ -35,6 +35,15 @@ public class LocalStorageServiceImpl implements StorageService {
     }
 
     @Override
+    public void deleteFile(String path) throws Exception {
+        Path target = Paths.get(BASE_DIR).toAbsolutePath().normalize().resolve(path).normalize();
+        if (!target.startsWith(Paths.get(BASE_DIR).toAbsolutePath().normalize())) {
+            throw new IllegalArgumentException("非法存储路径：" + path);
+        }
+        java.nio.file.Files.deleteIfExists(target);
+    }
+
+    @Override
     public String uploadFile(String path, java.io.InputStream in, long size) throws Exception {
         Path target = Paths.get(BASE_DIR).toAbsolutePath().normalize().resolve(path).normalize();
         if (!target.startsWith(Paths.get(BASE_DIR).toAbsolutePath().normalize())) {

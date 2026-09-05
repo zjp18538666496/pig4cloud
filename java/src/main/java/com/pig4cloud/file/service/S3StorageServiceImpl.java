@@ -6,6 +6,7 @@ import io.minio.GetObjectArgs;
 import io.minio.GetObjectResponse;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,14 @@ public class S3StorageServiceImpl implements StorageService {
                 .stream(in, size, -1)
                 .build());
         return "/" + stripLeadingSlash(path);
+    }
+
+    @Override
+    public void deleteFile(String path) throws Exception {
+        minioClient.removeObject(RemoveObjectArgs.builder()
+                .bucket(properties.getBucket())
+                .object(stripLeadingSlash(path))
+                .build());
     }
 
     @Override

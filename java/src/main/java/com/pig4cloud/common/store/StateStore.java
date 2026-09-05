@@ -9,6 +9,12 @@ import java.util.Set;
 public interface StateStore {
 
     /**
+     * 统一键前缀：与共用Redis的其它系统隔离（缓存监控/排查时一眼可辨）
+     */
+    String PREFIX = "pigx:";
+
+
+    /**
      * 写入键值
      *
      * @param ttlMillis 过期毫秒数；&lt;=0表示不过期

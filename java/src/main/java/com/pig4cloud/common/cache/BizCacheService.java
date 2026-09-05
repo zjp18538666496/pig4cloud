@@ -2,7 +2,11 @@ package com.pig4cloud.common.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -20,7 +24,10 @@ import java.util.function.Supplier;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class BizCacheService {
+
+    public static final String CHANNEL = "pigx:cache-evict";
 
     private final Cache<String, Object> menuCache = Caffeine.newBuilder()
             .expireAfterWrite(Duration.ofMinutes(10))
@@ -31,6 +38,11 @@ public class BizCacheService {
             .expireAfterWrite(Duration.ofMinutes(10))
             .maximumSize(200)
             .build();
+
+    private final ObjectProvider<StringRedisTemplate> redisTemplateProvider;
+
+    @Value("${app.store.type:memory}")
+    private String storeType;
 
     /**
      * 读穿透获取
@@ -44,14 +56,49 @@ public class BizCacheService {
         return (T) brandCache.get(key, k -> loader.get());
     }
 
+    /**
+     * 菜单缓存失效：本机立即失效 + redis模式广播其它实例（多实例严格一致）
+     */
     public void evictMenus() {
-        menuCache.invalidateAll();
-        log.debug("菜单缓存已全量失效");
+        evictMenusLocal();
+        broadcastEvict();
     }
 
     public void evictBrands() {
+        evictBrandsLocal();
+        broadcastEvict();
+    }
+
+    void evictMenusLocal() {
+        menuCache.invalidateAll();
+        log.debug("菜单缓存已全量失效(本机)");
+    }
+
+    void evictBrandsLocal() {
         brandCache.invalidateAll();
-        log.debug("租户品牌缓存已全量失效");
+        log.debug("租户品牌缓存已全量失效(本机)");
+    }
+
+    /**
+     * 订阅器收到广播后的本机失效（不含再次广播，redis pub/sub会回送发布者自身，重复失效无害）
+     */
+    public void evictAllLocal() {
+        evictMenusLocal();
+        evictBrandsLocal();
+    }
+
+    private void broadcastEvict() {
+        if (!"redis".equals(storeType)) {
+            return;
+        }
+        StringRedisTemplate redis = redisTemplateProvider.getIfAvailable();
+        if (redis != null) {
+            try {
+                redis.convertAndSend(CHANNEL, "all");
+            } catch (Exception ex) {
+                log.warn("缓存失效广播失败（其它实例将在TTL后一致）: {}", ex.getMessage());
+            }
+        }
     }
 
     /**

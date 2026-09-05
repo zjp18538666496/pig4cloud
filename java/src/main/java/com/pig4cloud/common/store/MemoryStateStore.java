@@ -19,20 +19,24 @@ public class MemoryStateStore implements StateStore {
 
     private final Map<String, Entry> store = new ConcurrentHashMap<>();
 
+    private String k(String key) {
+        return PREFIX + key;
+    }
+
     @Override
     public void put(String key, String value, long ttlMillis) {
         long expireAt = ttlMillis > 0 ? System.currentTimeMillis() + ttlMillis : 0L;
-        store.put(key, new Entry(value, expireAt));
+        store.put(k(key), new Entry(value, expireAt));
     }
 
     @Override
     public String get(String key) {
-        Entry entry = store.get(key);
+        Entry entry = store.get(k(key));
         if (entry == null) {
             return null;
         }
         if (entry.expireAt > 0 && entry.expireAt <= System.currentTimeMillis()) {
-            store.remove(key);
+            store.remove(k(key));
             return null;
         }
         return entry.value;
@@ -40,7 +44,7 @@ public class MemoryStateStore implements StateStore {
 
     @Override
     public void delete(String key) {
-        store.remove(key);
+        store.remove(k(key));
     }
 
     @Override
@@ -52,7 +56,7 @@ public class MemoryStateStore implements StateStore {
     public long increment(String key, long ttlMillis) {
         synchronized (this) {
             long value;
-            Entry entry = store.get(key);
+            Entry entry = store.get(k(key));
             if (entry != null && (entry.expireAt <= 0 || entry.expireAt > System.currentTimeMillis())) {
                 value = Long.parseLong(entry.value) + 1;
             } else {
@@ -79,7 +83,7 @@ public class MemoryStateStore implements StateStore {
         Set<String> result = new java.util.LinkedHashSet<>();
         store.forEach((key, entry) -> {
             if (key.startsWith(prefix) && (entry.expireAt <= 0 || entry.expireAt > System.currentTimeMillis())) {
-                result.add(key);
+                result.add(key.startsWith(PREFIX) ? key.substring(PREFIX.length()) : key);
             }
         });
         return result;
