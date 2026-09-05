@@ -55,6 +55,7 @@ public class ApiKeyService {
         }
         entity.setId(null);
         entity.setApi_key(generateKey());
+        entity.setApi_secret(generateKey() + generateKey());
         entity.setStatus(StringUtils.hasText(entity.getStatus()) ? entity.getStatus() : "1");
         entity.setCreate_by(SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getName() : null);
@@ -115,6 +116,13 @@ public class ApiKeyService {
 
     public int rateLimit() {
         return configService.getInt("openapi.rate-limit", 60);
+    }
+
+    /**
+     * 鉴权模式：simple(仅X-Api-Key) | hmac(强制签名) | both(默认，带签名头走签名，否则simple)
+     */
+    public String authMode() {
+        return configService.getValue("openapi.auth-mode", "both");
     }
 
     private String generateKey() {

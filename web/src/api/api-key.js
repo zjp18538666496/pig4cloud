@@ -21,3 +21,10 @@ export function updateApiKey(data) {
 export function delApiKey(data) {
     return service({ url: '/apikey/del', method: 'post', data })
 }
+
+/**
+ * 调用日志分页查询（按Key/时间范围/结果过滤）
+ */
+export function getApiKeyLogs(data) {
+    return service({ url: '/apikey/getLogs', method: 'post', data })
+}

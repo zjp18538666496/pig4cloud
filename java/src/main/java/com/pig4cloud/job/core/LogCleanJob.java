@@ -2,6 +2,7 @@ package com.pig4cloud.job.core;
 
 import com.pig4cloud.config.service.ConfigService;
 import com.pig4cloud.log.entity.LoginLog;
+import com.pig4cloud.log.entity.OpenApiLog;
 import com.pig4cloud.log.entity.OperateLog;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,8 @@ public class LogCleanJob implements JobHandler {
                 new Query(Criteria.where("createTime").lt(cutoff)), OperateLog.class).getDeletedCount();
         long login = mongoTemplate.remove(
                 new Query(Criteria.where("createTime").lt(cutoff)), LoginLog.class).getDeletedCount();
-        log.info("日志清理完成：操作日志{}条，登录日志{}条（保留{}天）", operate, login, retentionDays);
+        long openApi = mongoTemplate.remove(
+                new Query(Criteria.where("createTime").lt(cutoff)), OpenApiLog.class).getDeletedCount();
+        log.info("日志清理完成：操作日志{}条，登录日志{}条，OpenAPI调用日志{}条（保留{}天）", operate, login, openApi, retentionDays);
     }
 }

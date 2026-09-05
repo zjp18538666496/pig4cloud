@@ -23,7 +23,7 @@
 - **系统管理**：字典管理、参数配置（密码策略/锁定阈值/日志保留/脱敏等即时生效）、定时任务管理（cron调度/手动执行/执行日志，内置基于StateStore的分布式周期锁，多实例不重复执行）
 - **日志审计**：操作日志与登录日志（MongoDB，按租户隔离+超管全局视图，支持Excel导出、保留期自动清理）
 - **Excel导入导出**：用户列表导出/模板下载/批量导入（逐行校验报告）、弱口令字典校验（可开关）
-- **开放能力**：Open API（API Key授权范围/限流/过期，`/api/open/v1` 对外查询用户与公告）、代码生成器（读表结构生成CRUD，预览/下载）
+- **开放能力**：Open API（API Key授权范围/限流/过期，HMAC-SHA256签名+时间戳+Nonce防重放，调用明细落库可查，`/api/open/v1` 对外查询用户与公告）、代码生成器（读表结构生成CRUD，预览/下载）
 - **可观测性**：监控中心（JVM/系统概览）、健康自检、全局搜索、数据大屏（ECharts）、登录IP归属地（ip2region离线解析，不依赖外网）
 - **文件存储**：local（本地）/ftp/s3（MinIO等S3兼容对象存储）三种存储按`app.storage.type`一键切换，业务代码零改动
 - **个人中心**：自己的登录/操作日志、在线会话查看与踢出
@@ -113,6 +113,42 @@ com.pig4cloud
 - 权限点=角色编码（如`root`）+ 按钮菜单的权限标识（`sys_menu.perms`，如`user:remove`），登录时随用户信息下发：后端接口用 `@PreAuthorize("hasAuthority('user:remove')")` 控制，前端按钮用 `v-permission="['user:remove']"` 控制；注册接口 `/api/user/register` 无需登录。
 - 前端动态路由只接受 `sys_menu.component_path` 指向 `/views` 下真实存在的组件（白名单）。
 - 一次性状态（在线会话/验证码/失败锁定/token黑名单/IP限流）统一走 `StateStore` 抽象，memory/redis 可切换，详见上文「状态存储与多实例」。
+
+## Open API签名调用
+
+开放接口 `/api/open/v1/**` 支持两种鉴权方式（配置项 `openapi.auth-mode`：`both`默认/`simple`/`hmac`）：
+
+- **simple**：请求头只带 `X-Api-Key`（兼容老接入方）
+- **hmac（推荐）**：请求头携带 `X-Api-Key` + `X-Timestamp`（毫秒） + `X-Nonce`（随机串） + `X-Signature`，服务端校验时间窗（`openapi.sign-window-seconds`，默认±300秒）、nonce防重放（窗口内同Key同Nonce仅一次，走StateStore，多实例切redis即全集群生效）与签名比对（常量时间）
+
+签名算法：HMAC-SHA256，密钥为创建密钥时返回的**Secret**（仅展示一次），签名原文逐行`
+`拼接：
+
+```
+HTTP_METHOD + "
+" +
+path + "?" + 按参数名字典序排序的query + "
+" +    # 无query只拼path
+X-Api-Key + "
+" +
+X-Timestamp + "
+" +
+X-Nonce
+```
+
+curl示例：
+
+```bash
+TS=$(date +%s%3N); NONCE=$(uuidgen); KEY=ak_xxx; SECRET=sk_xxx
+SIGN=$(printf 'GET
+/api/open/v1/users?page=1
+%s
+%s
+%s' "$KEY" "$TS" "$NONCE"   | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
+curl -H "X-Api-Key: $KEY" -H "X-Timestamp: $TS" -H "X-Nonce: $NONCE" -H "X-Signature: $SIGN"   'http://127.0.0.1:9000/api/open/v1/users?page=1'
+```
+
+调用明细（接口/结果/耗时/IP归属地/失败原因）异步落MongoDB `open_api_log`，管理端密钥列表点"调用日志"查看，随`log.retention-days`自动清理。
 
 ## 多租户
 

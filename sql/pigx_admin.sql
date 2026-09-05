@@ -704,6 +704,7 @@ CREATE TABLE IF NOT EXISTS `sys_api_key`  (
   `app_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '接入方名称',
   `api_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'API Key(请求头X-Api-Key)',
   `scopes` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '授权范围(逗号分隔,如user:read,notice:read)',
+  `api_secret` varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '签名密钥(HMAC-SHA256,仅创建时返回一次)',
   `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '状态(0停用1启用)',
   `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
   `expire_time` datetime NULL DEFAULT NULL COMMENT '过期时间(空为永不过期)',

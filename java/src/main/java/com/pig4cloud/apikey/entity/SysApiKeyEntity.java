@@ -35,6 +35,11 @@ public class SysApiKeyEntity {
     private String scopes;
 
     /**
+     * 签名密钥（HMAC-SHA256用，仅创建时返回一次；simple模式可不使用）
+     */
+    private String api_secret;
+
+    /**
      * 状态(0停用1启用)
      */
     private String status;

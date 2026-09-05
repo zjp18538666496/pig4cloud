@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { createApiKey, delApiKey, getApiKeyLists, updateApiKey } from '@/api/api-key.js'
+import { createApiKey, delApiKey, getApiKeyLists, getApiKeyLogs, updateApiKey } from '@/api/api-key.js'
 
 /**
  * Open API密钥管理（仅超管）：创建时完整密钥只展示一次
@@ -64,7 +64,7 @@ const save = () => {
         action(dialog.form).then((res) => {
             if (res?.code === 200) {
                 if (dialog.type === 'create' && res.data?.api_key) {
-                    showKeyOnce(res.data.api_key)
+                    showKeyOnce(res.data.api_key, res.data.api_secret)
                 } else {
                     ElMessage.success(res.message || '保存成功')
                 }
@@ -77,13 +77,41 @@ const save = () => {
     })
 }
 
-const showKeyOnce = (key) => {
+const showKeyOnce = (key, secret) => {
     ElMessageBox.alert(
-        `<div style="word-break:break-all;font-family:monospace;font-size:15px;user-select:all">${key}</div>` +
-        '<div style="margin-top:8px;color:#f53f3f;font-size:12px">密钥仅展示这一次，请立即复制保存！调用方式：请求头 X-Api-Key</div>',
+        `<div style="word-break:break-all;font-family:monospace;font-size:15px;user-select:all">Key: ${key}</div>` +
+        `<div style="word-break:break-all;font-family:monospace;font-size:15px;user-select:all;margin-top:6px">Secret: ${secret || '（未生成，simple模式调用无需Secret）'}</div>` +
+        '<div style="margin-top:8px;color:#f53f3f;font-size:12px">Key与Secret仅展示这一次，请立即复制保存！' +
+        'simple模式：请求头携带X-Api-Key即可；hmac签名模式：另需X-Timestamp/X-Nonce/X-Signature（HMAC-SHA256，签名串详见README）</div>',
         '密钥创建成功',
         { dangerouslyUseHTMLString: true, confirmButtonText: '我已保存', type: 'warning' },
     )
+}
+
+/**
+ * 调用日志抽屉
+ */
+const logDrawer = reactive({ visible: false, rows: [], total: 0, loading: false,
+    query: { keyId: null, success: null, page: 1, pageSize: 10 } })
+
+const openLogs = (row) => {
+    logDrawer.query.keyId = row.id
+    logDrawer.query.success = null
+    logDrawer.query.page = 1
+    logDrawer.visible = true
+    loadLogs()
+}
+
+const loadLogs = () => {
+    logDrawer.loading = true
+    getApiKeyLogs(logDrawer.query).then((res) => {
+        if (res?.code === 200) {
+            logDrawer.rows = res.data.rows
+            logDrawer.total = res.data.total
+        }
+    }).finally(() => {
+        logDrawer.loading = false
+    })
 }
 
 const copyKey = (key) => {
@@ -141,8 +169,9 @@ const handleDelete = (row) => {
             <el-table-column prop="last_used_time" label="最后调用" width="170" align="center">
                 <template #default="scope">{{ scope.row.last_used_time || '从未调用' }}</template>
             </el-table-column>
-            <el-table-column label="操作" width="150" align="center">
+            <el-table-column label="操作" width="200" align="center">
                 <template #default="scope">
+                    <el-button size="small" type="primary" link @click="openLogs(scope.row)">调用日志</el-button>
                     <el-button size="small" type="primary" link v-permission="['apikey:manage']" @click="openDialog('edit', scope.row)">编辑</el-button>
                     <el-button size="small" type="danger" link v-permission="['apikey:manage']" @click="handleDelete(scope.row)">删除</el-button>
                 </template>
@@ -180,13 +209,49 @@ const handleDelete = (row) => {
                 <el-form-item label="备注">
                     <el-input v-model="dialog.form.remark" type="textarea" :rows="2" maxlength="255" />
                 </el-form-item>
-                <el-alert type="info" :closable="false" title="调用方式：GET /api/open/v1/users、/api/open/v1/notices，请求头携带 X-Api-Key；可用scope：user:read、notice:read" />
+                <el-alert type="info" :closable="false"
+                    title="调用方式：GET /api/open/v1/users、/api/open/v1/notices，请求头携带 X-Api-Key；可用scope：user:read、notice:read。默认both模式，请求头额外携带X-Timestamp/X-Nonce/X-Signature即自动启用HMAC验签（防冒充/防重放）" />
             </el-form>
             <template #footer>
                 <el-button @click="dialog.visible = false">取消</el-button>
                 <el-button type="primary" @click="save">保存</el-button>
             </template>
         </el-dialog>
+
+        <el-drawer v-model="logDrawer.visible" title="Open API调用日志" size="900">
+            <div class="flex items-center gap-10px mb-10px">
+                <el-select v-model="logDrawer.query.success" placeholder="全部结果" clearable style="width: 120px" @change="logDrawer.query.page = 1; loadLogs()">
+                    <el-option label="成功" :value="true" />
+                    <el-option label="失败" :value="false" />
+                </el-select>
+                <el-button @click="loadLogs">刷新</el-button>
+            </div>
+            <el-table :data="logDrawer.rows" border size="small" v-loading="logDrawer.loading">
+                <el-table-column prop="createTime" label="时间" width="165" />
+                <el-table-column prop="appName" label="接入方" width="110" show-overflow-tooltip />
+                <el-table-column prop="method" label="方式" width="60" align="center" />
+                <el-table-column prop="path" label="接口" min-width="150" show-overflow-tooltip />
+                <el-table-column prop="query" label="参数" min-width="120" show-overflow-tooltip />
+                <el-table-column label="结果" width="70" align="center">
+                    <template #default="scope">
+                        <el-tag :type="scope.row.success ? 'success' : 'danger'" size="small">{{ scope.row.success ? '成功' : '失败' }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="message" label="失败原因" min-width="110" show-overflow-tooltip />
+                <el-table-column prop="ip" label="来源IP" width="120" />
+                <el-table-column prop="region" label="归属地" width="130" show-overflow-tooltip />
+                <el-table-column prop="costMs" label="耗时(ms)" width="80" align="center" />
+            </el-table>
+            <el-pagination
+                class="mt-10px flex justify-end"
+                v-model:current-page="logDrawer.query.page"
+                v-model:page-size="logDrawer.query.pageSize"
+                :background="true"
+                layout="total, prev, pager, next"
+                :total="logDrawer.total"
+                @current-change="loadLogs"
+            />
+        </el-drawer>
     </div>
 </template>
 

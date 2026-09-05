@@ -2,9 +2,13 @@ package com.pig4cloud.apikey.controller;
 
 import com.pig4cloud.apikey.entity.SysApiKeyEntity;
 import com.pig4cloud.apikey.service.ApiKeyService;
+import com.pig4cloud.common.dto.BasePageQuery;
 import com.pig4cloud.common.result.PageResult;
+import com.pig4cloud.log.service.OpenApiLogService;
 import com.pig4cloud.common.result.R;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiKeyController {
 
     private final ApiKeyService apiKeyService;
+    private final OpenApiLogService openApiLogService;
 
     @PostMapping("/getLists")
     @PreAuthorize("hasAuthority('apikey:manage')")
@@ -37,6 +42,32 @@ public class ApiKeyController {
     @PreAuthorize("hasAuthority('apikey:manage')")
     public R<Void> update(@RequestBody SysApiKeyEntity entity) {
         return apiKeyService.update(entity);
+    }
+
+    /**
+     * 调用日志分页查询（按Key/时间范围/结果过滤）
+     */
+    @PostMapping("/getLogs")
+    @PreAuthorize("hasAuthority('apikey:manage')")
+    public R<PageResult<com.pig4cloud.log.entity.OpenApiLog>> getLogs(@RequestBody LogQueryDto dto) {
+        return R.ok("获取数据成功", openApiLogService.pageQuery(
+                dto.getKeyId(), dto.getSuccess(), dto.getStartTime(), dto.getEndTime(),
+                dto.getPage(), dto.getPageSize()));
+    }
+
+    @Getter
+    @Setter
+    public static class LogQueryDto extends BasePageQuery {
+        private Integer keyId;
+        private Boolean success;
+        /**
+         * 开始时间（毫秒时间戳，空为不限）
+         */
+        private Long startTime;
+        /**
+         * 结束时间（毫秒时间戳，空为不限）
+         */
+        private Long endTime;
     }
 
     @PostMapping("/del")
