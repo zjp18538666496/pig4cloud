@@ -53,7 +53,7 @@ public class ReauthAspect {
         }
         if (!pass) {
             log.warn("二次认证未通过：user={}, uri={}", username, attributes.getRequest().getRequestURI());
-            throw new BizException(403, "二次认证失败：请携带当前登录账号密码（请求头X-Reauth-Password）");
+            throw new BizException(403, com.pig4cloud.common.i18n.I18nMessage.get("reauth.failed"));
         }
     }
 }

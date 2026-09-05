@@ -49,3 +49,15 @@ export function updateTenant(data) {
         data,
     })
 }
+
+/**
+ * 删除租户（敏感操作：headers需携带X-Reauth-Password做二次认证）
+ */
+export function delTenant(data, headers) {
+    return service({
+        url: '/tenant/delTenant',
+        method: 'post',
+        data,
+        headers,
+    })
+}

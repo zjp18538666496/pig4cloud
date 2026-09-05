@@ -1,15 +1,17 @@
 <script setup>
 import { Lock, User } from '@element-plus/icons-vue'
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/login.js'
 import { useUserInfoStore } from '@/stores/user-info.js'
 import { getCaptcha, resetPasswordByEmail, sendResetCode } from '@/api/auth.js'
 import { getPolicy } from '@/api/config.js'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import service from '@/utils/request.js'
 import { VerifyUser } from '@/utils/vali.js'
 
 const router = useRouter()
+const route = useRoute()
 let loading = ref(false)
 const verifyUser = new VerifyUser()
 
@@ -41,6 +43,15 @@ const loadCaptcha = () => {
 }
 loadCaptcha()
 
+// OIDC回跳：带ticket时自动换登录态；带ssoError时提示
+onMounted(() => {
+    if (route.query.ticket) {
+        exchangeSsoTicket()
+    } else if (route.query.ssoError) {
+        ElMessage.error(String(route.query.ssoError))
+    }
+})
+
 /**
  * 密码登录
  */
@@ -63,6 +74,15 @@ const login1 = () => {
             } else {
                 ElMessage.error(`登录失败！${res?.message || '用户信息获取失败'}`)
                 loadCaptcha()
+
+// OIDC回跳：带ticket时自动换登录态；带ssoError时提示
+onMounted(() => {
+    if (route.query.ticket) {
+        exchangeSsoTicket()
+    } else if (route.query.ssoError) {
+        ElMessage.error(String(route.query.ssoError))
+    }
+})
             }
         })
         .catch((error) => {
@@ -74,6 +94,15 @@ const login1 = () => {
             }
             ElMessage.error(`登录失败！${error?.message} (${error?.code})`)
             loadCaptcha()
+
+// OIDC回跳：带ticket时自动换登录态；带ssoError时提示
+onMounted(() => {
+    if (route.query.ticket) {
+        exchangeSsoTicket()
+    } else if (route.query.ssoError) {
+        ElMessage.error(String(route.query.ssoError))
+    }
+})
         })
         .finally(() => {
             loading.value = false
@@ -103,6 +132,86 @@ const ruleForm = reactive({
 
 // 两步认证：code=1001表示需要动态码
 const showTotp = ref(false)
+
+/**
+ * 短信登录：loginType=password(默认)|sms；sms开启需后端app.sms.enabled
+ */
+const loginType = ref('password')
+const smsForm = reactive({ mobile: '', smsCode: '' })
+const smsSending = ref(false)
+const smsCountdown = ref(0)
+let smsTimer = null
+const sendSmsCode = () => {
+    if (!/^1[3-9][0-9]{9}$/.test(smsForm.mobile)) {
+        ElMessage.error('请输入正确的手机号')
+        return
+    }
+    smsSending.value = true
+    service({ url: '/auth/sms/send', method: 'post', data: { mobile: smsForm.mobile } })
+        .then((res) => {
+            if (res?.code === 200) {
+                ElMessage.success(res.message || '验证码已发送')
+                smsCountdown.value = 60
+                smsTimer = setInterval(() => {
+                    smsCountdown.value--
+                    if (smsCountdown.value <= 0) clearInterval(smsTimer)
+                }, 1000)
+                if (res.data) {
+                    ElMessage.info('后端为mock模式，验证码：' + res.data)
+                }
+            } else {
+                ElMessage.error(res?.message || '发送失败')
+            }
+        })
+        .finally(() => { smsSending.value = false })
+}
+const smsLogin = () => {
+    if (!/^1[3-9][0-9]{9}$/.test(smsForm.mobile)) { ElMessage.error('请输入正确的手机号'); return }
+    if (!smsForm.smsCode) { ElMessage.error('请输入短信验证码'); return }
+    loading.value = true
+    login({ username: smsForm.mobile, password: '', smsCode: smsForm.smsCode })
+        .then(async (res) => {
+            if (res?.code === 200 && res.data) {
+                ElMessage({ message: '登录成功', type: 'success' })
+                localStorage.setItem('userinfo', JSON.stringify(res.data))
+                useUserInfoStore().brand = res.data.brand || null
+                await router.push('/')
+            } else {
+                ElMessage.error(`登录失败！${res?.message || ''}`)
+            }
+        })
+        .catch((error) => ElMessage.error(`登录失败！${error?.message || ''}`))
+        .finally(() => { loading.value = false })
+}
+
+/**
+ * OIDC单点登录：后端开启时显示SSO按钮，点击跳转授权地址
+ */
+const ssoEnabled = ref(false)
+service({ url: '/auth/oidc/config', method: 'get' }).then((res) => {
+    if (res?.code === 200 && res.data?.enabled) ssoEnabled.value = true
+})
+const gotoSso = () => { window.location.href = '/api/auth/oidc/login' }
+
+/**
+ * OIDC回跳票据：一次性ticket换登录态（与密码登录同构）
+ */
+const exchangeSsoTicket = () => {
+    loading.value = true
+    service({ url: '/auth/oidc/exchange', method: 'get', params: { ticket: route.query.ticket } })
+        .then(async (res) => {
+            if (res?.code === 200 && res.data) {
+                ElMessage({ message: '登录成功', type: 'success' })
+                localStorage.setItem('userinfo', JSON.stringify(res.data))
+                useUserInfoStore().brand = res.data.brand || null
+                await router.replace('/')
+            } else {
+                ElMessage.error(res?.message || 'SSO登录失败')
+            }
+        })
+        .catch((error) => ElMessage.error(error?.message || 'SSO登录失败'))
+        .finally(() => { loading.value = false })
+}
 
 const rules = reactive({
     username: [{ validator: verifyUser.username, trigger: 'blur' }],
@@ -223,12 +332,27 @@ const resetForgotForm = () => {
 
 <template>
     <el-form ref="ruleFormRef" :model="ruleForm" status-icon :rules="rules" label-width="auto" class="demo-ruleForm max-w-400px">
-        <el-form-item prop="username">
-            <el-input :prefix-icon="User" v-model="ruleForm.username" placeholder="请输入用户名" size="large" type="text" autocomplete="off" clearable />
-        </el-form-item>
-        <el-form-item prop="password">
-            <el-input :prefix-icon="Lock" v-model="ruleForm.password" placeholder="请输入用密码" size="large" type="password" autocomplete="off" show-password />
-        </el-form-item>
+        <template v-if="loginType === 'password'">
+            <el-form-item prop="username">
+                <el-input :prefix-icon="User" v-model="ruleForm.username" placeholder="请输入用户名" size="large" type="text" autocomplete="off" clearable />
+            </el-form-item>
+            <el-form-item prop="password">
+                <el-input :prefix-icon="Lock" v-model="ruleForm.password" placeholder="请输入用密码" size="large" type="password" autocomplete="off" show-password />
+            </el-form-item>
+        </template>
+        <template v-else>
+            <el-form-item>
+                <el-input v-model="smsForm.mobile" placeholder="请输入手机号" size="large" clearable @keyup.enter="smsLogin" />
+            </el-form-item>
+            <el-form-item>
+                <div class="flex gap-10px w-100%">
+                    <el-input v-model="smsForm.smsCode" placeholder="短信验证码" size="large" @keyup.enter="smsLogin" />
+                    <el-button :loading="smsSending" :disabled="smsCountdown > 0" @click="sendSmsCode">
+                        {{ smsCountdown > 0 ? `${smsCountdown}s后重发` : '发送验证码' }}
+                    </el-button>
+                </div>
+            </el-form-item>
+        </template>
         <el-form-item v-if="policy.captchaEnabled" prop="captchaCode">
             <div class="flex gap-10px w-100%">
                 <el-input v-model="ruleForm.captchaCode" placeholder="请输入验证码" size="large" type="text" autocomplete="off" @keyup.enter="submitForm(ruleFormRef)" />
@@ -243,11 +367,16 @@ const resetForgotForm = () => {
             </el-input>
         </el-form-item>
         <el-form-item class="pointer">
-            <el-button :loading="loading" class="submitForm" size="large" type="primary" @click="submitForm(ruleFormRef)"> 登 录 </el-button>
+            <el-button v-if="loginType === 'password'" :loading="loading" class="submitForm" size="large" type="primary" @click="submitForm(ruleFormRef)"> 登 录 </el-button>
+            <el-button v-else :loading="loading" class="submitForm" size="large" type="primary" @click="smsLogin"> 登 录 </el-button>
         </el-form-item>
         <div class="rest">
-            <div @click="openForgot">忘记密码</div>
-            <div @click="registration">注册账号</div>
+            <div @click="loginType = loginType === 'password' ? 'sms' : 'password'">
+                {{ loginType === 'password' ? '短信验证码登录' : '密码登录' }}
+            </div>
+            <div v-if="ssoEnabled" @click="gotoSso">SSO登录</div>
+            <div v-if="loginType === 'password'" @click="openForgot">忘记密码</div>
+            <div v-if="loginType === 'password'" @click="registration">注册账号</div>
         </div>
     </el-form>
 

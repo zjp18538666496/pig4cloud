@@ -37,6 +37,7 @@
             <el-table-column label="操作" width="140" align="center">
                 <template #default="scope">
                     <el-button v-permission="['tenant:manage']" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+                    <el-button v-permission="['tenant:manage']" size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -102,8 +103,9 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { createTenant, getTenantLists, updateTenant } from '@/api/tenant.js'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { createTenant, delTenant, getTenantLists, updateTenant } from '@/api/tenant.js'
+import { confirmReauth } from '@/utils/reauth.js'
 import { getEnabledPackages } from '@/api/package.js'
 
 const tenantTable = reactive({
@@ -168,6 +170,24 @@ const openCreate = () => {
     dialog.form = { id: null, tenant_code: '', tenant_name: '', status: '1', package_id: null, expire_time: null, user_limit: null, brand_name: '', brand_logo: '', brand_color: '' }
     loadPackages()
     dialog.visible = true
+}
+
+// 删除租户（敏感操作：需二次认证输入当前登录密码）
+const handleDelete = (row) => {
+    ElMessageBox.confirm(`删除租户【${row.tenant_name}】不可恢复且级联清理数据，确定继续吗？`, '高危操作', {
+        confirmButtonText: '下一步',
+        cancelButtonText: '取消',
+        type: 'warning',
+    }).then(() => confirmReauth('请输入当前登录账号密码，确认删除租户'))
+        .then((headers) => delTenant({ id: row.id }, headers))
+        .then((res) => {
+            if (res?.code === 200) {
+                ElMessage.success('删除成功')
+                getTenantList()
+            } else {
+                ElMessage.error(res?.message || '删除失败')
+            }
+        }).catch(() => { })
 }
 
 const handleEdit = (row) => {

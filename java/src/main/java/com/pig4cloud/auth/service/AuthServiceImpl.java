@@ -114,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
             return issueLogin(user, authorities, ip, userAgent, request.getUsername(), "登录成功");
         } catch (AuthenticationException ex) {
             loginAttemptService.recordFailure(request.getUsername());
-            String message = ex instanceof BadCredentialsException ? "用户名或密码不正确" : ex.getMessage();
+            String message = ex instanceof BadCredentialsException ? com.pig4cloud.common.i18n.I18nMessage.get("login.wrong-credentials") : ex.getMessage();
             saveLoginLog(request.getUsername(), ip, resolveTenantId(request.getUsername()), false, message);
             throw ex;
         } catch (BizException ex) {
@@ -379,7 +379,7 @@ public class AuthServiceImpl implements AuthService {
             return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                     username, null, userDetails.getAuthorities());
         } catch (org.springframework.security.core.userdetails.UsernameNotFoundException ex) {
-            throw new BadCredentialsException("账号不存在");
+            throw new BadCredentialsException(com.pig4cloud.common.i18n.I18nMessage.get("login.account-missing"));
         }
     }
 

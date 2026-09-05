@@ -3,7 +3,8 @@ import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EditUser from '@/views/user-manager/components/EditUser.vue'
 import { debounce } from '@/utils/utils.js'
-import { createUser, delUser, downloadImportTemplate, exportUsers, getUserLists, importUsers, updateUser } from '@/api/user.js'
+import { createUser, delUser, downloadImportTemplate, getUserLists, importUsers, updateUser } from '@/api/user.js'
+import { submitUserExport } from '@/api/export.js'
 import { impersonate } from '@/api/auth.js'
 import { getDeptTree } from '@/api/dept.js'
 import { getTenantLists } from '@/api/tenant.js'
@@ -110,12 +111,13 @@ const downloadBlob = (blob, filename) => {
     URL.revokeObjectURL(url)
 }
 
+// 异步导出：提交任务后到“导出中心”下载
 const handleExport = () => {
-    exportUsers(userTable.value.query).then((res) => {
-        if (res instanceof Blob) {
-            downloadBlob(res, '用户列表.xlsx')
+    submitUserExport(userTable.value.query).then((res) => {
+        if (res?.code === 200) {
+            ElMessage.success(res.message || '导出任务已提交')
         } else {
-            ElMessage.error('导出失败，请重试')
+            ElMessage.error(res?.message || '提交失败')
         }
     })
 }
