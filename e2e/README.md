@@ -22,4 +22,3 @@ node e2e/api-smoke.mjs
    - 监控：`GET /api/monitor/overview`
    - Open API：管理端建 Key → 带 `X-Api-Key` 调 `/api/open/v1/users`
    - 回收站：删用户 → `GET /api/recycle/getLists` 应包含 → restore 后可登录
-   - 审批：普通用户 `POST /api/approval/apply` → 审批人 `GET /api/approval/pending` → `complete` → 角色已绑定
