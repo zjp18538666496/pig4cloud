@@ -17,3 +17,8 @@ export function getDashboardStats() {
 export function getTenantReport() {
     return service({ url: '/stats/tenantReport', method: 'get' })
 }
+
+// 大屏总览（登录趋势/审批量/通知送达率）
+export function getScreenSummary() {
+    return service({ url: '/stats/screenSummary', method: 'get' })
+}

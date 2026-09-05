@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
+import { applyChartTheme, onThemeChange } from '@/utils/chartTheme.js'
 import { getDashboardStats } from '@/api/stats.js'
 
 /**
@@ -48,7 +49,7 @@ const renderChart = () => {
         chart = echarts.init(chartRef.value)
     }
     const trend = stats.value.loginTrend || []
-    chart.setOption({
+    const option = applyChartTheme({
         tooltip: { trigger: 'axis' },
         grid: { left: 40, right: 20, top: 30, bottom: 30 },
         xAxis: {
@@ -68,9 +69,11 @@ const renderChart = () => {
             },
         ],
     })
+    chart.setOption(option, true)
 }
 
 const handleResize = () => chart && chart.resize()
+let stopThemeWatch = null
 
 const loadStats = () => {
     getDashboardStats().then((res) => {
@@ -82,11 +85,13 @@ const loadStats = () => {
 }
 
 onMounted(() => {
+    stopThemeWatch = onThemeChange(() => renderChart())
     loadStats()
     window.addEventListener('resize', handleResize)
 })
 
 onBeforeUnmount(() => {
+    stopThemeWatch?.()
     window.removeEventListener('resize', handleResize)
     if (chart) {
         chart.dispose()

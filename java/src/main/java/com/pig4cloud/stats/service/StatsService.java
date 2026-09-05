@@ -47,6 +47,7 @@ public class StatsService {
     private final OnlineUserStore onlineUserStore;
     private final NoticeService noticeService;
     private final MongoTemplate mongoTemplate;
+    private final com.pig4cloud.approval.mapper.SysApprovalMapper approvalMapper;
 
     public Map<String, Object> dashboard() {
         Map<String, Object> stats = new LinkedHashMap<>();
@@ -67,6 +68,44 @@ public class StatsService {
         List<NoticeEntity> notices = noticeService.latestPublished(5);
         stats.put("latestNotices", notices);
         return stats;
+    }
+
+    /**
+     * 大屏总览（screen:read）：登录趋势/今日登录/在线/用户/租户 + 审批量统计 + 通知送达率
+     */
+    public Map<String, Object> screenSummary() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        List<Map<String, Object>> trend = loginTrend(7);
+        data.put("loginTrend", trend);
+        data.put("todayLoginCount", trend.isEmpty() ? 0
+                : ((Number) trend.get(trend.size() - 1).get("count")).intValue());
+        data.put("onlineCount", onlineUserStore.count());
+        data.put("userCount", userMapper.selectCount(null));
+        data.put("tenantCount", tenantMapper.selectCount(null));
+        // 审批量（轻量审批）
+        Map<String, Object> approval = new LinkedHashMap<>();
+        approval.put("pending", approvalMapper.selectCount(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.pig4cloud.approval.entity.SysApprovalEntity>()
+                        .eq("status", "0")));
+        approval.put("approved", approvalMapper.selectCount(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.pig4cloud.approval.entity.SysApprovalEntity>()
+                        .eq("status", "1")));
+        approval.put("rejected", approvalMapper.selectCount(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<com.pig4cloud.approval.entity.SysApprovalEntity>()
+                        .eq("status", "2")));
+        data.put("approval", approval);
+        // 通知送达率（notify_log）
+        Map<String, Object> notify = new LinkedHashMap<>();
+        long total = mongoTemplate.count(new org.springframework.data.mongodb.core.query.Query(),
+                com.pig4cloud.notify.entity.NotifyLog.class);
+        long success = mongoTemplate.count(new org.springframework.data.mongodb.core.query.Query(
+                org.springframework.data.mongodb.core.query.Criteria.where("success").is(true)),
+                com.pig4cloud.notify.entity.NotifyLog.class);
+        notify.put("total", total);
+        notify.put("success", success);
+        notify.put("successRate", total == 0 ? "-" : Math.round(success * 1000 / total) / 10.0 + "%");
+        data.put("notify", notify);
+        return data;
     }
 
     /**

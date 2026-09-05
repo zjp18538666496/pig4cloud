@@ -173,6 +173,50 @@ curl -H "X-Api-Key: $KEY" -H "X-Timestamp: $TS" -H "X-Nonce: $NONCE" -H "X-Signa
 
 后端启动后访问 http://localhost:9000/swagger-ui/index.html
 
+## 功能配置项汇总
+
+各功能的开关与配置一览（改参数配置即时生效；环境变量需重启）：
+
+| 功能 | 配置 | 默认 | 说明 |
+|---|---|---|---|
+| 验证码 | `captcha.enabled`（参数配置） | true | 关闭后登录不校验，前端隐藏输入框 |
+| 登录锁定 | `login.max-attempts` / `login.lock-minutes` | 5 / 10 | 同账号连续失败锁定 |
+| IP限流 | `login.ip-window-max` | 30 | 10分钟窗口单IP登录尝试上限 |
+| 2FA | `login.2fa-enabled` / `login.2fa-force-enabled` | true / false | 总开关 / 强制未绑定者登录后引导绑定 |
+| 短信登录 | `app.sms.enabled` / `app.sms.mock`（env SMS_ENABLED/SMS_MOCK） | false / false | mock模式验证码直接回传前端，**生产严禁开启** |
+| LDAP登录 | `app.ldap.enabled`（env LDAP_ENABLED）+ spring.ldap.* | false | sys_user.auth_source='ldap'的账号走LDAP密码校验 |
+| OIDC单点登录 | `app.oidc.*`（env OIDC_*） | false | Keycloak/Casdoor等，先建同名本地账号 |
+| 密码策略 | `pwd.min-length` / `pwd.require-complex` / `pwd.expire-days` 等 | 8 / false / 0 | 注册/创建/改密校验 |
+| 二次认证 | `reauth.enabled`（参数配置） | true | 删租户/重置密码需请求头携带当前登录密码 |
+| 审批 | `approval.assignee`（参数配置） | admin | 审批中心待办审批人账号（站内信通知对象） |
+| 通知渠道 | 界面"通知管理"配置 | 无 | 邮件（需spring.mail.*+MAIL_ENABLED=true）/钉钉/企微/飞书/通用Webhook，支持测试发送 |
+| 日志保留 | `log.retention-days`（参数配置） | 90 | 操作/登录/OpenAPI/通知日志自动清理，0=永久 |
+| 导出文件保留 | `export.retention-days`（参数配置） | 7 | 导出中心文件过保留期自动清理，0=永久 |
+| 备份 | `app.backup.dir`（默认backup/） | backup | 界面"备份管理"手动备份/下载/删除；每日自动可挂定时任务 |
+| 数据权限 | 角色管理 data_scope | 1 | 1本租户全部/2本部门及以下/3仅本人/4自定义部门集 |
+| 文件存储 | `app.storage.type`（env STORAGE_TYPE） | local | local/ftp/s3，S3需配S3_*环境变量 |
+| 弱口令校验 | `pwd.weak-dict-enabled`（参数配置） | true | 拒绝常见弱密码 |
+| 脱敏 | `mask.enabled`（参数配置） | true | 无user:write权限者看到脱敏手机号/邮箱 |
+| 会话限制 | `login.max-sessions-per-user`（参数配置） | 3 | 单账号最大在线设备数，0=不限 |
+
+## 上线前检查清单
+
+- [ ] `JWT_SECRET`：强随机 ≥32字节（`openssl rand -base64 32`），切勿使用示例值
+- [ ] `DB_INIT=false`：关闭首启自动建表灌演示数据
+- [ ] **修改全部默认密码**：admin/root/12345678、各演示租户管理员
+- [ ] `STORE_TYPE=redis`：多实例必配（会话/验证码/任务锁/签名nonce共享）
+- [ ] `SWAGGER_ENABLED=false`：关闭接口文档暴露
+- [ ] `CORS_ORIGINS`：限定为前端实际域名，不用`*`
+- [ ] `captcha.enabled=true`、`login.max-attempts`/`login.lock-minutes` 按安全要求确认
+- [ ] `reauth.enabled=true`：敏感操作二次认证开启
+- [ ] `app.storage.type`：建议s3（MinIO/OSS）；local模式文件在单机，多实例不可共享
+- [ ] 通知渠道：配置钉钉/企微/飞书/邮件并点"测试发送"验证；`approval.assignee`改为实际审批人
+- [ ] 定时任务：确认租户过期检查/日志清理/公告发布任务启用；备份可新增任务每日调BackupService或使用scripts/backup-*.sh
+- [ ] `log.retention-days`/`export.retention-days` 按磁盘容量确认
+- [ ] Nginx：`try_files ... /index.html`不能省；`/api/`与`/ws/`代理齐全；`client_max_body_size`按需
+- [ ] 全站HTTPS
+- [ ] MongoDB/MySQL账号最小权限、内网可达性收敛
+
 ## 生产部署
 
 ### 1. 后端打包（Spring Boot → 可执行jar）

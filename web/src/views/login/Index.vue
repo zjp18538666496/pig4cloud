@@ -46,6 +46,17 @@ const zc = () => {
 }
 </script>
 <style scoped>
+@media (max-width: 768px) {
+    .login_container .background {
+        display: none;
+    }
+
+    .login_container .login-box {
+        padding-left: 0;
+        width: 100vw;
+    }
+}
+
 .login_container {
     display: flex;
     width: 100vw;

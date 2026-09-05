@@ -27,6 +27,15 @@ public class StatsController {
         return R.ok("请求成功", statsService.dashboard());
     }
 
+    /**
+     * 大屏总览（登录趋势/审批量/通知送达率）
+     */
+    @GetMapping("/screenSummary")
+    @PreAuthorize("hasAuthority('screen:read')")
+    public R<Map<String, Object>> screenSummary() {
+        return R.ok("获取数据成功", statsService.screenSummary());
+    }
+
     @GetMapping("/tenantReport")
     @PreAuthorize("hasAuthority('screen:read')")
     public R<List<Map<String, Object>>> tenantReport() {
