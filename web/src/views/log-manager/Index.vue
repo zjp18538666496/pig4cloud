@@ -34,6 +34,12 @@
                     </el-table-column>
                     <el-table-column prop="costMs" label="耗时(ms)" width="85" align="center" />
                     <el-table-column prop="errorMsg" label="失败信息" align="left" show-overflow-tooltip />
+                    <el-table-column label="操作" width="80" align="center">
+                        <template #default="scope">
+                            <el-button v-if="canRollback(scope.row)" size="small" type="warning" link
+                                @click="doRollback(scope.row)">回滚</el-button>
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="diff" label="变更对比" align="left" width="200">
                         <template #default="scope">
                             <el-tooltip v-if="scope.row.diff" :content="scope.row.diff" placement="top">
@@ -104,8 +110,9 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { exportLoginLogs, exportOperateLogs, getLoginLogs, getOperateLogs } from '@/api/log.js'
+import { rollbackOperateLog } from '@/api/log.js'
 
 const activeTab = ref('operate')
 const logTableHeight = window.innerHeight - 50 - 30 - 40 - 90

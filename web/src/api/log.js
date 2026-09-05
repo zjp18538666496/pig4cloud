@@ -39,3 +39,8 @@ export function exportOperateLogs(data) {
 export function exportLoginLogs(data) {
     return service({ url: '/log/exportLoginLogs', method: 'post', data, responseType: 'blob' })
 }
+
+// 操作回滚（基于审计diff还原编辑前的值）
+export function rollbackOperateLog(logId) {
+    return service({ url: '/log/rollback', method: 'post', data: { logId } })
+}

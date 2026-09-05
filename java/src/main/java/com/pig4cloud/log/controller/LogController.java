@@ -10,6 +10,7 @@ import com.pig4cloud.log.entity.OperateLog;
 import com.pig4cloud.log.service.LoginLogService;
 import com.pig4cloud.log.service.OperateLogService;
 import lombok.RequiredArgsConstructor;
+import com.pig4cloud.log.service.RollbackService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +25,7 @@ import java.util.List;
 public class LogController {
 
     private final OperateLogService operateLogService;
+    private final RollbackService rollbackService;
     private final LoginLogService loginLogService;
 
     @PostMapping("/getOperateLogs")
@@ -86,5 +88,14 @@ public class LogController {
                 .head(headers.stream().map(java.util.List::of).collect(java.util.stream.Collectors.toList()))
                 .sheet("sheet1")
                 .doWrite(data);
+    }
+
+    /**
+     * 操作回滚（基于审计diff还原编辑前的值；角色/租户/用户管理的编辑操作）
+     */
+    @PostMapping("/rollback")
+    @PreAuthorize("hasAuthority('log:read')")
+    public R<String> rollback(@org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> body) {
+        return R.ok(rollbackService.rollback(body.get("logId")), null);
     }
 }
