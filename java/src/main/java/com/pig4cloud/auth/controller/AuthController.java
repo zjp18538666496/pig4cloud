@@ -63,6 +63,7 @@ public class AuthController {
         LoginResult result = authService.login(request, clientIp, servletRequest.getHeader("User-Agent"));
         response.setHeader("Authorization", "Bearer " + result.accessToken());
         response.setHeader("Refresh-Token", result.refreshToken());
+        result.user().setBrand(result.brand());
         return R.ok("请求成功", result.user());
     }
 

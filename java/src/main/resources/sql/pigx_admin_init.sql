@@ -218,8 +218,9 @@ INSERT INTO `sys_menu` VALUES (20302, 203, '公告删除', NULL, '1', '2', '3', 
 INSERT INTO `sys_menu` VALUES (204, 2, '在线用户', '/online-manager', '1', '1', '2', '@/views/online-manager/Index.vue', 'online-manager', NULL);
 INSERT INTO `sys_menu` VALUES (20401, 204, '在线查询', NULL, '1', '2', '3', NULL, NULL, 'online:read');
 INSERT INTO `sys_menu` VALUES (20402, 204, '强制下线', NULL, '1', '2', '3', NULL, NULL, 'online:kick');
-INSERT INTO `sys_menu` VALUES (3, 0, '平台管理', '/tenant-manager', '1', '1', '1', '@/views/tenant-manager/Index.vue', 'tenant-manager', NULL);
-INSERT INTO `sys_menu` VALUES (301, 3, '租户管理', NULL, '1', '2', '2', NULL, NULL, 'tenant:manage');
+INSERT INTO `sys_menu` VALUES (3, 0, '平台管理', '/platform', '1', '0', '1', NULL, NULL, NULL);
+INSERT INTO `sys_menu` VALUES (307, 3, '租户管理', '/tenant-manager', '1', '1', '2', '@/views/tenant-manager/Index.vue', 'tenant-manager', NULL);
+INSERT INTO `sys_menu` VALUES (301, 307, '租户管理', NULL, '1', '2', '3', NULL, NULL, 'tenant:manage');
 INSERT INTO `sys_menu` VALUES (302, 3, '租户套餐', '/package-manager', '1', '1', '2', '@/views/package-manager/Index.vue', 'package-manager', NULL);
 INSERT INTO `sys_menu` VALUES (30201, 302, '套餐编辑', NULL, '1', '2', '3', NULL, NULL, 'package:write');
 INSERT INTO `sys_menu` VALUES (30202, 302, '套餐删除', NULL, '1', '2', '3', NULL, NULL, 'package:remove');
@@ -449,6 +450,7 @@ INSERT INTO `role_menu` VALUES (816, 2010502, 103);
 INSERT INTO `role_menu` VALUES (817, 206, 103);
 INSERT INTO `role_menu` VALUES (818, 20601, 103);
 INSERT INTO `role_menu` VALUES (820, 202, 104);
+INSERT INTO `role_menu` VALUES (900, 307, 100);
 INSERT INTO `role_menu` VALUES (821, 20201, 104);
 
 SET FOREIGN_KEY_CHECKS = 1;

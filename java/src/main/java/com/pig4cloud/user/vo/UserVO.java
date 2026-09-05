@@ -38,6 +38,11 @@ public class UserVO {
     private String impersonator;
 
     /**
+     * 租户品牌（仅登录/代理登录响应携带，前端侧边栏跟随展示）
+     */
+    private com.pig4cloud.tenant.dto.TenantBrandVO brand;
+
+    /**
      * 权限点集合（角色编码+按钮操作权限），登录时填充，供前端v-permission使用
      */
     private List<String> permissions;

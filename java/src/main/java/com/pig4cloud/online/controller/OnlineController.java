@@ -86,6 +86,7 @@ public class OnlineController {
         var result = authService.impersonate(dto.getTokenJti().trim(), operator);
         response.setHeader("Authorization", "Bearer " + result.accessToken());
         response.setHeader("Refresh-Token", result.refreshToken());
+        result.user().setBrand(result.brand());
         return R.ok("请求成功", result.user());
     }
 
