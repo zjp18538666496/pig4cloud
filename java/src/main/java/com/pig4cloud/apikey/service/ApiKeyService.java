@@ -55,7 +55,7 @@ public class ApiKeyService {
         }
         entity.setId(null);
         entity.setApi_key(generateKey());
-        entity.setApi_secret(generateKey() + generateKey());
+        entity.setApi_secret(generateSecret());
         entity.setStatus(StringUtils.hasText(entity.getStatus()) ? entity.getStatus() : "1");
         entity.setCreate_by(SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getName() : null);
@@ -129,5 +129,14 @@ public class ApiKeyService {
         byte[] bytes = new byte[20];
         random.nextBytes(bytes);
         return "sk_" + HexFormat.of().formatHex(bytes);
+    }
+
+    /**
+     * 签名密钥：64位hex（32字节），HMAC-SHA256用
+     */
+    private String generateSecret() {
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        return HexFormat.of().formatHex(bytes);
     }
 }
