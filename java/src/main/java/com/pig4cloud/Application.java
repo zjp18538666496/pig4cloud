@@ -25,7 +25,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.pig4cloud.message.mapper",
         "com.pig4cloud.apikey.mapper",
         "com.pig4cloud.recycle.mapper",
-        "com.pig4cloud.job.mapper"
+        "com.pig4cloud.job.mapper",
+        "com.pig4cloud.notify.mapper",
+        "com.pig4cloud.export.mapper"
 }) // 扫描各业务模块Mapper接口
 public class Application {
     public static void main(String[] args) {

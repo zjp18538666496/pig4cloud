@@ -146,6 +146,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-ldap</artifactId>
         </dependency>
+        <!--        IO工具（EasyExcel/POI运行期依赖，此前由Flowable传递引入，移除后需显式声明）-->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.15.1</version>
+        </dependency>
         <!--        本地缓存（菜单树/租户品牌热数据）-->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

@@ -40,6 +40,7 @@ public class ExportService {
     private final SysExportTaskMapper taskMapper;
     private final UserService userService;
     private final StorageService storageService;
+    private final AsyncExportWriter asyncExportWriter;
 
     /**
      * 提交用户导出任务：数据行同步构建（保留数据权限），Excel异步生成
@@ -60,56 +61,11 @@ public class ExportService {
         task.setCreate_by(createBy);
         task.setCreate_time(new Date());
         taskMapper.insert(task);
-        writeExcelAsync(task.getId(), "用户列表",
-                new String[]{"账号", "昵称", "部门", "租户", "手机号", "邮箱", "角色", "创建时间", "最后登录"}, data);
+        asyncExportWriter.write(task.getId(), "用户列表",
+                java.util.List.of("账号", "昵称", "部门", "租户", "手机号", "邮箱", "角色", "创建时间", "最后登录"), data);
         return R.ok("任务已提交，请稍后到导出中心下载", task.getId() == null ? null : task.getId().longValue());
     }
 
-    /**
-     * 异步写Excel并上传到当前存储
-     */
-    @Async
-    public void writeExcelAsync(Integer taskId, String sheetName, String[] headers, List<List<String>> data) {
-        SysExportTaskEntity task = taskMapper.selectById(taskId);
-        if (task == null) {
-            return;
-        }
-        File temp = null;
-        try {
-            temp = new File(System.getProperty("java.io.tmpdir"),
-                    "export-" + UUID.randomUUID() + ".xlsx");
-            // 表体首列为表头行（EasyExcel需head类或head列表，这里用首行表头数据+headRowNumber(0)简化）
-            List<List<String>> head = java.util.Arrays.stream(headers)
-                    .map(java.util.List::of).toList();
-            EasyExcel.write(temp.getAbsolutePath())
-                    .head(head)
-                    .sheet(sheetName)
-                    .doWrite(data);
-            String path = "export/" + UUID.randomUUID() + ".xlsx";
-            try (InputStream in = new FileInputStream(temp)) {
-                // MultipartFile接口不便伪造，走各存储实现的文件上传重载：统一转存
-                storageService.uploadFile(path, in, temp.length());
-            }
-            task.setStatus("1");
-            task.setFile_path(path);
-            task.setFinish_time(new Date());
-            taskMapper.updateById(task);
-            log.info("导出任务{}完成：{}行", taskId, data.size());
-        } catch (Exception ex) {
-            log.error("导出任务{}失败", taskId, ex);
-            task.setStatus("2");
-            task.setMessage(ex.getMessage() == null ? "导出失败" : ex.getMessage().substring(0, Math.min(490, ex.getMessage().length())));
-            task.setFinish_time(new Date());
-            taskMapper.updateById(task);
-        } finally {
-            if (temp != null && temp.exists()) {
-                try {
-                    Files.deleteIfExists(temp.toPath());
-                } catch (Exception ignored) {
-                }
-            }
-        }
-    }
 
     /**
      * 下载任务文件：非超管仅限本人任务
