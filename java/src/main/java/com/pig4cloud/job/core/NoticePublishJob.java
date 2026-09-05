@@ -21,6 +21,7 @@ import java.util.List;
 public class NoticePublishJob implements JobHandler {
 
     private final NoticeMapper noticeMapper;
+    private final com.pig4cloud.notify.service.NotifyService notifyService;
 
     @Override
     public String name() {
@@ -39,6 +40,10 @@ public class NoticePublishJob implements JobHandler {
                     .set("status", "1")
                     .set("update_time", new Date()));
             log.info("公告[{}]定时发布完成", notice.getTitle());
+            // 通知渠道事件：定时公告发布（未配置渠道时静默跳过）
+            notifyService.sendByEvent("notice-publish", java.util.Map.of(
+                    "title", notice.getTitle() == null ? "" : notice.getTitle(),
+                    "content", notice.getContent() == null ? "" : notice.getContent()));
         }
     }
 }

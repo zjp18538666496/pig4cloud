@@ -44,6 +44,11 @@ public class SysMessageEntity {
     private Integer target_user_id;
 
     /**
+     * 关联公告id（公告扇出站内信时记录，已读回执统计用）
+     */
+    private Integer notice_id;
+
+    /**
      * 已读(0未读1已读)
      */
     private String read_flag;

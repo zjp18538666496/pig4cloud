@@ -465,6 +465,53 @@ INSERT INTO `sys_post` VALUES (5, 'hr', '人事专员', 5, '1', 1, NOW(), NULL);
 INSERT INTO `sys_post` VALUES (6, 'tech-lead', '研发组长', 1, '1', 10, NOW(), NULL);
 INSERT INTO `sys_post` VALUES (7, 'tech-dev', '研发工程师', 2, '1', 10, NOW(), NULL);
 INSERT INTO `sys_post` VALUES (8, 'tech-qa', '测试工程师', 3, '1', 10, NOW(), NULL);
+
+-- ----------------------------
+-- 通知渠道配置（平台级：email/webhook/dingtalk/wecom/feishu）
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_notify_channel`;
+CREATE TABLE `sys_notify_channel`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '渠道id',
+  `channel_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '渠道名称',
+  `channel_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '类型(email/webhook/dingtalk/wecom/feishu)',
+  `config` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '渠道配置(JSON:email收件人/webhook地址与加签密钥等)',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '状态(0停用1启用)',
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
+  `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '创建人',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '通知渠道表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 通知消息模板（支持${变量}占位）
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_notify_template`;
+CREATE TABLE `sys_notify_template`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '模板id',
+  `template_code` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '模板编码',
+  `template_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '模板名称',
+  `title_template` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '标题模板(支持${变量})',
+  `content_template` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '内容模板(支持${变量})',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '状态(0停用1启用)',
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_template_code`(`template_code`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '通知模板表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 通知模板种子（事件接入：公告发布/任务失败/租户到期预警/用户配额预警）
+-- ----------------------------
+INSERT INTO `sys_notify_template` (`template_code`, `template_name`, `title_template`, `content_template`, `status`, `remark`, `create_time`) VALUES
+('notice-publish', '公告发布通知', '新公告：${title}', '公告【${title}】已发布。
+${content}', '1', '公告发布时推送给全部启用渠道', NOW()),
+('job-failed', '定时任务失败告警', '任务失败：${jobName}', '定时任务【${jobName}】执行失败。
+失败信息：${message}', '1', '定时任务执行失败时告警', NOW()),
+('tenant-expire-warning', '租户到期预警', '租户即将到期：${tenantName}', '租户【${tenantName}】将于 ${expireTime} 到期，请及时处理。', '1', '租户到期前7天预警', NOW()),
+('user-quota-warning', '用户配额预警', '租户用户数即将达到上限：${tenantName}', '租户【${tenantName}】用户数 ${used}/${limit}，已达90%，请注意。', '1', '租户用户数达到配额90%时预警', NOW());
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================
@@ -545,6 +592,7 @@ CREATE TABLE IF NOT EXISTS `sys_message`  (
   `msg_type` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '类型(1系统消息2公告通知)',
   `tenant_id` int(11) NOT NULL DEFAULT 0 COMMENT '租户id(0为平台)',
   `target_user_id` int(40) NOT NULL COMMENT '目标用户id',
+  `notice_id` int(11) NULL DEFAULT NULL COMMENT '关联公告id(公告扇出站内信时记录,已读回执统计用)' AFTER `target_user_id`,
   `read_flag` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '已读(0未读1已读)',
   `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '发送人',
   `create_time` datetime NULL DEFAULT NULL COMMENT '发送时间',

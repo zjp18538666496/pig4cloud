@@ -128,23 +128,51 @@ public class MessageService {
      * 公告扇出：公告发布时按可见范围发站内信（平台公告发全平台，租户公告发本租户）
      */
     public void fanoutNotice(Integer tenantId, String title, String content, String createBy) {
+        fanoutNotice(tenantId, null, title, content, createBy);
+    }
+
+    /**
+     * 公告扇出（带公告id，供已读回执统计）
+     */
+    public void fanoutNotice(Integer tenantId, Integer noticeId, String title, String content, String createBy) {
         QueryWrapper<UserEntity> wrapper = new QueryWrapper<>();
         if (tenantId != null && tenantId != 0) {
             wrapper.eq("tenant_id", tenantId);
         }
         List<UserEntity> targets = userMapper.selectList(wrapper);
         for (UserEntity target : targets) {
-            insertMessage(title, content, "2", target, createBy);
+            insertMessage(title, content, "2", target, createBy, noticeId);
         }
     }
 
+    /**
+     * 公告已读回执统计：该公告扇出的站内信总数/已读/未读
+     */
+    public R<java.util.Map<String, Object>> noticeReadStats(Integer noticeId) {
+        long total = messageMapper.selectCount(new QueryWrapper<SysMessageEntity>()
+                .eq("notice_id", noticeId));
+        long read = messageMapper.selectCount(new QueryWrapper<SysMessageEntity>()
+                .eq("notice_id", noticeId).eq("read_flag", "1"));
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("total", total);
+        data.put("read", read);
+        data.put("unread", total - read);
+        data.put("readRate", total == 0 ? "0%" : Math.round(read * 1000 / total) / 10.0 + "%");
+        return R.ok("获取数据成功", data);
+    }
+
     private void insertMessage(String title, String content, String msgType, UserEntity target, String createBy) {
+        insertMessage(title, content, msgType, target, createBy, null);
+    }
+
+    private void insertMessage(String title, String content, String msgType, UserEntity target, String createBy, Integer noticeId) {
         SysMessageEntity message = new SysMessageEntity();
         message.setTitle(title);
         message.setContent(content);
         message.setMsg_type(msgType);
         message.setTenant_id(target.getTenant_id());
         message.setTarget_user_id(target.getId());
+        message.setNotice_id(noticeId);
         message.setRead_flag("0");
         message.setCreate_by(createBy);
         message.setCreate_time(new Date());

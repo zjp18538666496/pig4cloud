@@ -13,6 +13,8 @@ import com.pig4cloud.common.exception.BizException;
 import com.pig4cloud.common.result.R;
 import com.pig4cloud.config.service.ConfigService;
 import com.pig4cloud.log.entity.LoginLog;
+import com.pig4cloud.message.entity.SysMessageEntity;
+import com.pig4cloud.message.mapper.SysMessageMapper;
 import com.pig4cloud.log.service.LoginLogService;
 import com.pig4cloud.user.entity.UserEntity;
 import com.pig4cloud.user.mapper.UserMapper;
@@ -60,6 +62,7 @@ public class AuthServiceImpl implements AuthService {
     private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
     private final com.pig4cloud.common.util.IpRegionService ipRegionService;
     private final com.pig4cloud.tenant.service.TenantService tenantService;
+    private final SysMessageMapper messageMapper;
 
     @Override
     public LoginResult login(LoginRequest request, String ip, String userAgent) {
@@ -121,6 +124,7 @@ public class AuthServiceImpl implements AuthService {
                 sessionKickService.enforceSessionLimit(request.getUsername(), maxSessions);
             }
             saveLoginLog(request.getUsername(), ip, user == null ? null : user.getTenant_id(), true, "登录成功");
+            checkUnusualRegion(user, ip);
             return new LoginResult(accessToken, refreshToken, userVO,
                     tenantService.getBrandByTenantId(user == null ? null : user.getTenant_id()));
         } catch (AuthenticationException ex) {
@@ -292,6 +296,40 @@ public class AuthServiceImpl implements AuthService {
         });
         saveLoginLog(user.getUsername(), null, user.getTenant_id(), true, "通过邮箱验证码重置密码");
         return R.ok("密码重置成功，请使用新密码登录", null);
+    }
+
+    /**
+     * 异地登录提醒：本次成功登录的归属地与上一次成功登录不同（均非内网/未知）时，
+     * 给用户发一条站内信提示。IP归属地在saveLoginLog里已入库，这里直接对比最近两条记录
+     */
+    private void checkUnusualRegion(UserEntity user, String ip) {
+        try {
+            if (user == null) {
+                return;
+            }
+            LoginLog last = loginLogService.lastSuccessLogin(user.getUsername());
+            String lastRegion = last == null ? null : last.getRegion();
+            String currentRegion = ipRegionService.resolve(ip);
+            if (lastRegion == null || lastRegion.isBlank()
+                    || "内网IP".equals(lastRegion) || "未知".equals(lastRegion)
+                    || "内网IP".equals(currentRegion) || "未知".equals(currentRegion)
+                    || lastRegion.equals(currentRegion)) {
+                return;
+            }
+            SysMessageEntity message = new SysMessageEntity();
+            message.setTitle("异地登录提醒");
+            message.setContent("您的账号在新的地区登录：本次登录地【" + currentRegion + "】，上次登录地【"
+                    + lastRegion + "】。如非本人操作，请立即修改密码。");
+            message.setMsg_type("1");
+            message.setTenant_id(user.getTenant_id());
+            message.setTarget_user_id(user.getId());
+            message.setRead_flag("0");
+            message.setCreate_by("系统");
+            message.setCreate_time(new Date());
+            messageMapper.insert(message);
+        } catch (Exception ex) {
+            log.debug("异地登录提醒检查失败: {}", ex.getMessage());
+        }
     }
 
     private void saveLoginLog(String username, String ip, Integer tenantId, boolean success, String message) {

@@ -38,6 +38,15 @@ public class LoginLogService {
         }
     }
 
+    /**
+     * 最近一次成功登录记录（异地登录提醒用）
+     */
+    public LoginLog lastSuccessLogin(String username) {
+        Query query = new Query(Criteria.where("username").is(username).and("success").is(true))
+                .with(Sort.by(Sort.Direction.DESC, "createTime")).limit(1);
+        return mongoTemplate.findOne(query, LoginLog.class);
+    }
+
     public PageResult<LoginLog> pageQuery(String username, Boolean success, Integer tenantId, long page, long pageSize) {
         PageRequest pageable = PageRequest.of((int) (page - 1), (int) pageSize,
                 Sort.by(Sort.Direction.DESC, "createTime"));

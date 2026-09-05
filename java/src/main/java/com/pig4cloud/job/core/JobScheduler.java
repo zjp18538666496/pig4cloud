@@ -31,6 +31,7 @@ public class JobScheduler {
 
     private final SysJobMapper jobMapper;
     private final SysJobLogMapper jobLogMapper;
+    private final com.pig4cloud.notify.service.NotifyService notifyService;
     private final StateStore stateStore;
     private final Map<String, JobHandler> handlers;
     private final String nodeId = UUID.randomUUID().toString().substring(0, 8);
@@ -40,10 +41,12 @@ public class JobScheduler {
     private final Map<Integer, Date> nextRunMap = new HashMap<>();
 
     public JobScheduler(SysJobMapper jobMapper, SysJobLogMapper jobLogMapper,
-                        StateStore stateStore, List<JobHandler> handlerList) {
+                        StateStore stateStore, List<JobHandler> handlerList,
+                        com.pig4cloud.notify.service.NotifyService notifyService) {
         this.jobMapper = jobMapper;
         this.jobLogMapper = jobLogMapper;
         this.stateStore = stateStore;
+        this.notifyService = notifyService;
         this.handlers = new HashMap<>();
         handlerList.forEach(handler -> this.handlers.put(handler.name(), handler));
     }
@@ -121,6 +124,10 @@ public class JobScheduler {
         } catch (Exception ex) {
             log.error("任务[{}]执行失败", job.getJob_name(), ex);
             saveLog(job, "0", truncate(ex.getMessage()), System.currentTimeMillis() - start);
+            // 通知渠道事件：任务失败告警
+            notifyService.sendByEvent("job-failed", java.util.Map.of(
+                    "jobName", job.getJob_name() == null ? "" : job.getJob_name(),
+                    "message", ex.getMessage() == null ? "" : ex.getMessage()));
         }
     }
 

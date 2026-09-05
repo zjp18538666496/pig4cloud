@@ -10,6 +10,7 @@ import com.pig4cloud.common.result.R;
 import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.message.service.MessageService;
 import com.pig4cloud.notice.dto.NoticeDto;
+import java.util.Map;
 import com.pig4cloud.notice.entity.NoticeEntity;
 import com.pig4cloud.notice.mapper.NoticeMapper;
 import lombok.Getter;
@@ -31,10 +32,12 @@ public class NoticeService {
 
     private final NoticeMapper noticeMapper;
     private final MessageService messageService;
+    private final com.pig4cloud.notify.service.NotifyService notifyService;
 
-    public NoticeService(NoticeMapper noticeMapper, MessageService messageService) {
+    public NoticeService(NoticeMapper noticeMapper, MessageService messageService, com.pig4cloud.notify.service.NotifyService notifyService) {
         this.noticeMapper = noticeMapper;
         this.messageService = messageService;
+        this.notifyService = notifyService;
     }
 
     @Getter
@@ -118,7 +121,11 @@ public class NoticeService {
      */
     private void fanoutIfRequested(NoticeDto dto, NoticeEntity notice) {
         if (Boolean.TRUE.equals(dto.getSendMessage()) && "1".equals(notice.getStatus())) {
-            messageService.fanoutNotice(notice.getTenant_id(), notice.getTitle(), notice.getContent(), notice.getCreate_by());
+            messageService.fanoutNotice(notice.getTenant_id(), notice.getId(), notice.getTitle(), notice.getContent(), notice.getCreate_by());
+            // 通知渠道事件：公告发布（邮件/钉钉/企微/飞书/Webhook，未配置渠道时静默跳过）
+            notifyService.sendByEvent("notice-publish", Map.of(
+                    "title", notice.getTitle() == null ? "" : notice.getTitle(),
+                    "content", notice.getContent() == null ? "" : notice.getContent()));
         }
     }
 

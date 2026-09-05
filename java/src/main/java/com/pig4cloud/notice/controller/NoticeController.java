@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NoticeController {
 
     private final NoticeService noticeService;
+    private final com.pig4cloud.message.service.MessageService messageService;
 
     /**
      * 管理列表（含草稿，按可见范围过滤）
@@ -41,6 +42,15 @@ public class NoticeController {
     @PreAuthorize("hasAuthority('notice:write')")
     public R<Void> updateNotice(@Valid @RequestBody NoticeDto dto) {
         return noticeService.updateNotice(dto);
+    }
+
+    /**
+     * 公告已读回执统计（扇出站内信的已读/未读）
+     */
+    @PostMapping("/readStats")
+    @PreAuthorize("hasAuthority('notice:write')")
+    public R<java.util.Map<String, Object>> readStats(@RequestBody NoticeDto dto) {
+        return messageService.noticeReadStats(dto.getId());
     }
 
     @PostMapping("/delNotice")
