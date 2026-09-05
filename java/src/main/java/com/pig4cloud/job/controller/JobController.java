@@ -8,6 +8,7 @@ import com.pig4cloud.job.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,6 +56,15 @@ public class JobController {
     @PreAuthorize("hasAuthority('job:remove')")
     public R<Void> delJob(@RequestBody Map<String, Integer> body) {
         return jobService.deleteJob(body.get("id"));
+    }
+
+    /**
+     * cron表达式校验+下次执行时间预览（可视化编辑用）
+     */
+    @GetMapping("/nextTimes")
+    public R<List<String>> nextTimes(@org.springframework.web.bind.annotation.RequestParam String cron,
+                                     @org.springframework.web.bind.annotation.RequestParam(defaultValue = "5") int count) {
+        return R.ok(jobService.nextTimes(cron, Math.min(Math.max(count, 1), 10)));
     }
 
     @PostMapping("/runOnce")

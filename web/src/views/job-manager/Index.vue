@@ -1,5 +1,6 @@
 <script setup>
 import { reactive, ref } from 'vue'
+import service from '@/utils/request.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createJob, delJob, getJobLists, getJobLogs, runJobOnce, updateJob } from '@/api/job.js'
 
@@ -49,6 +50,24 @@ const rules = reactive({
     handler: [{ required: true, message: '请输入处理器名', trigger: 'blur' }],
     cron: [{ required: true, message: '请输入cron表达式', trigger: 'blur' }],
 })
+
+// cron预设与下次执行时间预览
+const cronPreset = ref('')
+const cronPreview = ref([])
+const cronPreviewError = ref('')
+const applyCronPreset = (v) => {
+    if (v) dialog.form.cron = v
+}
+const previewCron = () => {
+    cronPreview.value = []
+    cronPreviewError.value = ''
+    if (!dialog.form.cron) { cronPreviewError.value = '请先填写cron表达式'; return }
+    service({ url: '/job/nextTimes', method: 'get', params: { cron: dialog.form.cron, count: 5 } })
+        .then((res) => {
+            if (res?.code === 200) cronPreview.value = res.data
+            else cronPreviewError.value = res?.message || '表达式非法'
+        })
+}
 
 const openDialog = (type, row) => {
     dialog.type = type
@@ -178,7 +197,25 @@ const openLogs = (row) => {
                     <el-input v-model="dialog.form.handler" placeholder="如tenantExpireCheckJob" maxlength="64" />
                 </el-form-item>
                 <el-form-item label="cron表达式" prop="cron">
-                    <el-input v-model="dialog.form.cron" placeholder="如 0 0 1 * * ?" maxlength="32" />
+                    <div class="w-100%">
+                        <div class="flex gap-10px mb-8px">
+                            <el-select v-model="cronPreset" placeholder="常用频率（可选）" style="width: 200px" @change="applyCronPreset" clearable>
+                                <el-option label="每分钟" value="0 * * * * ?" />
+                                <el-option label="每5分钟" value="0 */5 * * * ?" />
+                                <el-option label="每小时整点" value="0 0 * * * ?" />
+                                <el-option label="每天 01:00" value="0 0 1 * * ?" />
+                                <el-option label="每天 08:00" value="0 0 8 * * ?" />
+                                <el-option label="工作日 09:00" value="0 0 9 ? * MON-FRI" />
+                                <el-option label="每月1号 00:00" value="0 0 0 1 * ?" />
+                            </el-select>
+                            <el-input v-model="dialog.form.cron" placeholder="如 0 0 1 * * ?" maxlength="32" @input="cronPreset = ''" />
+                            <el-button @click="previewCron">预览</el-button>
+                        </div>
+                        <div v-if="cronPreview.length" class="text-12px" style="color:#67c23a">
+                            未来执行时间：{{ cronPreview.join('　') }}
+                        </div>
+                        <div v-else-if="cronPreviewError" class="text-12px" style="color:#f56c6c">{{ cronPreviewError }}</div>
+                    </div>
                 </el-form-item>
                 <el-form-item label="状态">
                     <el-radio-group v-model="dialog.form.status">

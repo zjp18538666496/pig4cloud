@@ -97,6 +97,28 @@ public class JobService {
     }
 
     @LogRecord(module = "定时任务", operation = "手动执行任务")
+    /**
+     * cron校验+未来N次执行时间（非法表达式抛业务异常提示）
+     */
+    public java.util.List<String> nextTimes(String cron, int count) {
+        try {
+            var expression = org.springframework.scheduling.support.CronExpression.parse(cron.trim());
+            var next = java.time.LocalDateTime.now();
+            java.util.List<String> times = new java.util.ArrayList<>();
+            for (int i = 0; i < count; i++) {
+                next = expression.next(next);
+                if (next == null) break;
+                times.add(next.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            }
+            if (times.isEmpty()) {
+                throw new com.pig4cloud.common.exception.BizException("该cron无未来执行时间");
+            }
+            return times;
+        } catch (IllegalArgumentException ex) {
+            throw new com.pig4cloud.common.exception.BizException("cron表达式非法：" + ex.getMessage());
+        }
+    }
+
     public R<String> runOnce(Integer id) {
         SysJobEntity job = jobMapper.selectById(id);
         if (job == null) {

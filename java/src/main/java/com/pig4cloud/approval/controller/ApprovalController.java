@@ -35,6 +35,7 @@ public class ApprovalController {
      * 提交申请（登录用户均可）
      */
     @PostMapping("/apply")
+    @com.pig4cloud.common.annotation.Idempotent(intervalSeconds = 5)
     public R<Void> apply(@RequestBody ApprovalService.ApplyDto dto) {
         return approvalService.apply(dto, currentUser());
     }

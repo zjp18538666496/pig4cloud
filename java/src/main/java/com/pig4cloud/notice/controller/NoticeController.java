@@ -33,6 +33,7 @@ public class NoticeController {
     }
 
     @PostMapping("/createNotice")
+    @com.pig4cloud.common.annotation.Idempotent
     @PreAuthorize("hasAuthority('notice:write')")
     public R<Void> createNotice(@Valid @RequestBody NoticeDto dto) {
         return noticeService.createNotice(dto);

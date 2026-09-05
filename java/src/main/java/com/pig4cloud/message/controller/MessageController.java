@@ -43,6 +43,7 @@ public class MessageController {
     }
 
     @PostMapping("/send")
+    @com.pig4cloud.common.annotation.Idempotent
     @LogRecord(module = "站内信", operation = "发送消息")
     @PreAuthorize("hasAuthority('notice:write')")
     public R<Void> send(@RequestBody MessageService.SendDto dto) {
