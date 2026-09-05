@@ -29,6 +29,7 @@ public class CacheMonitorService {
 
     private final StateStore stateStore;
     private final ObjectProvider<StringRedisTemplate> redisTemplateProvider;
+    private final com.pig4cloud.common.cache.BizCacheService bizCacheService;
 
     @Value("${app.store.type:memory}")
     private String storeType;
@@ -121,6 +122,39 @@ public class CacheMonitorService {
         data.put("total", total);
         data.put("rows", rows);
         return data;
+    }
+
+    /**
+     * 按前缀分组批量删除（危险操作）：删除该分组下全部键，返回删除数量
+     */
+    public int deleteGroup(String group) {
+        if (group == null || group.isBlank() || group.contains("*")) {
+            throw new BizException("非法的分组名");
+        }
+        Set<String> keys = stateStore.keys("");
+        int deleted = 0;
+        for (String key : keys) {
+            if (key.equals(group) || key.startsWith(group + ":")) {
+                stateStore.delete(key);
+                deleted++;
+            }
+        }
+        log.warn("缓存分组[{}]被平台超管批量删除{}个键", group, deleted);
+        return deleted;
+    }
+
+    /**
+     * 业务本地缓存（菜单/品牌Caffeine）概况
+     */
+    public Map<String, Object> bizStats() {
+        return bizCacheService.stats();
+    }
+
+    /**
+     * 业务本地缓存一键刷新（菜单/角色/套餐/租户变更后如未自动失效可手动刷新）
+     */
+    public void clearBiz() {
+        bizCacheService.evictAll();
     }
 
     /**

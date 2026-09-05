@@ -24,7 +24,34 @@ const loadKeys = () => {
         if (res?.code === 200) { keyTable.rows = res.data.rows; keyTable.total = res.data.total }
     }).finally(() => { keyTable.loading = false })
 }
-const refreshAll = () => { loadOverview(); keyTable.page = 1; loadKeys() }
+const bizCache = reactive({ menuCacheSize: null, brandCacheSize: null })
+const loadBiz = () => {
+    service({ url: '/monitor/cache/biz', method: 'get' }).then((res) => {
+        if (res?.code === 200) Object.assign(bizCache, res.data)
+    })
+}
+const clearBiz = () => {
+    ElMessageBox.confirm('刷新业务本地缓存（菜单树/租户品牌）？菜单或权限变更后如未自动生效，可在此强制刷新。', '业务缓存刷新')
+        .then(() => service({ url: '/monitor/cache/clearBiz', method: 'post' }))
+        .then((res) => {
+            if (res?.code === 200) { ElMessage.success(res.message); loadBiz() } else ElMessage.error(res?.message)
+        }).catch(() => { })
+}
+
+/**
+ * 按分组批量清理StateStore键：不同分组影响不同（auth=验证码/黑名单/锁定、online=在线会话、job=任务锁等）
+ */
+const clearGroup = (g, count) => {
+    ElMessageBox.confirm(
+        `清空分组【${g}】下全部 ${count} 个键？该分组对应的功能状态将立即失效（如：auth=重新验证码/黑名单失效、online=强制下线、job=任务锁释放、sms=验证码作废）。`,
+        '按分组清空缓存', { confirmButtonText: '确认清空', cancelButtonText: '取消', type: 'warning' })
+        .then(() => service({ url: '/monitor/cache/clearGroup', method: 'post', data: { group: g } }))
+        .then((res) => {
+            if (res?.code === 200) { ElMessage.success(res.message); refreshAll() } else ElMessage.error(res?.message)
+        }).catch(() => { })
+}
+
+const refreshAll = () => { loadOverview(); loadBiz(); keyTable.page = 1; loadKeys() }
 onMounted(refreshAll)
 
 const pickGroup = (g) => {
@@ -59,6 +86,17 @@ const handleDelete = (row) => {
             <el-col :span="6"><el-card shadow="never"><div class="stat-label">Redis键总数(dbSize)</div><div class="stat-value">{{ overview.dbSize ?? '-' }}</div></el-card></el-col>
         </el-row>
 
+        <el-card shadow="never" class="mb-10px">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-20px">
+                    <span class="text-14px" style="font-weight:600">业务本地缓存（Caffeine）</span>
+                    <span class="text-13px" style="color:#909399">菜单树缓存：{{ bizCache.menuCacheSize ?? 0 }} 条</span>
+                    <span class="text-13px" style="color:#909399">租户品牌缓存：{{ bizCache.brandCacheSize ?? 0 }} 条</span>
+                </div>
+                <el-button type="primary" size="small" @click="clearBiz">刷新业务缓存</el-button>
+            </div>
+        </el-card>
+
         <el-row :gutter="12">
             <el-col :span="7">
                 <el-card shadow="never">
@@ -69,8 +107,13 @@ const handleDelete = (row) => {
                         </div>
                     </template>
                     <el-table :data="overview.groups" size="small" highlight-current-row @row-click="pickGroup" class="pointer-row">
-                        <el-table-column prop="group" label="前缀分组" min-width="120" />
-                        <el-table-column prop="count" label="键数量" width="80" align="center" />
+                        <el-table-column prop="group" label="前缀分组" min-width="100" />
+                        <el-table-column prop="count" label="数量" width="60" align="center" />
+                        <el-table-column label="操作" width="60" align="center">
+                            <template #default="scope">
+                                <el-button size="small" type="danger" link @click.stop="clearGroup(scope.row.group, scope.row.count)">清空</el-button>
+                            </template>
+                        </el-table-column>
                     </el-table>
                     <div class="mt-8px text-12px" style="color:#909399">点击分组可筛选右侧键列表，再次点击取消</div>
                 </el-card>

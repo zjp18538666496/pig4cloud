@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -50,5 +52,23 @@ public class BizCacheService {
     public void evictBrands() {
         brandCache.invalidateAll();
         log.debug("租户品牌缓存已全量失效");
+    }
+
+    /**
+     * 全部业务缓存失效（缓存监控一键刷新用）
+     */
+    public void evictAll() {
+        evictMenus();
+        evictBrands();
+    }
+
+    /**
+     * 业务缓存概况（缓存监控展示用）
+     */
+    public Map<String, Object> stats() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("menuCacheSize", menuCache.estimatedSize());
+        data.put("brandCacheSize", brandCache.estimatedSize());
+        return data;
     }
 }

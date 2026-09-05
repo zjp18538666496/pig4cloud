@@ -55,6 +55,26 @@ public class MonitorController {
                 Math.max(1, page), Math.min(100, Math.max(1, pageSize))));
     }
 
+    @org.springframework.web.bind.annotation.GetMapping("/cache/biz")
+    @PreAuthorize("hasAuthority('super')")
+    public R<Map<String, Object>> cacheBiz() {
+        return R.ok(cacheMonitorService.bizStats());
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/cache/clearBiz")
+    @PreAuthorize("hasAuthority('super')")
+    public R<Void> cacheClearBiz() {
+        cacheMonitorService.clearBiz();
+        return R.ok("业务本地缓存已刷新（菜单树/租户品牌将重新加载）", null);
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/cache/clearGroup")
+    @PreAuthorize("hasAuthority('super')")
+    public R<Integer> cacheClearGroup(@org.springframework.web.bind.annotation.RequestBody Map<String, String> body) {
+        int deleted = cacheMonitorService.deleteGroup(body.get("group"));
+        return R.ok("已删除" + deleted + "个键", deleted);
+    }
+
     @org.springframework.web.bind.annotation.PostMapping("/cache/delete")
     @PreAuthorize("hasAuthority('super')")
     public R<Void> cacheDelete(@org.springframework.web.bind.annotation.RequestBody Map<String, String> body) {
