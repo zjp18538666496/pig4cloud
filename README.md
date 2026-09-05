@@ -1,6 +1,6 @@
 # pig4cloud admin
 
-前后端分离的RBAC权限管理系统：用户/角色/部门/菜单管理、JWT双token认证、动态菜单路由、多租户（套餐/配额）、在线用户管理、通知公告、登录日志与操作日志。
+前后端分离的RBAC权限管理系统：用户/角色/部门/菜单管理、JWT双token认证、2FA两步认证、动态菜单路由、多租户（套餐/配额）、在线用户管理与代理登录、通知公告与站内信、Open API、登录日志与操作日志。
 
 - 后端：Java 17 + Spring Boot 3.3 + Spring Security + MyBatis-Plus + MongoDB（日志）（`java/`）
 - 前端：Vue 3 + Vite + Element Plus + Pinia + ECharts（`web/`）
@@ -12,14 +12,18 @@
 
 - **权限管理**：用户/角色/部门/岗位/菜单（含按钮权限点）管理，数据权限（本租户全部/本部门及以下/仅本人）
 - **角色层级**：角色可挂上级角色形成角色树，子角色沿父链继承菜单/按钮权限；角色编码与数据权限不继承（防止继承super越权），后端校验同租户/防成环
-- **认证安全**：图形验证码（可开关）、登录失败锁定（阈值/时长可配）+ IP级限流、JWT双token、登出/强退token拉黑、邮箱找回密码、密码策略（最小长度/复杂度可配、首登强制改密、密码过期）
+- **认证安全**：图形验证码（可开关）、登录失败锁定（阈值/时长可配）+ IP级限流、JWT双token、登出/强退token拉黑、邮箱找回密码、密码策略（最小长度/复杂度可配、首登强制改密、密码过期）、2FA两步认证（TOTP+备用恢复码，全局开关/强制开启）、单账号设备数限制、代理登录（impersonate）
 - **权限即时生效**：改角色菜单/换套餐/禁用租户/删用户等敏感操作自动踢相关会话
-- **在线用户**：实时在线会话列表、强制下线
+- **在线用户**：实时在线会话列表、强制下线、代理登录
+- **回收站**：用户/角色删除改为软删除（可开关），支持恢复与彻底清除
 - **多租户**：共享表+tenant_id自动隔离；租户套餐（决定可用菜单，变更即时生效）、有效期（过期自动禁用任务）、用户数配额、租户删除
 - **通知与消息**：通知公告（平台/租户两级，可选扇出站内信）、站内信中心（WebSocket实时推送+未读铃铛）
-- **系统管理**：字典管理、参数配置（密码策略/锁定阈值/日志保留等即时生效）、定时任务管理（cron调度/手动执行/执行日志）
+- **系统管理**：字典管理、参数配置（密码策略/锁定阈值/日志保留/脱敏等即时生效）、定时任务管理（cron调度/手动执行/执行日志）
 - **日志审计**：操作日志与登录日志（MongoDB，按租户隔离+超管全局视图，支持Excel导出、保留期自动清理）
-- **Excel导入导出**：用户列表导出/模板下载/批量导入（逐行校验报告）
+- **Excel导入导出**：用户列表导出/模板下载/批量导入（逐行校验报告）、弱口令字典校验（可开关）
+- **开放能力**：Open API（API Key授权范围/限流/过期，`/api/open/v1` 对外查询用户与公告）、代码生成器（读表结构生成CRUD，预览/下载）
+- **可观测性**：监控中心（JVM/系统概览）、健康自检、全局搜索、数据大屏（ECharts）
+- **个人中心**：自己的登录/操作日志、在线会话查看与踢出
 - **首页仪表盘**：统计卡片+登录趋势+最新公告
 - **前端体验**：菜单图标、暗黑模式、多标签页、中英文切换、验证码开关联动
 
@@ -36,7 +40,7 @@
 
 ### 1. 数据库
 
-首次启动会**自动创建数据库、建表并灌入演示数据**（JDBC URL 带 `createDatabaseIfNotExist=true`，表不存在时自动执行 `sql/pigx_admin_init.sql`），无需手动导入。
+首次启动会**自动创建数据库、建表并灌入演示数据**（JDBC URL 带 `createDatabaseIfNotExist=true`，`sys_user` 表不存在时自动执行内置初始化脚本 `sql/pigx_admin_init.sql`，与 `sql/pigx_admin.sql` 同内容，含全部表结构与种子数据），无需手动导入。
 
 手动导入方式（可选）：
 
@@ -72,17 +76,30 @@ npm run dev:development   # /api 代理到 http://127.0.0.1:9000
 
 ```
 com.pig4cloud
-├── common        # 统一响应R<T>/PageResult、全局异常、公共配置、分页查询基类
-├── auth          # 登录/刷新token/登出/JWT/验证码/失败锁定/找回密码（/api/auth/**）
-├── online        # 在线用户管理：会话列表/强制下线（/api/online/**）
+├── common        # 统一响应R<T>/PageResult、全局异常、StateStore状态存储、分页查询基类
+├── auth          # 登录/刷新token/登出/JWT/验证码/失败锁定/2FA/找回密码（/api/auth/**）
+├── online        # 在线用户管理：会话列表/强制下线/代理登录（/api/online/**）
 ├── user          # 用户管理（/api/user/**）
-├── role          # 角色管理（含数据权限data_scope）（/api/role/**）
+├── role          # 角色管理（含数据权限data_scope、角色树继承）（/api/role/**）
 ├── dept          # 部门管理+数据权限计算（/api/dept/**）
+├── post          # 岗位管理（/api/post/**）
 ├── menu          # 菜单管理（/api/menu/**）
+├── dict          # 字典管理（/api/dict/**）
+├── config        # 参数配置（/api/config/**）
 ├── tenant        # 租户管理与租户套餐（/api/tenant/**）
-├── notice        # 通知公告（/api/notice/**）
-├── stats         # 首页仪表盘统计（/api/stats/**）
+├── notice        # 通知公告（支持定时发布）（/api/notice/**）
+├── message       # 站内信（/api/message/**）
+├── websocket     # WebSocket实时推送（/ws/**，多实例经Redis频道广播）
+├── recycle       # 回收站：软删除恢复/彻底清除（/api/recycle/**）
+├── job           # 自研定时任务：cron调度/手动执行/执行日志（/api/job/**）
 ├── log           # 操作日志与登录日志（MongoDB存储）（/api/log/**）
+├── apikey        # Open API密钥管理与开放接口（/api/apikey/**、/api/open/v1/**）
+├── monitor       # 监控中心（/api/monitor/**）
+├── health        # 健康自检（/api/health/**）
+├── search        # 全局搜索（/api/search/**）
+├── stats         # 首页仪表盘/租户报表（/api/stats/**）
+├── gen           # 代码生成器（/api/gen/**）
+├── profile       # 个人中心：自己的日志与会话（/api/profile/**）
 └── file          # 本地与FTP文件上传下载（/api/file/**）
 ```
 
@@ -92,7 +109,7 @@ com.pig4cloud
 - 认证：access token（1小时）+ refresh token（30天），通过响应头 `Authorization` / `Refresh-Token` 下发；动态路由由路由守卫按需注册（首次导航/刷新/重新登录后自动重建）。
 - 权限点=角色编码（如`root`）+ 按钮菜单的权限标识（`sys_menu.perms`，如`user:remove`），登录时随用户信息下发：后端接口用 `@PreAuthorize("hasAuthority('user:remove')")` 控制，前端按钮用 `v-permission="['user:remove']"` 控制；注册接口 `/api/user/register` 无需登录。
 - 前端动态路由只接受 `sys_menu.component_path` 指向 `/views` 下真实存在的组件（白名单）。
-- 在线会话/验证码/失败锁定/找回密码验证码均为**内存实现**（单机有效、重启清空），多实例部署需替换为Redis等共享存储（见`auth/online`与`auth/service`下的Store类边界）。
+- 一次性状态（在线会话/验证码/失败锁定/token黑名单/IP限流）统一走 `StateStore` 抽象，memory/redis 可切换，详见上文「状态存储与多实例」。
 
 ## 多租户
 
@@ -191,7 +208,7 @@ cd docker/Compose
 JWT_SECRET=$(openssl rand -base64 32) docker compose up -d --build
 ```
 
-Dockerfile基于eclipse-temurin:17-jre，按Spring Boot分层jar构建（依赖层缓存友好）。Compose已透传全部环境变量（见docker/Compose/docker-compose.yml），在同级建`.env`文件填写`JWT_SECRET`、`STORE_TYPE`、`REDIS_HOST`等即可。
+Dockerfile位于`java/docker/Dockerfile`（基于eclipse-temurin:17-jre，按Spring Boot分层jar构建，依赖层缓存友好）。Compose在`java/docker/Compose/`（含全家桶docker-compose.full.yml），已透传全部环境变量，在同级建`.env`文件填写`JWT_SECRET`、`STORE_TYPE`、`REDIS_HOST`等即可。
 
 ### 5. 部署注意事项
 

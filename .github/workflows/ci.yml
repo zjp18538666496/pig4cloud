@@ -41,4 +41,4 @@ jobs:
       #   working-directory: java
       #   run: |
       #     mvn -B -DskipTests package
-      #     docker build -f docker/Dockerfile/Dockerfile -t ${{ secrets.REGISTRY }}/pigx-admin:${{ github.sha }} .
+      #     docker build -f docker/Dockerfile -t ${{ secrets.REGISTRY }}/pigx-admin:${{ github.sha }} .
