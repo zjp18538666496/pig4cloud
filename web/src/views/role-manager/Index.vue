@@ -8,7 +8,7 @@ import { debounce } from '@/utils/utils.js'
 
 // 菜单权限列最多展示的标签数，超出的折叠成"+N"
 const MENU_TAG_LIMIT = 2
-const DS_TEXT = { 1: '本租户全部', 2: '本部门及以下', 3: '仅本人' }
+const DS_TEXT = { 1: '本租户全部', 2: '本部门及以下', 3: '仅本人', 4: '自定义部门集' }
 
 // 所属租户分组仅平台超管可见（普通管理员只见本租户角色）
 const isSuper = (() => {

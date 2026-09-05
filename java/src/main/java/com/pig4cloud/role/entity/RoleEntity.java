@@ -45,6 +45,11 @@ public class RoleEntity {
     private String data_scope;
 
     /**
+     * 自定义部门集（data_scope=4时生效，逗号分隔部门id）
+     */
+    private String custom_dept_ids;
+
+    /**
      * 父角色id(0为顶级)；菜单/按钮权限沿父链继承，角色编码与数据权限不继承
      */
     private Integer parent_id;

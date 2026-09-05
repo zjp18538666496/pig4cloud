@@ -56,7 +56,8 @@ CREATE TABLE `sys_role`  (
   `role_name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '角色名称',
   `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '角色描述',
   `tenant_id` int(11) NOT NULL DEFAULT 1 COMMENT '租户id(0为平台)',
-  `data_scope` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '数据权限(1本租户全部2本部门及以下3仅本人)',
+  `data_scope` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '数据权限(1本租户全部2本部门及以下3仅本人4自定义部门集)',
+  `custom_dept_ids` varchar(500) NULL DEFAULT NULL COMMENT '自定义部门集(data_scope=4时生效,逗号分隔部门id)',
   `parent_id` int(11) NULL DEFAULT 0 COMMENT '父角色id(0为顶级，菜单权限沿父链继承)',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 200 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '角色表' ROW_FORMAT = Dynamic;

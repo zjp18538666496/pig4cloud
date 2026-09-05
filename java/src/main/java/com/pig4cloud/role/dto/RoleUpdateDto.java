@@ -29,6 +29,12 @@ public class RoleUpdateDto {
     private String dataScope;
 
     /**
+     * 自定义部门集（data_scope=4时生效，逗号分隔部门id）
+     */
+    @JsonProperty("custom_dept_ids")
+    private String customDeptIds;
+
+    /**
      * 上级角色id(0为顶级)
      */
     @JsonProperty("parent_id")

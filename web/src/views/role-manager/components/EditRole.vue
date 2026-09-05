@@ -14,7 +14,13 @@
                 <el-radio value="1">本租户全部</el-radio>
                 <el-radio value="2">本部门及以下</el-radio>
                 <el-radio value="3">仅本人</el-radio>
+                <el-radio value="4">自定义部门集</el-radio>
             </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="props.roleInfo.data_scope === '4'" label="部门范围">
+            <el-tree-select v-model="customDeptIdList" :data="deptTreeOptions" multiple
+                :props="{ label: 'dept_name', children: 'children' }" node-key="id" check-strictly
+                show-checkbox :render-after-expand="false" style="width: 100%" placeholder="勾选可见的部门（精确到勾选项）" />
         </el-form-item>
         <el-form-item prop="parent_id" label="上级角色">
             <el-tree-select
@@ -47,9 +53,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getMenuLists } from '@/api/menu.js'
 import { getRoleLists } from '@/api/role.js'
+import { getDeptTree } from '@/api/dept.js'
+
+// 自定义部门集：custom_dept_ids(逗号分隔字符串) <-> 多选树id数组
+const deptTreeOptions = ref([])
+getDeptTree({}).then((res) => {
+    if (res?.code === 200) deptTreeOptions.value = res.data
+})
+const customDeptIdList = computed({
+    get: () => (props.roleInfo.custom_dept_ids || '').split(',').filter(Boolean).map(Number),
+    set: (ids) => { props.roleInfo.custom_dept_ids = (ids || []).join(',') },
+})
 
 const props = defineProps({
     roleInfo: {

@@ -18,6 +18,7 @@ import com.pig4cloud.role.mapper.RoleMapper;
 import com.pig4cloud.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
@@ -47,6 +48,10 @@ public class RoleServiceImpl implements RoleService {
         // 数据权限默认本租户全部
         roleEntity.setData_scope(dto.getDataScope() == null || dto.getDataScope().isBlank()
                 ? "1" : dto.getDataScope());
+        if ("4".equals(roleEntity.getData_scope()) && !StringUtils.hasText(dto.getCustomDeptIds())) {
+            throw new BizException("自定义部门集不能为空");
+        }
+        roleEntity.setCustom_dept_ids("4".equals(roleEntity.getData_scope()) ? dto.getCustomDeptIds() : null);
         // 租户归属由服务端决定：取当前登录用户的租户，未认证上下文(平台操作)归平台层
         Integer tenantId = UserContext.getTenantId() == null ? 0 : UserContext.getTenantId();
         validateParent(dto.getParentId(), null, tenantId);
@@ -79,6 +84,7 @@ public class RoleServiceImpl implements RoleService {
                         "data_scope", nvl(exists.getData_scope())),
                 Map.of("role_name", nvl(dto.getRoleName()), "description", nvl(dto.getDescription()),
                         "data_scope", nvl(dto.getDataScope()))));
+        // 自定义部门集变更一并纳入diff（可见范围变化属敏感变更）
         validateParent(dto.getParentId(), exists, exists.getTenant_id());
         UpdateWrapper<RoleEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("id", dto.getId());
@@ -88,6 +94,13 @@ public class RoleServiceImpl implements RoleService {
         if (dto.getDataScope() != null && !dto.getDataScope().isBlank()) {
             updateWrapper.set("data_scope", dto.getDataScope());
         }
+        if (dto.getCustomDeptIds() != null) {
+            if ("4".equals(dto.getDataScope()) && !org.springframework.util.StringUtils.hasText(dto.getCustomDeptIds())) {
+                throw new BizException("自定义部门集不能为空");
+            }
+            updateWrapper.set("custom_dept_ids", "4".equals(dto.getDataScope()) ? dto.getCustomDeptIds() : null);
+        }
+        // 审计补充自定义部门集对比
         updateWrapper.set("parent_id", dto.getParentId() == null || dto.getParentId() == 0 ? 0 : dto.getParentId());
         int rows = roleMapper.update(null, updateWrapper);
         if (rows <= 0) {

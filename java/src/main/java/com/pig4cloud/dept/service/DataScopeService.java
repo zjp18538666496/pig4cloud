@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ public class DataScopeService {
     public static final String SCOPE_ALL = "1";
     public static final String SCOPE_DEPT = "2";
     public static final String SCOPE_SELF = "3";
+    public static final String SCOPE_CUSTOM = "4";
 
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
@@ -53,6 +55,14 @@ public class DataScopeService {
         for (RoleEntity role : roles) {
             if (SCOPE_DEPT.equals(role.getData_scope()) && user != null) {
                 deptIds.addAll(deptService.selfAndDescendantIds(user.getDept_id()));
+            } else if (SCOPE_CUSTOM.equals(role.getData_scope()) && StringUtils.hasText(role.getCustom_dept_ids())) {
+                // 自定义部门集：仅可见勾选的部门本身（不含其下级，精确到勾选项）
+                for (String id : role.getCustom_dept_ids().split(",")) {
+                    try {
+                        deptIds.add(Integer.valueOf(id.trim()));
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
             } else if (SCOPE_SELF.equals(role.getData_scope())) {
                 includeSelf = true;
             }
