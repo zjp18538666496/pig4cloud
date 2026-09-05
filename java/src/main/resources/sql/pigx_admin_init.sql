@@ -551,6 +551,12 @@ INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 903, 209, 102 WHERE 
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 904, 308, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 904);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 905, 30801, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 905);
 
+
+INSERT INTO `sys_menu` (`id`, `parent_id`, `menu_name`, `route`, `status`, `type`, `level`, `component_path`, `component_name`, `perms`)
+SELECT 210, 2, '缓存监控', '/cache-monitor', '1', '1', '2', '@/views/cache-monitor/Index.vue', 'cache-monitor', 'super'
+WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 210);
+INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 906, 210, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 906);
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================

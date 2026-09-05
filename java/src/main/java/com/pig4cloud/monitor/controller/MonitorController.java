@@ -31,9 +31,36 @@ public class MonitorController {
     private final OnlineUserStore onlineUserStore;
     private final StateStore stateStore;
     private final ObjectMapper objectMapper;
+    private final com.pig4cloud.monitor.service.CacheMonitorService cacheMonitorService;
 
     @Value("${app.store.type:memory}")
     private String storeType;
+
+    /**
+     * 缓存总览（仅平台超管：会暴露会话/验证码等敏感内容）
+     */
+    @GetMapping("/cache/overview")
+    @PreAuthorize("hasAuthority('super')")
+    public R<Map<String, Object>> cacheOverview() {
+        return R.ok(cacheMonitorService.overview());
+    }
+
+    @GetMapping("/cache/keys")
+    @PreAuthorize("hasAuthority('super')")
+    public R<Map<String, Object>> cacheKeys(@org.springframework.web.bind.annotation.RequestParam(required = false) String group,
+                                            @org.springframework.web.bind.annotation.RequestParam(required = false) String keyword,
+                                            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "1") int page,
+                                            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int pageSize) {
+        return R.ok(cacheMonitorService.listKeys(group, keyword,
+                Math.max(1, page), Math.min(100, Math.max(1, pageSize))));
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/cache/delete")
+    @PreAuthorize("hasAuthority('super')")
+    public R<Void> cacheDelete(@org.springframework.web.bind.annotation.RequestBody Map<String, String> body) {
+        cacheMonitorService.deleteKey(body.get("key"));
+        return R.ok("删除成功", null);
+    }
 
     @GetMapping("/overview")
     @PreAuthorize("hasAuthority('monitor:read')")
