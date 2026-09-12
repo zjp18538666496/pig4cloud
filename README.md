@@ -169,6 +169,19 @@ curl -H "X-Api-Key: $KEY" -H "X-Timestamp: $TS" -H "X-Nonce: $NONCE" -H "X-Signa
 
 - 全新环境无需手动导入：首次启动自动建库建表灌数据。初始化脚本为完整版（`sql/pigx_admin.sql`，classpath副本在`java/src/main/resources/sql/pigx_admin_init.sql`），已包含全部表结构与种子数据，新库一次执行到位。
 
+
+## 集成测试
+
+独立于单元测试的端到端回归（起完整应用、连真实数据库）：
+
+```bash
+# 使用独立schema pigx_admin_it（DB_INIT自动建库灌演示数据，跑完自动删除），不碰共享Redis
+# Windows(PowerShell): $env:RUN_IT="true"; mvn test "-Dtest=AuthFlowIT,TenantIsolationIT,ApprovalFlowIT"
+RUN_IT=true mvn test -Dtest="AuthFlowIT,TenantIsolationIT,ApprovalFlowIT"
+```
+
+覆盖：登录链路（成功/错密/未带token）、多租户隔离（租户管理员只见本租户/越权拒绝/超管全局）、审批全流程（申请→通过→自动绑角色→重复拦截）。未设置`RUN_IT`时自动跳过（CI只跑单元测试）。
+
 ## 接口文档
 
 后端启动后访问 http://localhost:9000/swagger-ui/index.html

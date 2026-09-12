@@ -102,7 +102,7 @@ public class ApprovalService {
         }
         Integer tenantId = user.getTenant_id() == null ? 0 : user.getTenant_id();
         List<Map<String, Object>> roles = jdbcTemplate.queryForList(
-                "SELECT id, role_name FROM sys_role WHERE status = '1' AND (tenant_id = ? OR tenant_id = 0) ORDER BY id",
+                "SELECT id, role_name FROM sys_role WHERE (tenant_id = ? OR tenant_id = 0) ORDER BY id",
                 tenantId);
         // 排除已拥有角色
         return roles.stream()

@@ -1,0 +1,29 @@
+# 集成测试profile：独立schema（跑完由测试清理），STORE_TYPE=memory不碰共享Redis
+spring:
+  datasource:
+    url: jdbc:mysql://10.126.126.3:3306/pigx_admin_it?createDatabaseIfNotExist=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+  data:
+    mongodb:
+      uri: mongodb://root:123456@10.126.126.3:27017/pigx_log_it?authSource=admin
+app:
+  store:
+    type: memory
+  db-init:
+    enabled: true
+  mail:
+    enabled: false
+  ldap:
+    enabled: false
+  oidc:
+    enabled: false
+  sms:
+    enabled: false
+    mock: false
+  backup:
+    dir: target/backup-it
+management:
+  health:
+    ldap:
+      enabled: false

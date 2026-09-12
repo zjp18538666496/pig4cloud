@@ -24,6 +24,9 @@ CREATE TABLE `sys_tenant`  (
   `package_id` int(11) NULL DEFAULT NULL COMMENT '绑定套餐id',
   `expire_time` datetime NULL DEFAULT NULL COMMENT '过期时间(空为永不过期)',
   `user_limit` int(11) NULL DEFAULT NULL COMMENT '用户数上限(空为不限制)',
+  `brand_name` varchar(64) NULL DEFAULT NULL COMMENT '品牌名称(登录页/侧边栏展示,空则用tenant_name)',
+  `brand_logo` varchar(255) NULL DEFAULT NULL COMMENT '品牌logo地址',
+  `brand_color` varchar(16) NULL DEFAULT NULL COMMENT '品牌主题色',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_tenant_code`(`tenant_code`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '租户表' ROW_FORMAT = Dynamic;
@@ -230,20 +233,20 @@ INSERT INTO `sys_menu` VALUES (30202, 302, '套餐删除', NULL, '1', '2', '3', 
 -- ----------------------------
 -- Insert records of sys_tenant / sys_role
 -- ----------------------------
-INSERT INTO `sys_tenant` VALUES (1, 'default', '默认租户', '1', '2026-08-29 00:00:00', NULL, 1, NULL, NULL);
-INSERT INTO `sys_tenant` VALUES (10, 'tech', '科技有限公司', '1', '2026-08-29 00:00:00', NULL, 3, NULL, NULL);
-INSERT INTO `sys_tenant` VALUES (11, 'trade', '贸易有限公司', '1', '2026-08-29 00:00:00', NULL, 2, NULL, NULL);
-INSERT INTO `sys_tenant` VALUES (12, 'trial', '试用租户', '1', '2026-08-29 00:00:00', NULL, 3, '2027-12-31 23:59:59', 3);
-INSERT INTO `sys_tenant` VALUES (13, 'expired', '过期租户', '1', '2026-08-29 00:00:00', NULL, 1, '2026-01-01 00:00:00', NULL);
-INSERT INTO `sys_role` VALUES (100, 'super', '平台超级管理员', '平台层，跨租户', 0, '1', 0);
-INSERT INTO `sys_role` VALUES (102, 'root', '管理员', '管理员', 1, '1', 0);
-INSERT INTO `sys_role` VALUES (150, 'tech_admin', '科技有限公司管理员', '开通租户自动创建', 10, '1', 0);
-INSERT INTO `sys_role` VALUES (151, 'dev', '研发工程师', '数据权限-仅本人', 10, '3', 0);
-INSERT INTO `sys_role` VALUES (152, 'prod', '产品经理', '数据权限-本部门及以下', 10, '2', 0);
-INSERT INTO `sys_role` VALUES (153, 'trade_admin', '贸易有限公司管理员', '开通租户自动创建', 11, '1', 0);
-INSERT INTO `sys_role` VALUES (154, 'sales', '销售专员', '数据权限-仅本人', 11, '3', 0);
-INSERT INTO `sys_role` VALUES (155, 'trial_admin', '试用租户管理员', '开通租户自动创建', 12, '1', 0);
-INSERT INTO `sys_role` VALUES (156, 'expired_admin', '过期租户管理员', '开通租户自动创建', 13, '1', 0);
+INSERT INTO `sys_tenant` VALUES (1, 'default', '默认租户', '1', '2026-08-29 00:00:00', NULL, 1, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `sys_tenant` VALUES (10, 'tech', '科技有限公司', '1', '2026-08-29 00:00:00', NULL, 3, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `sys_tenant` VALUES (11, 'trade', '贸易有限公司', '1', '2026-08-29 00:00:00', NULL, 2, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `sys_tenant` VALUES (12, 'trial', '试用租户', '1', '2026-08-29 00:00:00', NULL, 3, '2027-12-31 23:59:59', 3, NULL, NULL, NULL);
+INSERT INTO `sys_tenant` VALUES (13, 'expired', '过期租户', '1', '2026-08-29 00:00:00', NULL, 1, '2026-01-01 00:00:00', NULL, NULL, NULL, NULL);
+INSERT INTO `sys_role` VALUES (100, 'super', '平台超级管理员', '平台层，跨租户', 0, '1', NULL, 0);
+INSERT INTO `sys_role` VALUES (102, 'root', '管理员', '管理员', 1, '1', NULL, 0);
+INSERT INTO `sys_role` VALUES (150, 'tech_admin', '科技有限公司管理员', '开通租户自动创建', 10, '1', NULL, 0);
+INSERT INTO `sys_role` VALUES (151, 'dev', '研发工程师', '数据权限-仅本人', 10, '3', NULL, 0);
+INSERT INTO `sys_role` VALUES (152, 'prod', '产品经理', '数据权限-本部门及以下', 10, '2', NULL, 0);
+INSERT INTO `sys_role` VALUES (153, 'trade_admin', '贸易有限公司管理员', '开通租户自动创建', 11, '1', NULL, 0);
+INSERT INTO `sys_role` VALUES (154, 'sales', '销售专员', '数据权限-仅本人', 11, '3', NULL, 0);
+INSERT INTO `sys_role` VALUES (155, 'trial_admin', '试用租户管理员', '开通租户自动创建', 12, '1', NULL, 0);
+INSERT INTO `sys_role` VALUES (156, 'expired_admin', '过期租户管理员', '开通租户自动创建', 13, '1', NULL, 0);
 
 -- ----------------------------
 -- Insert records of sys_dept
@@ -268,15 +271,15 @@ INSERT INTO `sys_tenant_package` VALUES (3, '专业套餐', '2,201,20101,2010101
 -- ----------------------------
 -- Insert records of sys_user（演示账号密码均为12345678）
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, '平台管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'admin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 0, NULL);
-INSERT INTO `sys_user` VALUES (2, '超级管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'root', '185****6496', '1975922551@qq.com', '2025-02-13 18:12:42', '2025-02-14 11:28:14', '2025-02-13 18:12:54', NULL, 1, 2);
-INSERT INTO `sys_user` VALUES (10, '科技管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'techadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 10, 20);
-INSERT INTO `sys_user` VALUES (11, '王伟', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'wangwei', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 10, 21);
-INSERT INTO `sys_user` VALUES (12, '李丽', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'lili', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 10, 22);
-INSERT INTO `sys_user` VALUES (13, '贸易管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'tradeadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 11, 23);
-INSERT INTO `sys_user` VALUES (14, '张三', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'zhangsan', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 11, 24);
-INSERT INTO `sys_user` VALUES (15, '试用管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'trialadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 12, NULL);
-INSERT INTO `sys_user` VALUES (16, '过期管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'expiredadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 13, NULL);
+INSERT INTO `sys_user` VALUES (1, '平台管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'admin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 0, NULL);
+INSERT INTO `sys_user` VALUES (2, '超级管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'root', '185****6496', '1975922551@qq.com', '2025-02-13 18:12:42', '2025-02-14 11:28:14', '2025-02-13 18:12:54', NULL, 1, 2);
+INSERT INTO `sys_user` VALUES (10, '科技管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'techadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 10, 20);
+INSERT INTO `sys_user` VALUES (11, '王伟', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'wangwei', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 10, 21);
+INSERT INTO `sys_user` VALUES (12, '李丽', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'lili', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 10, 22);
+INSERT INTO `sys_user` VALUES (13, '贸易管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'tradeadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 11, 23);
+INSERT INTO `sys_user` VALUES (14, '张三', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'zhangsan', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 11, 24);
+INSERT INTO `sys_user` VALUES (15, '试用管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'trialadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 12, NULL);
+INSERT INTO `sys_user` VALUES (16, '过期管理员', '$2a$10$9Ifg5wOb6hu94S0TcUdl/u94Uv5SMXucJPFTeQ2WeUhlWdx.z34l2', 'local', 'expiredadmin', NULL, NULL, '2026-08-29 00:00:00', NULL, NULL, NULL, 13, NULL);
 
 -- ----------------------------
 -- Insert records of role_menu
@@ -430,8 +433,8 @@ INSERT INTO `user_role` VALUES (66, 16, 156);
 -- security=安全管理员（用户/角色/菜单/部门/岗位/参数配置），auditor=审计员（仅日志查看与导出）
 -- 角色未绑定账号，可通过角色管理按需调整后授予用户
 -- ----------------------------
-INSERT INTO `sys_role` VALUES (103, 'security', '安全管理员', '三权分立-安全员：账号权限与安全参数配置', 0, '1', 0);
-INSERT INTO `sys_role` VALUES (104, 'auditor', '审计员', '三权分立-审计员：仅日志查看与导出报告', 0, '1', 0);
+INSERT INTO `sys_role` VALUES (103, 'security', '安全管理员', '三权分立-安全员：账号权限与安全参数配置', 0, '1', NULL, 0);
+INSERT INTO `sys_role` VALUES (104, 'auditor', '审计员', '三权分立-审计员：仅日志查看与导出报告', 0, '1', NULL, 0);
 INSERT INTO `role_menu` VALUES (800, 2, 103);
 INSERT INTO `role_menu` VALUES (801, 201, 103);
 INSERT INTO `role_menu` VALUES (802, 20101, 103);
@@ -456,17 +459,6 @@ INSERT INTO `role_menu` VALUES (900, 307, 100);
 INSERT INTO `role_menu` VALUES (821, 20201, 104);
 
 
--- ----------------------------
--- 岗位演示数据（默认租户与科技租户）
--- ----------------------------
-INSERT INTO `sys_post` VALUES (1, 'ceo', '总经理', 1, '1', 1, NOW(), NULL);
-INSERT INTO `sys_post` VALUES (2, 'cto', '技术总监', 2, '1', 1, NOW(), NULL);
-INSERT INTO `sys_post` VALUES (3, 'dev', '研发工程师', 3, '1', 1, NOW(), NULL);
-INSERT INTO `sys_post` VALUES (4, 'pm', '产品经理', 4, '1', 1, NOW(), NULL);
-INSERT INTO `sys_post` VALUES (5, 'hr', '人事专员', 5, '1', 1, NOW(), NULL);
-INSERT INTO `sys_post` VALUES (6, 'tech-lead', '研发组长', 1, '1', 10, NOW(), NULL);
-INSERT INTO `sys_post` VALUES (7, 'tech-dev', '研发工程师', 2, '1', 10, NOW(), NULL);
-INSERT INTO `sys_post` VALUES (8, 'tech-qa', '测试工程师', 3, '1', 10, NOW(), NULL);
 
 -- ----------------------------
 -- 通知渠道配置（平台级：email/webhook/dingtalk/wecom/feishu）
@@ -514,10 +506,6 @@ ${content}', '1', '公告发布时推送给全部启用渠道', NOW()),
 ('tenant-expire-warning', '租户到期预警', '租户即将到期：${tenantName}', '租户【${tenantName}】将于 ${expireTime} 到期，请及时处理。', '1', '租户到期前7天预警', NOW()),
 ('user-quota-warning', '用户配额预警', '租户用户数即将达到上限：${tenantName}', '租户【${tenantName}】用户数 ${used}/${limit}，已达90%，请注意。', '1', '租户用户数达到配额90%时预警', NOW());
 
-INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
-SELECT 'reauth.enabled', '敏感操作二次认证', 'true', '删除租户/重置密码需请求头携带当前登录密码确认'
-WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'reauth.enabled');
-
 
 -- ----------------------------
 -- 异步导出任务（下载中心）
@@ -558,10 +546,6 @@ SELECT 210, 2, '缓存监控', '/cache-monitor', '1', '1', '2', '@/views/cache-m
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 210);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 906, 210, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 906);
 
-INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
-SELECT 'export.retention-days', '导出文件保留天数', '7', '导出中心文件生成后保留天数，0=永久保留'
-WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'export.retention-days');
-
 
 -- ----------------------------
 -- 轻量审批：申请单（状态机：0待审批/1通过/2驳回；apply_type: role_apply角色申请/tenant_open租户开通/handover离职交接）
@@ -583,10 +567,6 @@ CREATE TABLE `sys_approval`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_approval_status`(`status`, `id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '审批申请表' ROW_FORMAT = Dynamic;
-
-INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
-SELECT 'approval.assignee', '审批人账号', 'admin', '审批中心待审单的审批人账号（站内信通知对象）'
-WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'approval.assignee');
 
 INSERT INTO `sys_notify_template` (`template_code`, `template_name`, `title_template`, `content_template`, `status`, `remark`, `create_time`) VALUES
 ('approval-pending', '审批待办通知', '新审批待办：${title}', '申请人【${applicant}】提交了申请：${title}。理由：${reason}', '1', '有新审批单时推送', NOW()),
@@ -614,10 +594,6 @@ WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 213);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 909, 212, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 909);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 910, 213, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 910);
 
-INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
-SELECT 'captcha.type', '验证码类型', 'image', 'image=图形字符验证码/slider=滑块拼图验证码'
-WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'captcha.type');
-
 
 -- ----------------------------
 -- 事件出站Webhook（平台级）：内部事件(公告发布/审批结果/任务失败等)签名推送给外部系统
@@ -636,7 +612,6 @@ CREATE TABLE `sys_event_webhook`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '事件出站Webhook表' ROW_FORMAT = Dynamic;
 
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================
 -- 以下为原 V4~V7 增量内容（合并版，按顺序执行即得完整库结构）
@@ -707,6 +682,19 @@ CREATE TABLE IF NOT EXISTS `user_post`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户岗位表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- 岗位演示数据（默认租户与科技租户）
+-- ----------------------------
+INSERT INTO `sys_post` VALUES (1, 'ceo', '总经理', 1, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (2, 'cto', '技术总监', 2, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (3, 'dev', '研发工程师', 3, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (4, 'pm', '产品经理', 4, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (5, 'hr', '人事专员', 5, '1', 1, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (6, 'tech-lead', '研发组长', 1, '1', 10, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (7, 'tech-dev', '研发工程师', 2, '1', 10, NOW(), NULL);
+INSERT INTO `sys_post` VALUES (8, 'tech-qa', '测试工程师', 3, '1', 10, NOW(), NULL);
+
+
+-- ----------------------------
 -- 4. 站内信（发送时按目标用户扇出落库）
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `sys_message`  (
@@ -716,7 +704,7 @@ CREATE TABLE IF NOT EXISTS `sys_message`  (
   `msg_type` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '类型(1系统消息2公告通知)',
   `tenant_id` int(11) NOT NULL DEFAULT 0 COMMENT '租户id(0为平台)',
   `target_user_id` int(40) NOT NULL COMMENT '目标用户id',
-  `notice_id` int(11) NULL DEFAULT NULL COMMENT '关联公告id(公告扇出站内信时记录,已读回执统计用)' AFTER `target_user_id`,
+  `notice_id` int(11) NULL DEFAULT NULL COMMENT '关联公告id(公告扇出站内信时记录,已读回执统计用)',
   `read_flag` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '已读(0未读1已读)',
   `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '发送人',
   `create_time` datetime NULL DEFAULT NULL COMMENT '发送时间',
@@ -1000,3 +988,24 @@ INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 733, 30601, 100 WHER
 INSERT INTO `sys_job` (`job_name`, `handler`, `cron`, `status`, `remark`, `create_time`)
 SELECT '公告定时发布', 'noticePublishJob', '0 * * * * ?', '1', '每分钟扫描到期的定时发布公告并发布', NOW()
 WHERE NOT EXISTS (SELECT 1 FROM sys_job WHERE handler = 'noticePublishJob');
+-- ----------------------------
+-- 后续功能配置项种子（二次认证/导出保留/审批人/验证码类型）
+-- ----------------------------
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'reauth.enabled', '敏感操作二次认证', 'true', '删除租户/重置密码需请求头携带当前登录密码确认'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'reauth.enabled');
+
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'export.retention-days', '导出文件保留天数', '7', '导出中心文件生成后保留天数，0=永久保留'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'export.retention-days');
+
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'approval.assignee', '审批人账号', 'admin', '审批中心待审单的审批人账号（站内信通知对象）'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'approval.assignee');
+
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'captcha.type', '验证码类型', 'image', 'image=图形字符验证码/slider=滑块拼图验证码'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'captcha.type');
+
+
+SET FOREIGN_KEY_CHECKS = 1;
