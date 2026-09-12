@@ -6,6 +6,7 @@ import com.pig4cloud.message.entity.SysMessageEntity;
 import com.pig4cloud.message.mapper.SysMessageMapper;
 import com.pig4cloud.notify.service.NotifyService;
 import com.pig4cloud.tenant.entity.TenantEntity;
+import com.pig4cloud.config.service.ConfigService;
 import com.pig4cloud.tenant.mapper.TenantMapper;
 import com.pig4cloud.user.entity.UserEntity;
 import com.pig4cloud.user.mapper.UserMapper;
@@ -35,6 +36,8 @@ public class TenantExpireCheckJob implements JobHandler {
     private final UserMapper userMapper;
     private final SysMessageMapper messageMapper;
     private final NotifyService notifyService;
+    private final ConfigService configService;
+    private final com.pig4cloud.common.store.StateStore stateStore;
 
     @Override
     public String name() {
@@ -51,6 +54,44 @@ public class TenantExpireCheckJob implements JobHandler {
         log.info("租户过期检查完成，自动禁用{}个租户", rows);
         warnExpiringTenants();
         warnQuotaTenants();
+        warnPasswordExpiry();
+    }
+
+    /**
+     * 密码到期提前提醒：开启密码有效期(pwd.expire-days>0)时，到期前7天给用户发站内信。
+     * StateStore去重（7天内同一用户只提醒一次）
+     */
+    private void warnPasswordExpiry() {
+        int expireDays = configService.getInt("pwd.expire-days", 0);
+        if (expireDays <= 0) {
+            return;
+        }
+        Date now = new Date();
+        Date warnFrom = new Date(now.getTime() + 7L * 24 * 3600 * 1000);
+        List<UserEntity> users = userMapper.selectList(new QueryWrapper<UserEntity>()
+                .eq("deleted", 0)
+                .isNotNull("pwd_update_time")
+                .lt("pwd_update_time", warnFrom));
+        int warned = 0;
+        for (UserEntity user : users) {
+            long ageDays = (now.getTime() - user.getPwd_update_time().getTime()) / (24L * 3600 * 1000);
+            long remainDays = expireDays - ageDays;
+            if (remainDays > 7 || remainDays < 0) {
+                continue;
+            }
+            // 7天内同一用户只提醒一次（StateStore去重，随提醒窗口自然过期）
+            if (!stateStore.putIfAbsent("pwd:warned:" + user.getId(), "1", 7L * 24 * 3600 * 1000)) {
+                continue;
+            }
+            sendSiteMessage(user,
+                    "密码即将到期提醒",
+                    "您的账号密码已使用" + ageDays + "天，将于约" + Math.max(remainDays, 0) + "天后到期（策略"
+                            + expireDays + "天），请尽快在【个人中心-安全信息】修改密码。");
+            warned++;
+        }
+        if (warned > 0) {
+            log.info("密码到期提醒发送{}个用户", warned);
+        }
     }
 
     /**
@@ -102,6 +143,23 @@ public class TenantExpireCheckJob implements JobHandler {
     /**
      * 发站内信给租户管理员（开通租户时自动创建的{租户ID}admin账号）；直接落库，不依赖登录上下文
      */
+    private void sendSiteMessage(UserEntity target, String title, String content) {
+        try {
+            SysMessageEntity message = new SysMessageEntity();
+            message.setTitle(title);
+            message.setContent(content);
+            message.setMsg_type("1");
+            message.setTenant_id(target.getTenant_id());
+            message.setTarget_user_id(target.getId());
+            message.setRead_flag("0");
+            message.setCreate_by("系统");
+            message.setCreate_time(new Date());
+            messageMapper.insert(message);
+        } catch (Exception ex) {
+            log.warn("站内信发送失败: {}", ex.getMessage());
+        }
+    }
+
     private void sendToTenantAdmin(TenantEntity tenant, String title, String content) {
         try {
             UserEntity admin = userMapper.selectOne(new QueryWrapper<UserEntity>()

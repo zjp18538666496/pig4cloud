@@ -30,3 +30,23 @@ export function getNotifyLogs(data) {
 export function testNotifySend(data) {
     return service({ url: '/notify/testSend', method: 'post', data })
 }
+
+// ========== 事件出站Webhook ==========
+export function getWebhookLists(data) {
+    return service({ url: '/notify/getWebhookLists', method: 'post', data })
+}
+export function createWebhook(data) {
+    return service({ url: '/notify/createWebhook', method: 'post', data })
+}
+export function updateWebhook(data) {
+    return service({ url: '/notify/updateWebhook', method: 'post', data })
+}
+export function delWebhook(data) {
+    return service({ url: '/notify/delWebhook', method: 'post', data })
+}
+export function testWebhook(data) {
+    return service({ url: '/notify/testWebhook', method: 'post', data })
+}
+export function getWebhookLogs(data) {
+    return service({ url: '/notify/getWebhookLogs', method: 'post', data })
+}

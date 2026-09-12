@@ -614,6 +614,28 @@ WHERE NOT EXISTS (SELECT 1 FROM sys_menu WHERE id = 213);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 909, 212, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 909);
 INSERT INTO `role_menu` (`id`, `menu_id`, `role_id`) SELECT 910, 213, 100 WHERE NOT EXISTS (SELECT 1 FROM role_menu WHERE id = 910);
 
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'captcha.type', '验证码类型', 'image', 'image=图形字符验证码/slider=滑块拼图验证码'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'captcha.type');
+
+
+-- ----------------------------
+-- 事件出站Webhook（平台级）：内部事件(公告发布/审批结果/任务失败等)签名推送给外部系统
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_event_webhook`;
+CREATE TABLE `sys_event_webhook`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `webhook_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '名称',
+  `url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '接收地址',
+  `secret` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '签名密钥(HMAC-SHA256,可空)',
+  `events` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '订阅事件(逗号分隔,如notice-publish,approval-result)',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '1' COMMENT '状态(0停用1启用)',
+  `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '创建人',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '事件出站Webhook表' ROW_FORMAT = Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================

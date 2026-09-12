@@ -2,6 +2,7 @@ package com.pig4cloud.notify.controller;
 
 import com.pig4cloud.common.result.PageResult;
 import com.pig4cloud.common.result.R;
+import com.pig4cloud.notify.entity.SysEventWebhookEntity;
 import com.pig4cloud.notify.entity.SysNotifyChannelEntity;
 import com.pig4cloud.notify.entity.SysNotifyTemplateEntity;
 import com.pig4cloud.notify.service.NotifyService;
@@ -75,6 +76,50 @@ public class NotifyController {
     @PreAuthorize("hasAuthority('notify:manage')")
     public R<PageResult<com.pig4cloud.notify.entity.NotifyLog>> getLogs(@RequestBody NotifyService.LogQueryDto dto) {
         return notifyService.getLogs(dto);
+    }
+
+    // ==================== 事件出站Webhook ====================
+
+    @PostMapping("/getWebhookLists")
+    @PreAuthorize("hasAuthority('notify:manage')")
+    public R<PageResult<SysEventWebhookEntity>> getWebhookLists(@RequestBody NotifyService.WebhookQueryDto dto) {
+        return notifyService.getWebhookLists(dto);
+    }
+
+    @PostMapping("/createWebhook")
+    @PreAuthorize("hasAuthority('notify:manage')")
+    public R<SysEventWebhookEntity> createWebhook(@Valid @RequestBody SysEventWebhookEntity entity) {
+        return notifyService.createWebhook(entity);
+    }
+
+    @PostMapping("/updateWebhook")
+    @PreAuthorize("hasAuthority('notify:manage')")
+    public R<Void> updateWebhook(@RequestBody SysEventWebhookEntity entity) {
+        return notifyService.updateWebhook(entity);
+    }
+
+    @PostMapping("/delWebhook")
+    @PreAuthorize("hasAuthority('notify:manage')")
+    public R<Void> delWebhook(@RequestBody SysEventWebhookEntity entity) {
+        return notifyService.delWebhook(entity.getId());
+    }
+
+    /**
+     * 测试事件推送（发送一条test事件到该Webhook）
+     */
+    @PostMapping("/testWebhook")
+    @PreAuthorize("hasAuthority('notify:manage')")
+    public R<String> testWebhook(@RequestBody NotifyService.TestSendDto dto) {
+        return notifyService.testWebhook(dto.getChannelId());
+    }
+
+    /**
+     * 事件推送投递记录
+     */
+    @PostMapping("/getWebhookLogs")
+    @PreAuthorize("hasAuthority('notify:manage')")
+    public R<PageResult<com.pig4cloud.notify.entity.NotifyLog>> getWebhookLogs(@RequestBody NotifyService.WebhookQueryDto dto) {
+        return notifyService.getWebhookLogs(dto);
     }
 
     @PostMapping("/testSend")

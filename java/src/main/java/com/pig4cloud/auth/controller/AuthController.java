@@ -45,13 +45,18 @@ public class AuthController {
     private final ConfigService configService;
 
     /**
-     * 图形验证码，登录前获取；返回captchaId与base64图片。按IP限频防刷
+     * 登录验证码：按captcha.type返回图形字符验证码或滑块拼图（滑块多返回bgImage/pieceImage/pieceY，X坐标为答案不下发）。
+     * 按IP限频防刷
      */
     @GetMapping("/captcha")
-    public R<Map<String, String>> captcha(HttpServletRequest request) {
+    public R<Map<String, Object>> captcha(HttpServletRequest request) {
         ipRateLimiter.checkLimit("captcha:ip", ServletUtils.getClientIp(request), 30, 60 * 1000L,
                 "验证码获取过于频繁，请稍后再试");
-        return R.ok("请求成功", captchaService.generate());
+        String captchaType = configService.getValue("captcha.type", "image");
+        Map<String, Object> data = "slider".equals(captchaType)
+                ? captchaService.generateSlider()
+                : new java.util.LinkedHashMap<>(captchaService.generate());
+        return R.ok("请求成功", data);
     }
 
     /**

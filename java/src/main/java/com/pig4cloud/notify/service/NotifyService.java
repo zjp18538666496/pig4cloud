@@ -9,8 +9,10 @@ import com.pig4cloud.common.result.R;
 import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.notify.entity.NotifyLog;
 import com.pig4cloud.notify.entity.SysNotifyChannelEntity;
+import com.pig4cloud.notify.entity.SysEventWebhookEntity;
 import com.pig4cloud.notify.entity.SysNotifyTemplateEntity;
 import com.pig4cloud.notify.mapper.SysNotifyChannelMapper;
+import com.pig4cloud.notify.mapper.SysEventWebhookMapper;
 import com.pig4cloud.notify.mapper.SysNotifyTemplateMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * 通知服务：模板渲染(${变量}) + 多渠道异步投递 + 发送记录。
  * 事件接入点统一走sendByEvent（吞异常，通知失败不影响主流程）：
@@ -43,6 +46,9 @@ public class NotifyService {
     private final SysNotifyTemplateMapper templateMapper;
     private final NotifySender sender;
     private final MongoTemplate mongoTemplate;
+    private final SysEventWebhookMapper webhookMapper;
+    private final org.springframework.context.ApplicationContext applicationContext;
+    private final com.pig4cloud.common.mq.BufferedExecutor bufferedExecutor;
 
     @Getter
     @Setter
@@ -189,6 +195,15 @@ public class NotifyService {
         } catch (Exception ex) {
             log.warn("事件通知[{}]发送失败: {}", templateCode, ex.getMessage());
         }
+        // 事件出站Webhook：订阅了该事件的外部系统签名推送（组件存在才分发）
+        try {
+            var pusher = applicationContext.getBeanProvider(EventPushService.class).getIfAvailable();
+            if (pusher != null) {
+                pusher.dispatch(templateCode, params == null ? Map.of() : Map.copyOf(params));
+            }
+        } catch (Exception ex) {
+            log.warn("事件[{}]出站推送失败: {}", templateCode, ex.getMessage());
+        }
     }
 
     /**
@@ -252,25 +267,37 @@ public class NotifyService {
         return error;
     }
 
-    @Async
-    protected void saveLog(SysNotifyChannelEntity channel, String templateCode, String title,
-                           String receiver, String error, long costMs) {
-        try {
-            NotifyLog logEntity = new NotifyLog();
-            logEntity.setChannelId(channel.getId());
-            logEntity.setChannelName(channel.getChannel_name());
-            logEntity.setChannelType(channel.getChannel_type());
-            logEntity.setTemplateCode(templateCode);
-            logEntity.setTitle(title);
-            logEntity.setReceiver(receiver);
-            logEntity.setSuccess(error == null);
-            logEntity.setMessage(error);
-            logEntity.setCostMs(costMs);
-            logEntity.setCreateTime(new Date());
-            mongoTemplate.save(logEntity);
-        } catch (Exception ex) {
-            log.warn("通知发送记录写入失败: {}", ex.getMessage());
+    private void saveLog(SysNotifyChannelEntity channel, String templateCode, String title,
+                         String receiver, String error, long costMs) {
+        bufferedExecutor.submit(() -> {
+            try {
+                NotifyLog logEntity = new NotifyLog();
+                logEntity.setChannelId(channel.getId());
+                logEntity.setChannelName(channel.getChannel_name());
+                logEntity.setChannelType(channel.getChannel_type());
+                logEntity.setTemplateCode(templateCode);
+                logEntity.setTitle(title);
+                logEntity.setReceiver(receiver);
+                logEntity.setSuccess(error == null);
+                logEntity.setMessage(error);
+                logEntity.setCostMs(costMs);
+                logEntity.setCreateTime(new Date());
+                mongoTemplate.save(logEntity);
+            } catch (Exception ex) {
+                log.warn("通知发送记录写入失败: {}", ex.getMessage());
+            }
+        }, "notify-log");
+    }
+
+    /**
+     * 测试事件推送直达入口（供事件推送tab）
+     */
+    public String pushTestEvent(Integer webhookId, String eventCode, Map<String, Object> payload) {
+        var webhook = webhookMapper.selectById(webhookId);
+        if (webhook == null) {
+            throw new BizException("Webhook不存在");
         }
+        return eventPushService().attempt0(webhook, eventCode, payload);
     }
 
     /**
@@ -313,5 +340,128 @@ public class NotifyService {
             }
         }
         return result;
+    }
+
+    // ==================== 事件出站Webhook ====================
+
+    public R<PageResult<SysEventWebhookEntity>> getWebhookLists(WebhookQueryDto dto) {
+        Page<SysEventWebhookEntity> result = webhookMapper.selectPage(
+                new Page<>(Math.max(1, dto.getPage()), Math.max(1, dto.getPageSize())),
+                new QueryWrapper<SysEventWebhookEntity>()
+                        .like(StringUtils.hasText(dto.getWebhook_name()), "webhook_name", dto.getWebhook_name())
+                        .orderByDesc("id"));
+        return R.ok("获取数据成功", PageResult.of(result.getRecords(), result.getTotal(), dto.getPageSize(), dto.getPage()));
+    }
+
+    @LogRecord(module = "通知管理", operation = "创建事件Webhook")
+    public R<SysEventWebhookEntity> createWebhook(SysEventWebhookEntity entity) {
+        validateWebhook(entity);
+        entity.setId(null);
+        entity.setCreate_by(SecurityContextHolder.getContext().getAuthentication() != null
+                ? SecurityContextHolder.getContext().getAuthentication().getName() : null);
+        entity.setCreate_time(new Date());
+        webhookMapper.insert(entity);
+        return R.ok("创建成功", entity);
+    }
+
+    @LogRecord(module = "通知管理", operation = "编辑事件Webhook")
+    public R<Void> updateWebhook(SysEventWebhookEntity entity) {
+        validateWebhook(entity);
+        SysEventWebhookEntity update = new SysEventWebhookEntity();
+        update.setId(entity.getId());
+        update.setWebhook_name(entity.getWebhook_name());
+        update.setUrl(entity.getUrl());
+        update.setSecret(entity.getSecret());
+        update.setEvents(entity.getEvents());
+        update.setStatus(entity.getStatus());
+        update.setUpdate_time(new Date());
+        webhookMapper.updateById(update);
+        return R.ok("更新成功", null);
+    }
+
+    @LogRecord(module = "通知管理", operation = "删除事件Webhook")
+    public R<Void> delWebhook(Integer id) {
+        webhookMapper.deleteById(id);
+        return R.ok("删除成功", null);
+    }
+
+    private void validateWebhook(SysEventWebhookEntity entity) {
+        if (!StringUtils.hasText(entity.getWebhook_name()) || !StringUtils.hasText(entity.getUrl())) {
+            throw new BizException("名称与接收地址不能为空");
+        }
+        if (!entity.getUrl().startsWith("http")) {
+            throw new BizException("接收地址必须以http(s)开头");
+        }
+        if (!StringUtils.hasText(entity.getEvents())) {
+            throw new BizException("至少订阅一个事件");
+        }
+    }
+
+    /**
+     * 测试事件推送：发一条test事件（签名/记录与真实事件一致，不重试）
+     */
+    public R<String> testWebhook(Integer webhookId) {
+        SysEventWebhookEntity webhook = webhookMapper.selectById(webhookId);
+        if (webhook == null) {
+            throw new BizException("Webhook不存在");
+        }
+        long start = System.currentTimeMillis();
+        String error = eventPushService().attempt0(webhook, "test",
+                Map.of("message", "PIGX ADMIN webhook测试"));
+        saveWebhookTestLog(webhook, error, System.currentTimeMillis() - start);
+        return error == null ? R.ok("推送成功，请到接收端确认", null) : R.fail("推送失败：" + error);
+    }
+
+    private EventPushService eventPushService() {
+        return applicationContext.getBean(EventPushService.class);
+    }
+
+    private void saveWebhookTestLog(SysEventWebhookEntity webhook, String error, long costMs) {
+        try {
+            com.pig4cloud.notify.entity.NotifyLog logEntity = new com.pig4cloud.notify.entity.NotifyLog();
+            logEntity.setChannelId(webhook.getId());
+            logEntity.setChannelName(webhook.getWebhook_name());
+            logEntity.setChannelType("outbound");
+            logEntity.setTemplateCode("test");
+            logEntity.setTitle("Webhook测试推送");
+            logEntity.setReceiver(webhook.getUrl());
+            logEntity.setSuccess(error == null);
+            logEntity.setMessage(error);
+            logEntity.setCostMs(costMs);
+            logEntity.setCreateTime(new Date());
+            mongoTemplate.save(logEntity);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * 事件推送投递记录（channelType=outbound）
+     */
+    public R<PageResult<com.pig4cloud.notify.entity.NotifyLog>> getWebhookLogs(WebhookQueryDto dto) {
+        org.springframework.data.mongodb.core.query.Criteria criteria =
+                org.springframework.data.mongodb.core.query.Criteria.where("channelType").is("outbound");
+        if (dto.getChannelId() != null) {
+            criteria = criteria.and("channelId").is(dto.getChannelId());
+        }
+        if (dto.getSuccess() != null) {
+            criteria = criteria.and("success").is(dto.getSuccess());
+        }
+        org.springframework.data.mongodb.core.query.Query query =
+                new org.springframework.data.mongodb.core.query.Query(criteria);
+        long total = mongoTemplate.count(query, com.pig4cloud.notify.entity.NotifyLog.class);
+        query.with(org.springframework.data.domain.PageRequest.of(
+                (int) Math.max(0, dto.getPage() - 1), (int) Math.max(1, dto.getPageSize()),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createTime")));
+        List<com.pig4cloud.notify.entity.NotifyLog> rows =
+                mongoTemplate.find(query, com.pig4cloud.notify.entity.NotifyLog.class);
+        return R.ok("获取数据成功", PageResult.of(rows, total, dto.getPageSize(), dto.getPage()));
+    }
+
+    @Getter
+    @Setter
+    public static class WebhookQueryDto extends BasePageQuery {
+        private String webhook_name = "";
+        private Integer channelId;
+        private Boolean success;
     }
 }

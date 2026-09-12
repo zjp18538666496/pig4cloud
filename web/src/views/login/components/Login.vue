@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { login } from '@/api/login.js'
 import { useUserInfoStore } from '@/stores/user-info.js'
 import { getCaptcha, resetPasswordByEmail, sendResetCode } from '@/api/auth.js'
+import SliderCaptcha from '@/views/login/components/SliderCaptcha.vue'
 import { getPolicy } from '@/api/config.js'
 import { useRoute, useRouter } from 'vue-router'
 import service from '@/utils/request.js'
@@ -31,15 +32,28 @@ getPolicy().then((res) => {
 const captcha = reactive({
     id: '',
     image: '',
+    type: 'image',
+    bgImage: '',
+    pieceImage: '',
+    pieceY: 0,
 })
 const loadCaptcha = () => {
     getCaptcha().then((res) => {
         if (res?.code === 200) {
             captcha.id = res.data.captchaId
-            captcha.image = res.data.image
+            captcha.type = res.data.type || 'image'
+            captcha.image = res.data.image || ''
+            captcha.bgImage = res.data.bgImage || ''
+            captcha.pieceImage = res.data.pieceImage || ''
+            captcha.pieceY = res.data.pieceY || 0
             ruleForm.captchaCode = ''
         }
     })
+}
+// 滑块拖到位后自动提交登录（captchaCode=滑块X距离，后端±5px容差校验）
+const onSliderDrop = (x) => {
+    ruleForm.captchaCode = String(x)
+    submitForm(ruleFormRef)
 }
 loadCaptcha()
 
@@ -353,8 +367,10 @@ const resetForgotForm = () => {
                 </div>
             </el-form-item>
         </template>
-        <el-form-item v-if="policy.captchaEnabled" prop="captchaCode">
-            <div class="flex gap-10px w-100%">
+        <el-form-item v-if="policy.captchaEnabled && loginType === 'password'" prop="captchaCode">
+            <SliderCaptcha v-if="captcha.type === 'slider'" :bg-image="captcha.bgImage" :piece-image="captcha.pieceImage"
+                :piece-y="captcha.pieceY" @dropped="onSliderDrop" />
+            <div v-else class="flex gap-10px w-100%">
                 <el-input v-model="ruleForm.captchaCode" placeholder="请输入验证码" size="large" type="text" autocomplete="off" @keyup.enter="submitForm(ruleFormRef)" />
                 <img v-if="captcha.image" :src="captcha.image" title="看不清？点击刷新" class="captcha-img" alt="验证码" @click="loadCaptcha" />
             </div>
