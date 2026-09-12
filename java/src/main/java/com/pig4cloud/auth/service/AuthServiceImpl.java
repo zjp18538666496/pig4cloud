@@ -63,6 +63,7 @@ public class AuthServiceImpl implements AuthService {
     private final com.pig4cloud.common.util.IpRegionService ipRegionService;
     private final com.pig4cloud.tenant.service.TenantService tenantService;
     private final SysMessageMapper messageMapper;
+    private final com.pig4cloud.user.service.PasswordHistoryService passwordHistoryService;
     private final SmsLoginService smsLoginService;
     private final org.springframework.beans.factory.ObjectProvider<LdapAuthService> ldapAuthProvider;
 
@@ -96,6 +97,7 @@ public class AuthServiceImpl implements AuthService {
                         new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
             }
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            checkIpWhitelist(preUser, ip);
 
             // 角色编码+按钮权限点合并存入token，解析端再拆开
             List<String> authorities = authentication.getAuthorities().stream()
@@ -281,6 +283,29 @@ public class AuthServiceImpl implements AuthService {
         });
         saveLoginLog(user.getUsername(), null, user.getTenant_id(), true, "通过邮箱验证码重置密码");
         return R.ok("密码重置成功，请使用新密码登录", null);
+    }
+
+    /**
+     * 账号级登录IP白名单：login_ip_whitelist非空时，来源IP必须精确匹配或匹配*前缀通配
+     */
+    private void checkIpWhitelist(UserEntity user, String ip) {
+        if (user == null || user.getLogin_ip_whitelist() == null || user.getLogin_ip_whitelist().isBlank()) {
+            return;
+        }
+        for (String rule : user.getLogin_ip_whitelist().split(",")) {
+            String pattern = rule.trim();
+            if (pattern.isEmpty()) {
+                continue;
+            }
+            boolean matched = pattern.endsWith("*")
+                    ? ip != null && ip.startsWith(pattern.substring(0, pattern.length() - 1))
+                    : pattern.equals(ip);
+            if (matched) {
+                return;
+            }
+        }
+        log.warn("账号[{}]登录被IP白名单拦截: {}", user.getUsername(), ip);
+        throw new BadCredentialsException("当前IP不在该账号的登录白名单内");
     }
 
     /**

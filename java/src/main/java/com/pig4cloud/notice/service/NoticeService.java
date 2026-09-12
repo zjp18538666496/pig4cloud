@@ -11,6 +11,8 @@ import com.pig4cloud.log.annotation.LogRecord;
 import com.pig4cloud.message.service.MessageService;
 import com.pig4cloud.notice.dto.NoticeDto;
 import java.util.Map;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import com.pig4cloud.notice.entity.NoticeEntity;
 import com.pig4cloud.notice.mapper.NoticeMapper;
 import lombok.Getter;
@@ -89,6 +91,7 @@ public class NoticeService {
     public R<Void> createNotice(NoticeDto dto) {
         NoticeEntity notice = new NoticeEntity();
         applyDto(dto, notice);
+        notice.setContent(sanitizeHtml(notice.getContent()));
         // tenant_id由服务端决定：super发平台公告(0)，租户管理员发本租户公告
         notice.setTenant_id(UserContext.getTenantId() == null ? 0 : UserContext.getTenantId());
         notice.setCreate_by(SecurityContextHolder.getContext().getAuthentication() != null
@@ -109,6 +112,7 @@ public class NoticeService {
         NoticeEntity notice = new NoticeEntity();
         notice.setId(dto.getId());
         applyDto(dto, notice);
+        notice.setContent(sanitizeHtml(notice.getContent()));
         notice.setUpdate_time(new Date());
         noticeMapper.updateById(notice);
         exists.setStatus(notice.getStatus());
@@ -121,11 +125,12 @@ public class NoticeService {
      */
     private void fanoutIfRequested(NoticeDto dto, NoticeEntity notice) {
         if (Boolean.TRUE.equals(dto.getSendMessage()) && "1".equals(notice.getStatus())) {
-            messageService.fanoutNotice(notice.getTenant_id(), notice.getId(), notice.getTitle(), notice.getContent(), notice.getCreate_by());
+            messageService.fanoutNotice(notice.getTenant_id(), notice.getId(), notice.getTitle(),
+                    Jsoup.parse(notice.getContent() == null ? "" : notice.getContent()).text(), notice.getCreate_by());
             // 通知渠道事件：公告发布（邮件/钉钉/企微/飞书/Webhook，未配置渠道时静默跳过）
             notifyService.sendByEvent("notice-publish", Map.of(
                     "title", notice.getTitle() == null ? "" : notice.getTitle(),
-                    "content", notice.getContent() == null ? "" : notice.getContent()));
+                    "content", Jsoup.parse(notice.getContent() == null ? "" : notice.getContent()).text()));
         }
     }
 
@@ -167,5 +172,20 @@ public class NoticeService {
         } else {
             notice.setPublish_time(null);
         }
+    }
+
+    /**
+     * 公告富文本消毒：白名单过滤标签/属性防XSS（允许图片/标题/表格/行内样式）
+     */
+    private String sanitizeHtml(String content) {
+        if (content == null) {
+            return null;
+        }
+        Safelist safelist = Safelist.basicWithImages()
+                .addTags("h1", "h2", "h3", "h4", "h5", "h6", "table", "thead", "tbody", "tr", "td", "th", "font", "span", "u", "s")
+                .addAttributes("span", "style")
+                .addAttributes("font", "color", "size")
+                .addAttributes(":all", "style", "width", "height");
+        return Jsoup.clean(content, "", safelist);
     }
 }

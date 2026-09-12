@@ -13,6 +13,11 @@ public class UserCreateDto {
 
     @NotBlank(message = "用户名不能为空")
     @Pattern(regexp = "^[a-zA-Z0-9]{4,12}$", message = "请输入4到12位的用户名，支持字母和数字")
+    /**
+     * 登录IP白名单（逗号分隔，支持*前缀，空=不限制）
+     */
+    private String loginIpWhitelist;
+
     private String username;
 
     @NotBlank(message = "密码不能为空")

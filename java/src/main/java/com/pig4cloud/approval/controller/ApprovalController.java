@@ -69,7 +69,6 @@ public class ApprovalController {
      * 审批（通过/驳回）
      */
     @PostMapping("/approve")
-    @PreAuthorize("hasAuthority('approval:manage')")
     public R<Void> approve(@RequestBody ApprovalService.ApproveDto dto) {
         return approvalService.approve(dto, currentUser());
     }

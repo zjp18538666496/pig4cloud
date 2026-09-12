@@ -57,6 +57,25 @@ const zc = () => {
     }
 }
 
+/* 深色模式：登录页整体转暗，插画降透明度 */
+:global(html.dark) .login_container {
+    background-color: #0f172a;
+}
+
+:global(html.dark) .login_container .login-box .title {
+    color: #e5e7eb;
+}
+
+:global(html.dark) .login_container .login-box .from {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+:global(html.dark) .login_container .background {
+    opacity: 0.5;
+}
+
 .login_container {
     display: flex;
     width: 100vw;

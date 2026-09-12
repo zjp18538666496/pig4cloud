@@ -40,7 +40,7 @@ public interface UserMapper extends BaseMapper<UserEntity> {
     @Select({
             "<script>",
             "SELECT",
-            "  u.id, u.name, u.username, u.mobile, u.email, u.dept_id, u.tenant_id, u.totp_enabled, d.dept_name, t.tenant_name,",
+            "  u.id, u.name, u.username, u.mobile, u.email, u.dept_id, u.tenant_id, u.totp_enabled, u.login_ip_whitelist, d.dept_name, t.tenant_name,",
             "  DATE_FORMAT(u.create_time, '%Y-%m-%d %H:%i:%s') AS create_time,",
             "  DATE_FORMAT(u.update_time, '%Y-%m-%d %H:%i:%s') AS update_time,",
             "  DATE_FORMAT(u.last_login_time, '%Y-%m-%d %H:%i:%s') AS last_login_time,",

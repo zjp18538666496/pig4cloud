@@ -38,6 +38,7 @@ public class ProfileController {
     private final OnlineUserStore onlineUserStore;
     private final SessionKickService sessionKickService;
     private final JwtUtils jwtUtils;
+    private final com.pig4cloud.profile.ProfileService profileService;
 
     private String currentUsername() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -110,5 +111,27 @@ public class ProfileController {
             // token无效时无法标记当前设备
         }
         return null;
+    }
+
+    /**
+     * 首页工作台自定义配置读取（当前用户）
+     */
+    @GetMapping("/workbench")
+    public R<String> getWorkbench() {
+        return R.ok("获取数据成功", profileService.getWorkbenchConfig(currentUser()));
+    }
+
+    /**
+     * 首页工作台自定义配置保存
+     */
+    @PostMapping("/workbench")
+    public R<Void> saveWorkbench(@org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> body) {
+        profileService.saveWorkbenchConfig(currentUser(), body.get("config"));
+        return R.ok("保存成功", null);
+    }
+
+    private String currentUser() {
+        return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() == null
+                ? null : org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

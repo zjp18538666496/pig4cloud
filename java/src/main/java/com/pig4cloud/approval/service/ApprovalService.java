@@ -69,6 +69,11 @@ public class ApprovalService {
         private Integer roleId;
 
         private String reason;
+
+        /**
+         * 抄送人账号（逗号分隔，可选）
+         */
+        private String cc;
     }
 
     @Getter
@@ -187,6 +192,7 @@ public class ApprovalService {
         entity.setApply_type(dto.getApplyType());
         entity.setBiz_data(bizData);
         entity.setReason(dto.getReason());
+        entity.setCc(dto.getCc());
         entity.setApplicant(applicant);
         var user = userMapper.selectUserByUsername(applicant);
         entity.setTenant_id(user == null ? null : user.getTenant_id());
@@ -195,10 +201,28 @@ public class ApprovalService {
         approvalMapper.insert(entity);
         // 提醒审批人（站内信+通知渠道）
         String assignee = configService.getValue("approval.assignee", "admin");
+        String delegate = configService.getValue("approval.delegate", "");
         sendSiteMessage(assignee, "新审批待办：" + title,
                 "申请人【" + applicant + "】提交了申请：" + title
                         + (StringUtils.hasText(dto.getReason()) ? "。理由：" + dto.getReason() : ""),
                 user == null ? null : user.getTenant_id());
+        // 委托：受托人同样收到待办提醒且可代为审批
+        if (StringUtils.hasText(delegate) && !delegate.equals(assignee)) {
+            sendSiteMessage(delegate, "【委托】新审批待办：" + title,
+                    "审批人已委托，申请人【" + applicant + "】的申请：" + title + " 可由您代为审批。",
+                    user == null ? null : user.getTenant_id());
+        }
+        // 抄送
+        if (StringUtils.hasText(dto.getCc())) {
+            for (String ccUser : dto.getCc().split(",")) {
+                if (StringUtils.hasText(ccUser) && !ccUser.trim().equals(applicant)) {
+                    sendSiteMessage(ccUser.trim(), "【抄送】" + title,
+                            "申请人【" + applicant + "】提交了申请：" + title
+                                    + (StringUtils.hasText(dto.getReason()) ? "。理由：" + dto.getReason() : ""),
+                            user == null ? null : user.getTenant_id());
+                }
+            }
+        }
         notifyService.sendByEvent("approval-pending", Map.of(
                 "applicant", applicant,
                 "title", title,
@@ -220,6 +244,16 @@ public class ApprovalService {
         if (!"0".equals(approval.getStatus())) {
             throw new BizException("该申请已审批完成");
         }
+        // 审批权限：有approval:manage权限点（super）或 审批人/受托人
+        String operator = currentUser();
+        String assignee = configService.getValue("approval.assignee", "admin");
+        String delegate = configService.getValue("approval.delegate", "");
+        boolean hasPerm = SecurityContextHolder.getContext().getAuthentication() != null
+                && SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                        .anyMatch(a -> "approval:manage".equals(a.getAuthority()));
+        if (!hasPerm && !operator.equals(assignee) && !operator.equals(delegate)) {
+            throw new BizException(403, "仅审批人或受托人可审批");
+        }
         boolean pass = Boolean.TRUE.equals(dto.getPass());
         approval.setStatus(pass ? "1" : "2");
         approval.setApprover(approver);
@@ -227,6 +261,17 @@ public class ApprovalService {
         approval.setApprove_time(new Date());
         approvalMapper.updateById(approval);
         String resultText = pass ? "通过" : "驳回";
+        // 抄送结果
+        if (StringUtils.hasText(approval.getCc())) {
+            for (String ccUser : approval.getCc().split(",")) {
+                if (StringUtils.hasText(ccUser)) {
+                    sendSiteMessage(ccUser.trim(), "【抄送】审批" + resultText + "：" + approval.getTitle(),
+                            "申请【" + approval.getTitle() + "】已被" + resultText
+                                    + (StringUtils.hasText(approval.getApprove_comment()) ? "。审批意见：" + approval.getApprove_comment() : ""),
+                            approval.getTenant_id());
+                }
+            }
+        }
         // 角色申请通过：给申请人绑定角色（幂等）并踢会话让权限即时生效
         if (pass && TYPE_ROLE_APPLY.equals(approval.getApply_type())) {
             try {

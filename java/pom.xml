@@ -152,6 +152,12 @@
             <artifactId>commons-io</artifactId>
             <version>2.15.1</version>
         </dependency>
+        <!--        HTML消毒（公告富文本白名单过滤，防XSS）-->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
         <!--        本地缓存（菜单树/租户品牌热数据）-->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

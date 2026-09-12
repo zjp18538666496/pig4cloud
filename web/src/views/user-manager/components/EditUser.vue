@@ -35,6 +35,10 @@
                 <el-option v-for="item in postList" :key="item.id" :label="item.post_name" :value="item.id" />
             </el-select>
         </el-form-item>
+        <el-form-item label="IP白名单">
+            <el-input v-model="props.roleInfo.login_ip_whitelist"
+                placeholder="登录IP白名单，逗号分隔，支持*通配；留空不限制" maxlength="500" />
+        </el-form-item>
         <el-form-item label="手机号">
             <el-input v-model="props.roleInfo.mobile" />
         </el-form-item>

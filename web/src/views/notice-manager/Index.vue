@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createNotice, delNotice, getNoticeLists, updateNotice } from '@/api/notice.js'
+import RichEditor from '@/components/RichEditor.vue'
 
 /**
  * 通知公告管理
@@ -55,6 +56,18 @@ const formRef = ref()
 const rules = reactive({
     title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
 })
+
+const stripTags = (html) => (html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+
+// 公告详情（富文本渲染）
+const viewVisible = ref(false)
+const viewing = reactive({ title: '', content: '', createTime: '' })
+const viewNotice = (row) => {
+    viewing.title = row.title
+    viewing.content = row.content
+    viewing.createTime = row.create_time
+    viewVisible.value = true
+}
 
 const openDialog = (type, row) => {
     dialog.type = type
@@ -119,7 +132,9 @@ const handleDelete = (row) => {
         <el-table :data="noticeTable.rows" border :max-height="noticeTable.height">
             <el-table-column label="序号" type="index" width="60" align="center" />
             <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-            <el-table-column prop="content" label="内容" min-width="280" show-overflow-tooltip />
+            <el-table-column label="内容" min-width="280" show-overflow-tooltip>
+                <template #default="scope">{{ stripTags(scope.row.content) }}</template>
+            </el-table-column>
             <el-table-column label="状态" width="90" align="center">
                 <template #default="scope">
                     <el-tag :type="scope.row.status === '1' ? 'success' : 'info'">{{ statusText(scope.row.status) }}</el-tag>
@@ -129,6 +144,7 @@ const handleDelete = (row) => {
             <el-table-column prop="create_time" label="创建时间" width="170" />
             <el-table-column label="操作" width="150" align="center">
                 <template #default="scope">
+                    <el-button size="small" type="success" link @click="viewNotice(scope.row)">查看</el-button>
                     <el-button size="small" type="primary" link v-permission="['notice:write']" @click="openDialog('edit', scope.row)">编辑</el-button>
                     <el-button size="small" type="danger" link v-permission="['notice:remove']" @click="handleDelete(scope.row)">删除</el-button>
                 </template>
@@ -152,7 +168,7 @@ const handleDelete = (row) => {
                     <el-input v-model="dialog.form.title" placeholder="请输入公告标题" maxlength="128" />
                 </el-form-item>
                 <el-form-item label="内容">
-                    <el-input v-model="dialog.form.content" type="textarea" :rows="6" placeholder="请输入公告内容" maxlength="10000" show-word-limit />
+                    <RichEditor v-model="dialog.form.content" />
                 </el-form-item>
                 <el-form-item label="状态">
                     <el-radio-group v-model="dialog.form.status">
@@ -171,10 +187,9 @@ const handleDelete = (row) => {
             </template>
         </el-dialog>
     </div>
-</template>
 
-<style scoped>
-.page {
-    padding: 20px;
-}
-</style>
+    <el-dialog v-model="viewVisible" :title="viewing.title" width="680">
+        <div class="text-12px" style="color:#909399;margin-bottom:8px">{{ viewing.createTime }}</div>
+        <div class="notice-content" v-html="viewing.content"></div>
+    </el-dialog>
+</template>

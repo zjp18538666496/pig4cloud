@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
+import service from '@/utils/request.js'
 import { applyChartTheme, onThemeChange } from '@/utils/chartTheme.js'
 import { getDashboardStats } from '@/api/stats.js'
 
@@ -18,10 +19,9 @@ const permissions = computed(() => {
 })
 const isSuper = computed(() => permissions.value.includes('super'))
 
-const statCards = computed(() => {
-    if (!stats.value) {
-        return []
-    }
+// 基础卡片全集（工作台设置用）
+const allCards = computed(() => {
+    if (!stats.value) return []
     const cards = [
         { label: '用户数', value: stats.value.userCount, color: '#2e5cf6' },
         { label: '角色数', value: stats.value.roleCount, color: '#00b578' },
@@ -34,6 +34,55 @@ const statCards = computed(() => {
     cards.push({ label: '当前在线', value: stats.value.onlineCount, color: '#14c9c9' })
     return cards
 })
+
+const statCards = computed(() => {
+    if (!stats.value) {
+        return []
+    }
+    const cards = allCards.value
+    // 工作台自定义：按个人配置（JSON {order:[label...], hidden:[label...]}）过滤与排序
+    let list = cards
+    try {
+        const cfg = JSON.parse(workbenchConfig.value || 'null')
+        if (cfg && Array.isArray(cfg.order)) {
+            list = cfg.order
+                .map((label) => cards.find((c) => c.label === label))
+                .filter(Boolean)
+            for (const c of cards) {
+                if (!list.includes(c)) list.push(c)
+            }
+            if (Array.isArray(cfg.hidden)) {
+                list = list.filter((c) => !cfg.hidden.includes(c.label))
+            }
+        }
+    } catch (ignored) {
+    }
+    return list
+})
+
+// 工作台设置
+const wbVisible = ref(false)
+const workbenchConfig = ref('')
+const wbChecks = ref([])
+const openWorkbench = () => {
+    try {
+        const cfg = JSON.parse(workbenchConfig.value || 'null')
+        wbChecks.value = cfg && Array.isArray(cfg.hidden) ? allCards.value.map(c => c.label).filter(l => !cfg.hidden.includes(l)) : allCards.value.map(c => c.label)
+    } catch (e) {
+        wbChecks.value = allCards.value.map(c => c.label)
+    }
+    wbVisible.value = true
+}
+const saveWorkbench = () => {
+    const hidden = allCards.value.map(c => c.label).filter(l => !wbChecks.value.includes(l))
+    const order = [...wbChecks.value, ...allCards.value.map(c => c.label).filter(l => !wbChecks.value.includes(l))]
+    const cfg = JSON.stringify({ order, hidden })
+    workbenchConfig.value = cfg
+    service({ url: '/profile/workbench', method: 'post', data: { config: cfg } }).then((res) => {
+        if (res?.code === 200) ElMessage.success('工作台设置已保存')
+    })
+    wbVisible.value = false
+}
 
 /**
  * 登录趋势图
@@ -75,6 +124,10 @@ const renderChart = () => {
 const handleResize = () => chart && chart.resize()
 let stopThemeWatch = null
 
+service({ url: '/profile/workbench', method: 'get' }).then((res) => {
+    if (res?.code === 200 && res.data) workbenchConfig.value = res.data
+})
+
 const loadStats = () => {
     getDashboardStats().then((res) => {
         if (res?.code === 200) {
@@ -109,7 +162,22 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- 统计卡片 -->
-        <div class="cards">
+        <div class="flex justify-end mb-8px">
+        <el-button size="small" @click="openWorkbench">⚙ 工作台设置</el-button>
+    </div>
+    <el-dialog v-model="wbVisible" title="工作台卡片设置" width="420">
+        <div class="text-13px" style="color:#909399;margin-bottom:10px">勾选要显示的统计卡片：</div>
+        <el-checkbox-group v-model="wbChecks">
+            <div v-for="c in allCards" :key="c.label" style="margin:6px 0">
+                <el-checkbox :label="c.label">{{ c.label }}</el-checkbox>
+            </div>
+        </el-checkbox-group>
+        <template #footer>
+            <el-button @click="wbVisible = false">取消</el-button>
+            <el-button type="primary" @click="saveWorkbench">保存</el-button>
+        </template>
+    </el-dialog>
+    <div class="cards">
             <el-card v-for="card in statCards" :key="card.label" shadow="hover" class="card">
                 <div class="card-value" :style="{ color: card.color }">{{ card.value ?? '-' }}</div>
                 <div class="card-label">{{ card.label }}</div>

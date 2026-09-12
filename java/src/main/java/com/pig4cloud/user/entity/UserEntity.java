@@ -64,6 +64,16 @@ public class UserEntity {
     private Integer dept_id;
 
     /**
+     * 登录IP白名单（逗号分隔，支持*前缀通配，空=不限制）
+     */
+    private String login_ip_whitelist;
+
+    /**
+     * 首页工作台自定义配置（JSON：卡片顺序与显隐）
+     */
+    private String workbench_config;
+
+    /**
      * 强制修改密码标记（租户管理员初始密码/管理员重置后置1，改密后清除）
      */
     private Integer force_pwd_change;

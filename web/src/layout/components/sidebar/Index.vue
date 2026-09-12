@@ -81,6 +81,11 @@ const toggleCollapse = () => {
 }
 </script>
 <style scoped lang="scss">
+/* 深色模式：logo底色跟随暗黑 */
+:global(html.dark) .sidebar .logo {
+    background-color: #1f2937;
+}
+
 .sidebar {
     display: flex;
     flex-direction: column;

@@ -142,6 +142,9 @@
                     <el-form-item label="申请理由">
                         <el-input v-model="applyForm.reason" type="textarea" :rows="3" maxlength="500" placeholder="请说明申请原因，便于审批人判断" />
                     </el-form-item>
+                    <el-form-item label="抄送人">
+                        <el-input v-model="applyForm.cc" placeholder="抄送账号，逗号分隔（选填）" />
+                    </el-form-item>
                 </el-form>
                 <template #footer>
                     <el-button @click="applyVisible = false">取消</el-button>

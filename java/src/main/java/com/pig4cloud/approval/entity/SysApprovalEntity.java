@@ -40,6 +40,11 @@ public class SysApprovalEntity {
     private String reason;
 
     /**
+     * 抄送人账号（逗号分隔）
+     */
+    private String cc;
+
+    /**
      * 申请人账号
      */
     private String applicant;

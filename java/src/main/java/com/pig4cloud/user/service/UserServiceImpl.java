@@ -61,6 +61,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final com.pig4cloud.file.service.StorageService storageService;
     private final com.pig4cloud.common.cache.BizCacheService bizCacheService;
+    private final com.pig4cloud.user.service.PasswordHistoryService passwordHistoryService;
     private final FileUtils fileUtils;
 
     @Override
@@ -99,6 +100,7 @@ public class UserServiceImpl implements UserService {
         userEntity.setMobile(dto.getMobile());
         userEntity.setEmail(dto.getEmail());
         userEntity.setDept_id(dto.getDeptId());
+        userEntity.setLogin_ip_whitelist(dto.getLoginIpWhitelist());
         userEntity.setCreate_time(new Timestamp(System.currentTimeMillis()));
         userEntity.setTenant_id(tenantId);
         int rows = userMapper.insert(userEntity);
@@ -245,11 +247,13 @@ public class UserServiceImpl implements UserService {
         if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
             throw new BizException("密码不能和之前一样");
         }
-        // 新密码走密码策略校验
+        // 新密码走密码策略校验 + 历史防重
         passwordPolicyService.validate(dto.getNewPassword());
+        passwordHistoryService.assertNotReused(user.getId(), dto.getNewPassword());
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("username", username);
         updateWrapper.set("password", passwordEncoder.encode(dto.getNewPassword()));
+        passwordHistoryService.record(user.getId(), user.getPassword());
         updateWrapper.set("pwd_update_time", new Timestamp(System.currentTimeMillis()));
         updateWrapper.set("force_pwd_change", 0);
         updateWrapper.set("update_time", new Timestamp(System.currentTimeMillis()));
@@ -259,8 +263,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public R<Void> resetPassword(ResetPasswordDto dto) {
-        // 管理员重置：走密码策略校验；标记首登强制改密（可配置）并踢掉该用户在线会话
+        // 管理员重置：走密码策略校验+历史防重；标记首登强制改密（可配置）并踢掉该用户在线会话
         passwordPolicyService.validate(dto.getPassword());
+        var resetUser = userMapper.selectUserByUsername(dto.getUsername());
+        if (resetUser != null) {
+            passwordHistoryService.assertNotReused(resetUser.getId(), dto.getPassword());
+        }
         UpdateWrapper<UserEntity> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("username", dto.getUsername());
         updateWrapper.set("password", passwordEncoder.encode(dto.getPassword()));
@@ -268,6 +276,9 @@ public class UserServiceImpl implements UserService {
         updateWrapper.set("force_pwd_change", passwordPolicyService.forceChangeOnReset() ? 1 : 0);
         updateWrapper.set("update_time", new Timestamp(System.currentTimeMillis()));
         int rows = userMapper.update(null, updateWrapper);
+        if (rows > 0 && resetUser != null) {
+            passwordHistoryService.record(resetUser.getId(), resetUser.getPassword());
+        }
         sessionKickService.kickUser(dto.getUsername());
         return R.ok(rows > 0 ? "重置成功" : "重置失败", null);
     }
@@ -302,6 +313,8 @@ public class UserServiceImpl implements UserService {
         // 管理员可调整部门归属（null表示清空）；非管理员不允许改动
         if (isAdmin) {
             updateWrapper.set("dept_id", dto.getDeptId());
+            // 登录IP白名单仅管理员可配（空串=清除限制）
+            updateWrapper.set("login_ip_whitelist", dto.getLoginIpWhitelist());
         }
         int updateResult = userMapper.update(null, updateWrapper);
         if (updateResult <= 0) {

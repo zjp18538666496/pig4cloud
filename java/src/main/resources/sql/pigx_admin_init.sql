@@ -140,6 +140,8 @@ CREATE TABLE `sys_user`  (
   `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '用户头像地址',
   `tenant_id` int(11) NOT NULL DEFAULT 1 COMMENT '租户id(0为平台)',
   `dept_id` int(11) NULL DEFAULT NULL COMMENT '部门id',
+  `login_ip_whitelist` varchar(500) NULL DEFAULT NULL COMMENT '登录IP白名单(逗号分隔,支持*前缀,空=不限制)',
+  `workbench_config` text NULL COMMENT '首页工作台自定义配置(JSON)',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
@@ -557,6 +559,7 @@ CREATE TABLE `sys_approval`  (
   `apply_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '类型(role_apply/tenant_open/handover)',
   `biz_data` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '业务数据(JSON,如角色申请的roleId)',
   `reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '申请理由',
+  `cc` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '抄送人账号(逗号分隔)',
   `applicant` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '申请人账号',
   `tenant_id` int(11) NULL DEFAULT NULL COMMENT '申请人租户',
   `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '0' COMMENT '状态(0待审批1通过2驳回)',
@@ -1007,5 +1010,25 @@ INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
 SELECT 'captcha.type', '验证码类型', 'image', 'image=图形字符验证码/slider=滑块拼图验证码'
 WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'captcha.type');
 
+
+-- ----------------------------
+-- 密码历史（等保：防止改回最近N次用过的密码）
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_password_history`;
+CREATE TABLE `sys_password_history`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `user_id` int(40) NOT NULL COMMENT '用户id',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '密码哈希(BCrypt)',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_pwdhist_user`(`user_id`, `id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '密码历史表' ROW_FORMAT = Dynamic;
+
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'pwd.history-count', '密码历史防重次数', '3', '改密时不能与最近N次密码相同，0=不校验'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'pwd.history-count');
+INSERT INTO `sys_config` (`config_key`, `config_name`, `config_value`, `remark`)
+SELECT 'approval.delegate', '审批委托账号', '', '审批人出差时委托的账号（空=不委托，受托人同样可审批）'
+WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'approval.delegate');
 
 SET FOREIGN_KEY_CHECKS = 1;

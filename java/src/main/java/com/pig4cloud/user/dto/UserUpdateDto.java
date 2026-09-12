@@ -12,6 +12,11 @@ import java.util.List;
 public class UserUpdateDto {
 
     @NotNull(message = "用户id不能为空")
+    /**
+     * 登录IP白名单（逗号分隔，支持*前缀，空=不限制）
+     */
+    private String loginIpWhitelist;
+
     private Long id;
 
     private String username;
