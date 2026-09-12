@@ -50,7 +50,8 @@ onUnmounted(() => {
 
 <template>
     <div class="slider-captcha">
-        <div class="canvas" :style="{ width: width + 'px' }">
+        <!-- 强制按图片自然尺寸(310x155)渲染，保证拖动距离与答案坐标1:1 -->
+        <div class="canvas">
             <img class="bg" :src="bgImage" alt="滑块验证码背景" draggable="false" />
             <img class="piece" :src="pieceImage" alt="" draggable="false"
                 :style="{ top: pieceY + 'px', left: pieceX + 'px' }" />
@@ -67,18 +68,22 @@ onUnmounted(() => {
 
 <style scoped>
 .slider-captcha {
-    width: 100%;
+    width: 310px;
 }
 
+/* 固定自然尺寸渲染：防止容器拉伸导致拖动距离与缺口坐标比例失配 */
 .canvas {
     position: relative;
+    width: 310px;
+    height: 155px;
     border-radius: 6px;
     overflow: hidden;
 }
 
 .bg {
     display: block;
-    width: 100%;
+    width: 310px;
+    height: 155px;
     user-select: none;
 }
 
