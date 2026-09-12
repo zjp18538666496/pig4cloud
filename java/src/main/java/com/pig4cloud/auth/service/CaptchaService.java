@@ -130,24 +130,61 @@ public class CaptchaService {
     }
 
     /**
-     * 滑块背景：渐变底+随机圆形纹理
+     * 滑块背景：每次随机——渐变配色从调色板随机取一组，叠加随机装饰形状（圆/线/三角）
      */
     private java.awt.image.BufferedImage drawSliderBackground() {
+        // 渐变调色板（左色, 右色）
+        int[][] palette = {
+                {0x2E5CF6, 0x14C9C9}, {0x7B4BF6, 0xF65CB0}, {0x00B578, 0x14C9C9},
+                {0xFF8F1F, 0xF65C5C}, {0x3B82F6, 0x8B5CF6}, {0x0EA5E9, 0x22C55E},
+                {0xF43F5E, 0xFB923C}, {0x6366F1, 0x14B8A6},
+        };
+        int[] colors = palette[random.nextInt(palette.length)];
         int width = 310;
         int height = 155;
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        graphics.setPaint(new GradientPaint(0, 0, new Color(0x2E, 0x5C, 0xF6),
-                width, height, new Color(0x14, 0xC9, 0xC9)));
+        // 随机方向的渐变底
+        if (random.nextBoolean()) {
+            graphics.setPaint(new GradientPaint(0, 0, new Color(colors[0]), width, height, new Color(colors[1])));
+        } else {
+            graphics.setPaint(new GradientPaint(width, 0, new Color(colors[0]), 0, height, new Color(colors[1])));
+        }
         graphics.fillRect(0, 0, width, height);
-        for (int i = 0; i < 12; i++) {
-            graphics.setColor(randomColor(180, 255));
-            int size = 6 + random.nextInt(18);
+        // 半透明装饰形状（大圆+细线+小三角混合）
+        for (int i = 0; i < 6; i++) {
+            graphics.setColor(randomTranslucentColor());
+            int size = 20 + random.nextInt(50);
+            switch (random.nextInt(3)) {
+                case 0 -> graphics.fillOval(random.nextInt(width) - 20, random.nextInt(height) - 20, size, size);
+                case 1 -> {
+                    graphics.setStroke(new BasicStroke(1.5f));
+                    graphics.drawLine(random.nextInt(width), random.nextInt(height),
+                            random.nextInt(width), random.nextInt(height));
+                }
+                default -> {
+                    int tx = random.nextInt(width), ty = random.nextInt(height);
+                    java.awt.Polygon triangle = new java.awt.Polygon();
+                    triangle.addPoint(tx, ty);
+                    triangle.addPoint(tx + size, ty + random.nextInt(20) - 10);
+                    triangle.addPoint(tx + size / 2, ty + size);
+                    graphics.fillPolygon(triangle);
+                }
+            }
+        }
+        // 白色噪点提亮
+        for (int i = 0; i < 25; i++) {
+            graphics.setColor(new Color(255, 255, 255, 60 + random.nextInt(80)));
+            int size = 3 + random.nextInt(8);
             graphics.fillOval(random.nextInt(width), random.nextInt(height), size, size);
         }
         graphics.dispose();
         return image;
+    }
+
+    private Color randomTranslucentColor() {
+        return new Color(255, 255, 255, 40 + random.nextInt(90));
     }
 
     /**
