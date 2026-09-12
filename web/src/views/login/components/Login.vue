@@ -47,8 +47,11 @@ const loadCaptcha = () => {
             captcha.pieceImage = res.data.pieceImage || ''
             captcha.pieceY = res.data.pieceY || 0
             ruleForm.captchaCode = ''
+        } else {
+            // 获取失败（限流/服务异常）：明确告知并保留旧图，用户可稍后重试
+            ElMessage.warning(res?.message || '验证码获取失败，请稍后重试')
         }
-    })
+    }).catch(() => { })
 }
 // 滑块拖到位后自动提交登录（captchaCode=滑块X距离，后端±5px容差校验）
 const onSliderDrop = (x) => {

@@ -50,7 +50,7 @@ public class AuthController {
      */
     @GetMapping("/captcha")
     public R<Map<String, Object>> captcha(HttpServletRequest request) {
-        ipRateLimiter.checkLimit("captcha:ip", ServletUtils.getClientIp(request), 30, 60 * 1000L,
+        ipRateLimiter.checkLimit("captcha:ip", ServletUtils.getClientIp(request), 60, 60 * 1000L,
                 "验证码获取过于频繁，请稍后再试");
         String captchaType = configService.getValue("captcha.type", "image");
         Map<String, Object> data = "slider".equals(captchaType)
