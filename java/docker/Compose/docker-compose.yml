@@ -21,6 +21,33 @@ services:
       - MAIL_ENABLED=${MAIL_ENABLED:-false}
       # 首次启动自动建库建表+演示数据，生产建议false
       - DB_INIT=${DB_INIT:-true}
+      # 验证码类型：image(图形字符) | slider(滑块拼图)
+      - CAPTCHA_TYPE=${CAPTCHA_TYPE:-image}
+      # 短信登录（mock模式验证码回传前端，生产严禁开启）
+      - SMS_ENABLED=${SMS_ENABLED:-false}
+      - SMS_MOCK=${SMS_MOCK:-false}
+      # LDAP/AD登录
+      - LDAP_ENABLED=${LDAP_ENABLED:-false}
+      - LDAP_USERNAME_ATTR=${LDAP_USERNAME_ATTR:-uid}
+      - LDAP_HEALTH_ENABLED=${LDAP_HEALTH_ENABLED:-false}
+      # OIDC单点登录
+      - OIDC_ENABLED=${OIDC_ENABLED:-false}
+      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID:-}
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET:-}
+      - OIDC_AUTHORIZE_URI=${OIDC_AUTHORIZE_URI:-}
+      - OIDC_TOKEN_URI=${OIDC_TOKEN_URI:-}
+      - OIDC_USERINFO_URI=${OIDC_USERINFO_URI:-}
+      - OIDC_REDIRECT_URI=${OIDC_REDIRECT_URI:-}
+      - OIDC_SCOPE=${OIDC_SCOPE:-openid profile email}
+      - OIDC_USERNAME_CLAIM=${OIDC_USERNAME_CLAIM:-preferred_username}
+      # 接口文档开关：生产关闭
+      - SWAGGER_ENABLED=${SWAGGER_ENABLED:-true}
+      # 文件存储：local | ftp | s3
+      - STORAGE_TYPE=${STORAGE_TYPE:-local}
+      - S3_ENDPOINT=${S3_ENDPOINT:-http://127.0.0.1:9000}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-minioadmin}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-}
+      - S3_BUCKET=${S3_BUCKET:-pigx-admin}
       # MySQL/MongoDB等连接走application-local.yaml挂载或标准环境变量
       # - SPRING_DATASOURCE_URL=jdbc:mysql://10.126.126.3:3306/pigx_admin?createDatabaseIfNotExist=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
       - SPRING_DATA_MONGODB_URI=${SPRING_DATA_MONGODB_URI:-}

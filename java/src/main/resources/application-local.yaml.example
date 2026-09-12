@@ -32,6 +32,13 @@ ftp:
 #   secret-key: your-s3-secret
 #   bucket: pigx-admin
 #   path-style-access: true
+# LDAP/AD登录（app.ldap.enabled=true时启用；sys_user.auth_source='ldap'的账号走LDAP校验）
+# spring:
+#   ldap:
+#     urls: ldap://127.0.0.1:389
+#     base: dc=example,dc=org
+#     username: cn=admin,dc=example,dc=org
+#     password: your-ldap-password
 jwt:
   # 生成方式: openssl rand -base64 32
   secret: your-base64-secret-at-least-32-bytes

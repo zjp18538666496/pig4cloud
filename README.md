@@ -245,6 +245,12 @@ java -jar target/pig4cloud-1.0-SNAPSHOT.jar
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | `127.0.0.1` / `6379` / 空 | Redis连接（STORE_TYPE=redis时使用） |
 | `DB_INIT` | `true` | 首次启动自动建库建表+演示数据；生产建议`false` |
 | `MAIL_ENABLED` | `false` | 找回密码邮件开关（需配置spring.mail.*） |
+| `SMS_ENABLED` / `SMS_MOCK` | false / false | 短信登录开关；mock模式验证码回显前端（**生产严禁开mock**） |
+| `LDAP_ENABLED` / `LDAP_USERNAME_ATTR` | false / uid | LDAP/AD登录；同时配spring.ldap.urls/base |
+| `LDAP_HEALTH_ENABLED` | false | LDAP健康检查指示器（未启用LDAP保持false） |
+| `OIDC_ENABLED` + `OIDC_CLIENT_ID` 等 | false | OIDC单点登录（authorize/token/userinfo/redirect等URI按IdP填写） |
+| `CAPTCHA_TYPE` | image | 登录验证码：image图形字符 / slider滑块拼图 |
+| `SWAGGER_ENABLED` | true | 接口文档开关，生产必须false |
 | `STORAGE_TYPE` | `local` | 文件存储：`local`本地 / `ftp` / `s3`（S3兼容对象存储） |
 | `S3_ENDPOINT` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET` | `http://127.0.0.1:9000` / `minioadmin` / 无 / `pigx-admin` | S3存储连接参数（STORAGE_TYPE=s3时使用） |
 

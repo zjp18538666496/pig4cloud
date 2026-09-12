@@ -99,6 +99,23 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       DB_INIT: ${DB_INIT:-true}
+      - MAIL_ENABLED=${MAIL_ENABLED:-false}
+      # 短信/LDAP/OIDC登录（默认关闭，按需开启）
+      SMS_ENABLED: ${SMS_ENABLED:-false}
+      SMS_MOCK: ${SMS_MOCK:-false}
+      LDAP_ENABLED: ${LDAP_ENABLED:-false}
+      LDAP_HEALTH_ENABLED: ${LDAP_HEALTH_ENABLED:-false}
+      OIDC_ENABLED: ${OIDC_ENABLED:-false}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_AUTHORIZE_URI: ${OIDC_AUTHORIZE_URI:-}
+      OIDC_TOKEN_URI: ${OIDC_TOKEN_URI:-}
+      OIDC_USERINFO_URI: ${OIDC_USERINFO_URI:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
+      OIDC_USERNAME_CLAIM: ${OIDC_USERNAME_CLAIM:-preferred_username}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+      # 验证码类型：image | slider
+      CAPTCHA_TYPE: ${CAPTCHA_TYPE:-image}
       # 文件存储走S3（MinIO）；STORAGE_TYPE可改local/ftp
       STORAGE_TYPE: s3
       S3_ENDPOINT: http://minio:9000
