@@ -53,7 +53,8 @@ const loadCaptcha = () => {
 // 滑块拖到位后自动提交登录（captchaCode=滑块X距离，后端±5px容差校验）
 const onSliderDrop = (x) => {
     ruleForm.captchaCode = String(x)
-    submitForm(ruleFormRef)
+    // script内访问ref须取.value（模板中才会自动解包）
+    submitForm(ruleFormRef.value)
 }
 loadCaptcha()
 
@@ -123,7 +124,7 @@ onMounted(() => {
         })
 }
 
-const emit = defineEmits(['dl'])
+const emit = defineEmits(['dl', 'zc'])
 
 /**
  * 注册账号
