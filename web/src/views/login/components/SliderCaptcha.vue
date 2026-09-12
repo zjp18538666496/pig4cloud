@@ -1,5 +1,5 @@
 <script setup>
-import { onUnmounted, reactive, ref } from 'vue'
+import { onUnmounted, reactive, ref, watch } from 'vue'
 
 /**
  * 滑块拼图验证码：渲染背景/拼图块，拖到底部滑块对准缺口后emit最终X距离
@@ -15,6 +15,11 @@ const emit = defineEmits(['dropped'])
 
 const pieceX = ref(0)
 const dragging = ref(false)
+// 新验证码到达（登录失败后刷新）时，拖动位置归零重新对齐
+watch(() => props.bgImage, () => {
+    pieceX.value = 0
+    dragging.value = false
+})
 const drag = reactive({ startX: 0, current: 0 })
 const trackRef = ref()
 
